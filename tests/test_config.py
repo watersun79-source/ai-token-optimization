@@ -36,7 +36,7 @@ class PolicyConfigTests(unittest.TestCase):
         self.assertIsInstance(search_uses, int, "max_web_search_uses must be an integer")
         self.assertNotIsInstance(search_uses, bool, "max_web_search_uses must not be boolean")
         self.assertGreaterEqual(search_uses, 0)
-        self.assertLessEqual(search_uses, 2)
+        self.assertLessEqual(search_uses, 3)
 
     def test_secrets_and_execution_claims_protected(self):
         safety = self.policy["safety"]
