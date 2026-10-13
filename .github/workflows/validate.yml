@@ -27,5 +27,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Validate policy tests
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run Python regression tests
         run: python -m unittest discover -s tests -v
+      - name: Compare JavaScript validator against shared fixtures
+        run: node tools/json_output_validator.js
