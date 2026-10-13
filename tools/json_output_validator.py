@@ -17,6 +17,7 @@ Exit codes: 0 valid, 1 invalid JSON/schema/inconsistent verdicts.
 from __future__ import annotations
 
 import json
+import math
 import re
 import sys
 from typing import Any
@@ -97,14 +98,16 @@ def validate(value: Any) -> list[str]:
         if not expected_correct:
             counted_errors += 1
 
-    if (
-        not isinstance(value["error_count"], int)
-        or isinstance(value["error_count"], bool)
-        or value["error_count"] < 0
-    ):
+    error_count = value["error_count"]
+    is_integer_count = (
+        isinstance(error_count, int) and not isinstance(error_count, bool)
+    ) or (
+        isinstance(error_count, float) and math.isfinite(error_count) and error_count.is_integer()
+    )
+    if not is_integer_count or error_count < 0:
         errors.append("error_count_must_be_integer")
-    elif value["error_count"] != counted_errors:
-        errors.append(f"error_count_mismatch:reported={value['error_count']},computed={counted_errors}")
+    elif error_count != counted_errors:
+        errors.append(f"error_count_mismatch:reported={error_count},computed={counted_errors}")
 
     if not isinstance(value["answer"], str) or not value["answer"].strip():
         errors.append("answer_must_be_nonempty_string")
