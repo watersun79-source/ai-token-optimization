@@ -243,6 +243,11 @@
       "expected_errors": [
         "error_count_must_be_integer"
       ]
+    },
+    {
+      "id": "markdown_fence_input",
+      "raw_input": "```json\n{\"checks\":[{\"label\":\"1+1\",\"expected\":\"2\",\"actual\":\"2\",\"correct\":true}],\"error_count\":0,\"answer\":\"정상\",\"confidence\":\"high\",\"search_used\":false}\n```",
+      "expected_errors": []
     }
   ]
 }
