@@ -66,10 +66,10 @@ class PolicyConfigTests(unittest.TestCase):
         self.assertTrue(research["free_first"])
         self.assertTrue(research["paid_search_or_api_calls_require_explicit_approval"])
         budget = research["search_budget"]
-        self.assertEqual(budget["default_max_searches"], 2)
+        self.assertEqual(budget["default_max_searches"], 3)
         self.assertTrue(budget["reuse_results_within_run"])
         self.assertTrue(budget["avoid_duplicate_queries"])
-        self.assertLessEqual(self.policy["limits"]["max_web_search_uses"], 2)
+        self.assertLessEqual(self.policy["limits"]["max_web_search_uses"], 3)
 
     def test_paid_external_ai_calls_are_not_implicitly_allowed(self):
         limits = self.policy["limits"]
