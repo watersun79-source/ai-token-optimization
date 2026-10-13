@@ -38,6 +38,21 @@ def extract_json(text: str) -> Any:
         raise ValueError(f"invalid_json: {exc.msg} at line {exc.lineno}, column {exc.colno}") from exc
 
 
+def _js_string(value: Any) -> str:
+    """Mirror JavaScript String() for JSON values used in parity checks."""
+    if value is None:
+        return "null"
+    if value is True:
+        return "true"
+    if value is False:
+        return "false"
+    if isinstance(value, list):
+        return ",".join("" if item is None else _js_string(item) for item in value)
+    if isinstance(value, dict):
+        return "[object Object]"
+    return str(value)
+
+
 def validate(value: Any) -> list[str]:
     errors: list[str] = []
     if not isinstance(value, dict):
@@ -74,7 +89,7 @@ def validate(value: Any) -> list[str]:
             errors.append(prefix + "_correct_must_be_boolean")
             continue
         # For this deterministic claim-checking schema, values are compared as normalized strings.
-        expected_correct = str(check["expected"]).strip() == str(check["actual"]).strip()
+        expected_correct = _js_string(check["expected"]).strip() == _js_string(check["actual"]).strip()
         if check["correct"] != expected_correct:
             errors.append(prefix + "_verdict_mismatch")
         if not expected_correct:
