@@ -80,14 +80,21 @@ def validate(value: Any) -> list[str]:
         if not expected_correct:
             counted_errors += 1
 
-    if not isinstance(value["error_count"], int) or isinstance(value["error_count"], bool):
+    if (
+        not isinstance(value["error_count"], int)
+        or isinstance(value["error_count"], bool)
+        or value["error_count"] < 0
+    ):
         errors.append("error_count_must_be_integer")
     elif value["error_count"] != counted_errors:
         errors.append(f"error_count_mismatch:reported={value['error_count']},computed={counted_errors}")
 
     if not isinstance(value["answer"], str) or not value["answer"].strip():
         errors.append("answer_must_be_nonempty_string")
-    if value["confidence"] not in CONFIDENCE_VALUES:
+    if (
+        not isinstance(value["confidence"], str)
+        or value["confidence"] not in CONFIDENCE_VALUES
+    ):
         errors.append("confidence_must_be_low_medium_or_high")
     if not isinstance(value["search_used"], bool):
         errors.append("search_used_must_be_boolean")
