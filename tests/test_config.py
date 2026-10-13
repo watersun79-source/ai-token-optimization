@@ -12,23 +12,31 @@ class PolicyConfigTests(unittest.TestCase):
             (ROOT / "config" / "policy.json").read_text(encoding="utf-8")
         )
 
+    def assert_positive_integer(self, value, field):
+        self.assertIsInstance(value, int, f"{field} must be an integer")
+        self.assertNotIsInstance(value, bool, f"{field} must not be boolean")
+        self.assertGreater(value, 0, f"{field} must be positive")
+
     def test_call_limits_are_positive_and_bounded(self):
         routing = self.policy["routing"]
         simple_calls = routing["simple_question"]["max_ai_calls"]
         complex_calls = routing["complex_question"]["max_ai_calls"]
-        self.assertIsInstance(simple_calls, int)
-        self.assertGreaterEqual(simple_calls, 1)
+        self.assert_positive_integer(simple_calls, "simple_question.max_ai_calls")
         self.assertEqual(simple_calls, 1)
-        self.assertIsInstance(complex_calls, int)
-        self.assertGreaterEqual(complex_calls, 1)
+        self.assert_positive_integer(complex_calls, "complex_question.max_ai_calls")
         self.assertLessEqual(complex_calls, 2)
 
     def test_output_and_search_limits(self):
         limits = self.policy["limits"]
-        self.assertGreater(limits["max_prompt_chars"], 0)
-        self.assertGreater(limits["max_output_tokens_default"], 0)
-        self.assertGreaterEqual(limits["max_web_search_uses"], 0)
-        self.assertLessEqual(limits["max_web_search_uses"], 2)
+        self.assert_positive_integer(limits["max_prompt_chars"], "max_prompt_chars")
+        self.assert_positive_integer(
+            limits["max_output_tokens_default"], "max_output_tokens_default"
+        )
+        search_uses = limits["max_web_search_uses"]
+        self.assertIsInstance(search_uses, int, "max_web_search_uses must be an integer")
+        self.assertNotIsInstance(search_uses, bool, "max_web_search_uses must not be boolean")
+        self.assertGreaterEqual(search_uses, 0)
+        self.assertLessEqual(search_uses, 2)
 
     def test_secrets_and_execution_claims_protected(self):
         safety = self.policy["safety"]
@@ -41,8 +49,15 @@ class PolicyConfigTests(unittest.TestCase):
         automation = self.policy["scheduled_automation"]
         self.assertTrue(automation["enabled"])
         actions = automation["on_each_run"]
-        self.assertTrue(any("Do not change, disable, delete, or reschedule" in item for item in actions))
-        self.assertTrue(any("Report configured, attempted, and verified-success states separately" in item for item in actions))
+        self.assertTrue(
+            any("Do not change, disable, delete, or reschedule" in item for item in actions)
+        )
+        self.assertTrue(
+            any(
+                "Report configured, attempted, and verified-success states separately" in item
+                for item in actions
+            )
+        )
 
     def test_independent_review_is_restricted(self):
         review = self.policy["routing"]["independent_third_review"]
