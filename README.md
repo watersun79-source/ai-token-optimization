@@ -24,3 +24,7 @@
 `python -m unittest discover -s tests -v`
 
 GitHub Actions는 설정 파일과 테스트를 검사한다. 이것은 Activepieces 실서비스 실행이나 AI 응답 품질을 보증하지 않는다.
+
+
+## 자동 실행
+GitHub Actions는 `main` 브랜치에 변경 사항이 푸시되거나 Pull Request가 열릴 때 정책 테스트를 자동 실행하도록 설정되어 있다. 실행 결과는 저장소의 Actions 탭에서 확인한다.
