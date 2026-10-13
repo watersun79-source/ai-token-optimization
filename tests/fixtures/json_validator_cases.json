@@ -364,6 +364,53 @@
       "expected_errors": [
         "error_count_must_be_integer"
       ]
+    },
+    {
+      "id": "root_array_rejected",
+      "input": [],
+      "expected_errors": [
+        "root_must_be_object"
+      ]
+    },
+    {
+      "id": "root_string_rejected",
+      "input": "not an object",
+      "expected_errors": [
+        "root_must_be_object"
+      ]
+    },
+    {
+      "id": "empty_checks_rejected",
+      "input": {
+        "checks": [],
+        "error_count": 0,
+        "answer": "정상",
+        "confidence": "high",
+        "search_used": false
+      },
+      "expected_errors": [
+        "checks_must_be_nonempty_array"
+      ]
+    },
+    {
+      "id": "string_correct_rejected",
+      "input": {
+        "checks": [
+          {
+            "label": "boolean correct",
+            "expected": "same",
+            "actual": "same",
+            "correct": "true"
+          }
+        ],
+        "error_count": 0,
+        "answer": "정상",
+        "confidence": "high",
+        "search_used": false
+      },
+      "expected_errors": [
+        "checks[0]_correct_must_be_boolean"
+      ]
     }
   ]
 }
