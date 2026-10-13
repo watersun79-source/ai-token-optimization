@@ -268,6 +268,24 @@
       "expected_errors": [
         "checks[0]_verdict_mismatch"
       ]
+    },
+    {
+      "id": "integral_float_string_comparison_parity",
+      "input": {
+        "checks": [
+          {
+            "label": "numeric normalization",
+            "expected": 1,
+            "actual": 1,
+            "correct": true
+          }
+        ],
+        "error_count": 0,
+        "answer": "검증",
+        "confidence": "high",
+        "search_used": false
+      },
+      "expected_errors": []
     }
   ]
 }
