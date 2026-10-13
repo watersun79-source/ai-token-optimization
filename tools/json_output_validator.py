@@ -50,6 +50,8 @@ def _js_string(value: Any) -> str:
         return ",".join("" if item is None else _js_string(item) for item in value)
     if isinstance(value, dict):
         return "[object Object]"
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
     return str(value)
 
 
