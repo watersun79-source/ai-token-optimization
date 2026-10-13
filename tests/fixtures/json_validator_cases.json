@@ -304,6 +304,66 @@
         "search_used": false
       },
       "expected_errors": []
+    },
+    {
+      "id": "fractional_error_count_rejected",
+      "input": {
+        "checks": [
+          {
+            "label": "1+1",
+            "expected": "2",
+            "actual": "2",
+            "correct": true
+          }
+        ],
+        "answer": "정상",
+        "confidence": "high",
+        "search_used": false,
+        "error_count": 0.5
+      },
+      "expected_errors": [
+        "error_count_must_be_integer"
+      ]
+    },
+    {
+      "id": "string_error_count_rejected",
+      "input": {
+        "checks": [
+          {
+            "label": "1+1",
+            "expected": "2",
+            "actual": "2",
+            "correct": true
+          }
+        ],
+        "answer": "정상",
+        "confidence": "high",
+        "search_used": false,
+        "error_count": "0"
+      },
+      "expected_errors": [
+        "error_count_must_be_integer"
+      ]
+    },
+    {
+      "id": "null_error_count_rejected",
+      "input": {
+        "checks": [
+          {
+            "label": "1+1",
+            "expected": "2",
+            "actual": "2",
+            "correct": true
+          }
+        ],
+        "answer": "정상",
+        "confidence": "high",
+        "search_used": false,
+        "error_count": null
+      },
+      "expected_errors": [
+        "error_count_must_be_integer"
+      ]
     }
   ]
 }
