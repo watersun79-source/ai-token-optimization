@@ -9,6 +9,13 @@ const CHECK = new Set(["label", "expected", "actual", "correct"]);
 const CONFIDENCE = new Set(["low", "medium", "high"]);
 function sameArray(a, b) { return a.length === b.length && a.every((x, i) => x === b[i]); }
 function sortedDiff(a, b) { return [...a].filter(x => !b.has(x)).sort(); }
+function extractJson(raw) {
+  let candidate = raw.trim();
+  if (candidate.startsWith("```")) {
+    candidate = candidate.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  }
+  return JSON.parse(candidate);
+}
 function validate(value) {
   const errors = [];
   if (value === null || typeof value !== "object" || Array.isArray(value)) return ["root_must_be_object"];
@@ -44,7 +51,7 @@ let failed = 0;
 for (const item of fixtures.cases) {
   let errors;
   if (item.raw_input !== undefined) {
-    try { errors = validate(JSON.parse(item.raw_input)); }
+    try { errors = validate(extractJson(item.raw_input)); }
     catch { errors = ["invalid_json"]; }
   } else errors = validate(item.input);
   const pass = sameArray(errors, item.expected_errors);
