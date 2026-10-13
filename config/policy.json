@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "language": "ko",
+  "default_style": "concise",
+  "routing": {
+    "simple_question": {
+      "max_ai_calls": 1,
+      "web_search": false
+    },
+    "complex_question": {
+      "max_ai_calls": 2,
+      "web_search": "only_if_current_information_needed"
+    },
+    "independent_third_review": {
+      "enabled": false,
+      "allow_only_when": "material_risk_or_high_value_verification"
+    }
+  },
+  "limits": {
+    "max_prompt_chars": 5000,
+    "max_output_tokens_default": 700,
+    "max_web_search_uses": 2
+  },
+  "safety": {
+    "never_claim_unverified_execution": true,
+    "distinguish_mock_tests_from_production": true,
+    "never_commit_secrets": true,
+    "avoid_duplicate_model_calls": true
+  }
+}
