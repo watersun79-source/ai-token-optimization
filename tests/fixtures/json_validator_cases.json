@@ -223,6 +223,26 @@
       "expected_errors": [
         "error_count_must_be_integer"
       ]
+    },
+    {
+      "id": "boolean_error_count_rejected",
+      "input": {
+        "checks": [
+          {
+            "label": "1+1",
+            "expected": "2",
+            "actual": "2",
+            "correct": true
+          }
+        ],
+        "error_count": true,
+        "answer": "정상",
+        "confidence": "high",
+        "search_used": false
+      },
+      "expected_errors": [
+        "error_count_must_be_integer"
+      ]
     }
   ]
 }
