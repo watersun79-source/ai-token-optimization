@@ -34,9 +34,16 @@ def extract_json(text: str) -> Any:
         candidate = re.sub(r"^\`\`\`(?:json)?\s*", "", candidate, count=1, flags=re.I)
         candidate = re.sub(r"\s*\`\`\`$", "", candidate, count=1)
     try:
-        return json.loads(candidate)
+        return json.loads(candidate, parse_constant=_reject_nonstandard_constant)
     except json.JSONDecodeError as exc:
         raise ValueError(f"invalid_json: {exc.msg} at line {exc.lineno}, column {exc.colno}") from exc
+    except ValueError as exc:
+        raise ValueError(f"invalid_json: {exc}") from exc
+
+
+def _reject_nonstandard_constant(constant: str) -> None:
+    """Reject Python json's non-standard NaN and Infinity extensions."""
+    raise ValueError(f"non-standard JSON constant {constant}")
 
 
 def _js_string(value: Any) -> str:
