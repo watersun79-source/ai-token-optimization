@@ -26,5 +26,26 @@
     "distinguish_mock_tests_from_production": true,
     "never_commit_secrets": true,
     "avoid_duplicate_model_calls": true
+  },
+  "scheduled_automation": {
+    "enabled": true,
+    "repository": "watersun79-source/ai-token-optimization",
+    "policy_source": "config/policy.json",
+    "on_each_run": [
+      "Read applicable policy and preserve the existing schedule",
+      "Check enabled status and recent execution result when tools permit",
+      "Use one AI call for routine checks and a second only for material issues",
+      "Do not change, disable, delete, or reschedule existing automations without explicit approval",
+      "Report configured, attempted, and verified-success states separately"
+    ],
+    "github_actions": {
+      "workflow": ".github/workflows/validate.yml",
+      "triggers": [
+        "push to main",
+        "pull_request to main",
+        "workflow_dispatch"
+      ],
+      "note": "Workflow validates repository policy/tests; it does not itself execute or control the scheduled automation."
+    }
   }
 }
