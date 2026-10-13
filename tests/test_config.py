@@ -77,6 +77,10 @@ class PolicyConfigTests(unittest.TestCase):
             any("Never call paid external AI APIs unless explicitly approved" in rule
                 for rule in limits["token_optimization"])
         )
+        rules = limits["token_optimization"]
+        self.assertTrue(any("zero external AI API calls" in rule for rule in rules))
+        self.assertTrue(any("separate token-count API request" in rule for rule in rules))
+        self.assertTrue(any("never create paid caches without explicit approval" in rule for rule in rules))
 
     def test_independent_review_is_restricted(self):
         review = self.policy["routing"]["independent_third_review"]
