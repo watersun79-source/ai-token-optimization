@@ -163,6 +163,66 @@
       "expected_errors": [
         "invalid_json"
       ]
+    },
+    {
+      "id": "confidence_array_rejected",
+      "input": {
+        "checks": [
+          {
+            "label": "1+1",
+            "expected": "2",
+            "actual": "2",
+            "correct": true
+          }
+        ],
+        "error_count": 0,
+        "answer": "정상",
+        "confidence": [],
+        "search_used": false
+      },
+      "expected_errors": [
+        "confidence_must_be_low_medium_or_high"
+      ]
+    },
+    {
+      "id": "confidence_object_rejected",
+      "input": {
+        "checks": [
+          {
+            "label": "1+1",
+            "expected": "2",
+            "actual": "2",
+            "correct": true
+          }
+        ],
+        "error_count": 0,
+        "answer": "정상",
+        "confidence": {},
+        "search_used": false
+      },
+      "expected_errors": [
+        "confidence_must_be_low_medium_or_high"
+      ]
+    },
+    {
+      "id": "negative_error_count_rejected",
+      "input": {
+        "checks": [
+          {
+            "label": "1+1",
+            "expected": "2",
+            "actual": "2",
+            "correct": true
+          }
+        ],
+        "error_count": -1,
+        "answer": "정상",
+        "confidence": "high",
+        "search_used": false
+      },
+      "expected_errors": [
+        "error_count_must_be_integer"
+      ]
     }
   ]
 }
