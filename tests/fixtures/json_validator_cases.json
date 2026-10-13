@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "description": "Shared fixtures for Python and JavaScript JSON output validators.",
+  "cases": [
+    {
+      "id": "valid_payload",
+      "input": {
+        "checks": [
+          {
+            "label": "48*27",
+            "expected": "1296",
+            "actual": "1296",
+            "correct": true
+          },
+          {
+            "label": "1296/48",
+            "expected": "27",
+            "actual": "28",
+            "correct": false
+          },
+          {
+            "label": "1296/27",
+            "expected": "48",
+            "actual": "48",
+            "correct": true
+          }
+        ],
+        "error_count": 1,
+        "answer": "검증 결과 오류 1개",
+        "confidence": "high",
+        "search_used": false
+      },
+      "expected_errors": []
+    },
+    {
+      "id": "wrong_error_count",
+      "input": {
+        "checks": [
+          {
+            "label": "48*27",
+            "expected": "1296",
+            "actual": "1296",
+            "correct": true
+          },
+          {
+            "label": "1296/48",
+            "expected": "27",
+            "actual": "28",
+            "correct": false
+          },
+          {
+            "label": "1296/27",
+            "expected": "48",
+            "actual": "48",
+            "correct": true
+          }
+        ],
+        "error_count": 0,
+        "answer": "검증 결과 오류 1개",
+        "confidence": "high",
+        "search_used": false
+      },
+      "expected_errors": [
+        "error_count_mismatch:reported=0,computed=1"
+      ]
+    },
+    {
+      "id": "wrong_verdict",
+      "input": {
+        "checks": [
+          {
+            "label": "48*27",
+            "expected": "1296",
+            "actual": "1296",
+            "correct": true
+          },
+          {
+            "label": "1296/48",
+            "expected": "27",
+            "actual": "28",
+            "correct": false
+          },
+          {
+            "label": "1296/27",
+            "expected": "48",
+            "actual": "48",
+            "correct": false
+          }
+        ],
+        "error_count": 1,
+        "answer": "검증 결과 오류 1개",
+        "confidence": "high",
+        "search_used": false
+      },
+      "expected_errors": [
+        "checks[2]_verdict_mismatch"
+      ]
+    },
+    {
+      "id": "extra_check_field",
+      "input": {
+        "checks": [
+          {
+            "label": "48*27",
+            "expected": "1296",
+            "actual": "1296",
+            "correct": true,
+            "note": "extra"
+          }
+        ],
+        "error_count": 0,
+        "answer": "정상",
+        "confidence": "high",
+        "search_used": false
+      },
+      "expected_errors": [
+        "checks[0]_unexpected_fields:note"
+      ]
+    },
+    {
+      "id": "extra_top_level_field",
+      "input": {
+        "checks": [
+          {
+            "label": "1+1",
+            "expected": "2",
+            "actual": "2",
+            "correct": true
+          }
+        ],
+        "error_count": 0,
+        "answer": "정상",
+        "confidence": "high",
+        "search_used": false,
+        "extra": true
+      },
+      "expected_errors": [
+        "unexpected_fields:extra"
+      ]
+    },
+    {
+      "id": "missing_top_level_field",
+      "input": {
+        "checks": [
+          {
+            "label": "1+1",
+            "expected": "2",
+            "actual": "2",
+            "correct": true
+          }
+        ],
+        "error_count": 0,
+        "answer": "정상",
+        "confidence": "high"
+      },
+      "expected_errors": [
+        "missing_fields:search_used"
+      ]
+    },
+    {
+      "id": "invalid_json",
+      "raw_input": "{\"checks\": ",
+      "expected_errors": [
+        "invalid_json"
+      ]
+    }
+  ]
+}
