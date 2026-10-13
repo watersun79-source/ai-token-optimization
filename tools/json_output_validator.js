@@ -33,7 +33,7 @@ function validate(value) {
     if (check.correct !== expectedCorrect) errors.push(prefix + "_verdict_mismatch");
     if (!expectedCorrect) counted++;
   });
-  if (!Number.isInteger(value.error_count)) errors.push("error_count_must_be_integer");
+  if (!Number.isInteger(value.error_count) || value.error_count < 0) errors.push("error_count_must_be_integer");
   else if (value.error_count !== counted) errors.push(`error_count_mismatch:reported=${value.error_count},computed=${counted}`);
   if (typeof value.answer !== "string" || !value.answer.trim()) errors.push("answer_must_be_nonempty_string");
   if (!CONFIDENCE.has(value.confidence)) errors.push("confidence_must_be_low_medium_or_high");
