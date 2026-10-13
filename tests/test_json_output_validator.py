@@ -42,6 +42,23 @@ class JsonOutputValidatorTests(unittest.TestCase):
         self.payload["extra"] = True
         self.assertTrue(any("unexpected_fields" in e for e in validate(self.payload)))
 
+    def test_confidence_array_and_object_rejected_without_exception(self):
+        for confidence in ([], {}):
+            with self.subTest(confidence=confidence):
+                self.payload["confidence"] = confidence
+                self.assertIn(
+                    "confidence_must_be_low_medium_or_high",
+                    validate(self.payload),
+                )
+
+    def test_negative_error_count_rejected_as_non_integer(self):
+        self.payload["error_count"] = -1
+        self.assertIn("error_count_must_be_integer", validate(self.payload))
+
+    def test_boolean_error_count_rejected(self):
+        self.payload["error_count"] = True
+        self.assertIn("error_count_must_be_integer", validate(self.payload))
+
 
 if __name__ == "__main__":
     unittest.main()
