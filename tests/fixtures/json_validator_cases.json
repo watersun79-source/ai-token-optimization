@@ -248,6 +248,26 @@
       "id": "markdown_fence_input",
       "raw_input": "```json\n{\"checks\":[{\"label\":\"1+1\",\"expected\":\"2\",\"actual\":\"2\",\"correct\":true}],\"error_count\":0,\"answer\":\"정상\",\"confidence\":\"high\",\"search_used\":false}\n```",
       "expected_errors": []
+    },
+    {
+      "id": "boolean_string_comparison_parity",
+      "input": {
+        "checks": [
+          {
+            "label": "boolean normalization",
+            "expected": true,
+            "actual": "True",
+            "correct": true
+          }
+        ],
+        "error_count": 1,
+        "answer": "검증",
+        "confidence": "high",
+        "search_used": false
+      },
+      "expected_errors": [
+        "checks[0]_verdict_mismatch"
+      ]
     }
   ]
 }
