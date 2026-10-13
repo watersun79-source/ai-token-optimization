@@ -59,6 +59,25 @@ class PolicyConfigTests(unittest.TestCase):
             )
         )
 
+    def test_research_is_free_first_and_bounded(self):
+        routing = self.policy["routing"]
+        research = routing["internet_research"]
+        self.assertTrue(research["enabled"])
+        self.assertTrue(research["free_first"])
+        self.assertTrue(research["paid_search_or_api_calls_require_explicit_approval"])
+        budget = research["search_budget"]
+        self.assertEqual(budget["default_max_searches"], 2)
+        self.assertTrue(budget["reuse_results_within_run"])
+        self.assertTrue(budget["avoid_duplicate_queries"])
+        self.assertLessEqual(self.policy["limits"]["max_web_search_uses"], 2)
+
+    def test_paid_external_ai_calls_are_not_implicitly_allowed(self):
+        limits = self.policy["limits"]
+        self.assertTrue(
+            any("Never call paid external AI APIs unless explicitly approved" in rule
+                for rule in limits["token_optimization"])
+        )
+
     def test_independent_review_is_restricted(self):
         review = self.policy["routing"]["independent_third_review"]
         self.assertFalse(review["enabled"])
