@@ -14,12 +14,49 @@
     "independent_third_review": {
       "enabled": false,
       "allow_only_when": "material_risk_or_high_value_verification"
+    },
+    "internet_research": {
+      "enabled": true,
+      "use_when": [
+        "current information is needed",
+        "security or correctness needs independent evidence",
+        "repository dependency or API behavior may have changed",
+        "a bug needs upstream issue/documentation confirmation"
+      ],
+      "source_priority": [
+        "official documentation and release notes",
+        "the repository and its tests/issues/PRs",
+        "official GitHub repositories and changelogs",
+        "reputable technical sources",
+        "community discussions as supporting evidence"
+      ],
+      "search_budget": {
+        "default_max_searches": 2,
+        "expand_only_if": [
+          "sources conflict",
+          "critical fact remains unverified",
+          "the first search results are insufficient"
+        ],
+        "reuse_results_within_run": true,
+        "avoid_duplicate_queries": true
+      },
+      "free_first": true,
+      "paid_search_or_api_calls_require_explicit_approval": true
     }
   },
   "limits": {
-    "max_prompt_chars": 5000,
-    "max_output_tokens_default": 700,
-    "max_web_search_uses": 2
+    "max_prompt_chars": 3500,
+    "max_output_tokens_default": 500,
+    "max_web_search_uses": 2,
+    "token_optimization": [
+      "Prefer repository-local deterministic tests and static checks before any model/API call",
+      "Send only relevant file excerpts, diffs, errors, and test summaries; do not resend whole repositories or repeated context",
+      "Use one model/API call for routine work; use a second only for a meaningful independent review",
+      "Use concise structured outputs and bounded output tokens",
+      "Reuse stable prompt prefixes and cached results where supported and verified",
+      "Never call paid external AI APIs unless explicitly approved; do not infer free-tier availability without checking account terms",
+      "Measure tokens and cost only from actual API usage logs and official rates; otherwise report unavailable"
+    ]
   },
   "safety": {
     "never_claim_unverified_execution": true,
@@ -33,6 +70,10 @@
     "policy_source": "config/policy.json",
     "on_each_run": [
       "Read applicable policy and preserve the existing schedule",
+      "Use internet research when it materially improves correctness or freshness; search official docs/release notes and repository sources first",
+      "Reuse search results and avoid duplicate queries; default to at most two searches and expand only when a critical issue remains unresolved",
+      "Prefer free public sources and local tests; paid search/API/model calls require explicit approval",
+      "Minimize tokens by sending focused diffs and relevant excerpts, reusing stable prompts, and keeping outputs concise",
       "Check enabled status and recent execution result when tools permit",
       "Use one AI call for routine checks and a second only for material issues",
       "Do not change, disable, delete, or reschedule existing automations without explicit approval",
