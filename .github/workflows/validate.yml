@@ -7,12 +7,19 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Least-privilege token: validation only needs to read repository contents.
 permissions:
   contents: read
+
+# Avoid wasting Actions minutes on duplicate validation for the same ref.
+concurrency:
+  group: policy-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
