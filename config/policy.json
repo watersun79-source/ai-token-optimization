@@ -78,7 +78,7 @@
     "on_each_run": [
       "Read applicable policy and preserve the existing schedule",
       "Use internet research when it materially improves correctness or freshness; search official docs/release notes and repository sources first",
-      "Reuse search results and avoid duplicate queries; default to at most two searches and expand only when a critical issue remains unresolved",
+      "Reuse search results and avoid duplicate queries; default to at most three searches and expand only when a critical issue remains unresolved",
       "Prefer free public sources and local tests; paid search/API/model calls require explicit approval",
       "Minimize tokens by sending focused diffs and relevant excerpts, reusing stable prompts, and keeping outputs concise",
       "Check enabled status and recent execution result when tools permit",
