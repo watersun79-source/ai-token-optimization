@@ -46,6 +46,46 @@ def _reject_nonstandard_constant(constant: str) -> None:
     raise ValueError(f"non-standard JSON constant {constant}")
 
 
+def _js_number_string(value: int | float) -> str:
+    """Format a Python JSON number using JavaScript Number-to-string rules."""
+    try:
+        number = float(value)
+    except OverflowError:
+        return "-Infinity" if value < 0 else "Infinity"
+
+    if math.isnan(number):
+        return "NaN"
+    if math.isinf(number):
+        return "-Infinity" if number < 0 else "Infinity"
+    if number == 0:
+        return "0"
+
+    sign = "-" if number < 0 else ""
+    text = repr(abs(number)).lower()
+    if "e" not in text:
+        return sign + (text[:-2] if text.endswith(".0") else text)
+
+    mantissa, exponent_text = text.split("e", 1)
+    exponent = int(exponent_text)
+    if -6 <= exponent < 21:
+        digits = mantissa.replace(".", "")
+        decimal_position = 1 + exponent
+        if decimal_position <= 0:
+            formatted = "0." + ("0" * -decimal_position) + digits
+        elif decimal_position >= len(digits):
+            formatted = digits + ("0" * (decimal_position - len(digits)))
+        else:
+            formatted = digits[:decimal_position] + "." + digits[decimal_position:]
+        if "." in formatted:
+            formatted = formatted.rstrip("0").rstrip(".")
+        return sign + formatted
+
+    if "." in mantissa:
+        mantissa = mantissa.rstrip("0").rstrip(".")
+    exponent_sign = "+" if exponent >= 0 else "-"
+    return sign + mantissa + "e" + exponent_sign + str(abs(exponent))
+
+
 def _js_string(value: Any) -> str:
     """Mirror JavaScript String() for JSON values used in parity checks."""
     if value is None:
@@ -54,12 +94,12 @@ def _js_string(value: Any) -> str:
         return "true"
     if value is False:
         return "false"
+    if isinstance(value, (int, float)):
+        return _js_number_string(value)
     if isinstance(value, list):
         return ",".join("" if item is None else _js_string(item) for item in value)
     if isinstance(value, dict):
         return "[object Object]"
-    if isinstance(value, float) and value.is_integer():
-        return str(int(value))
     return str(value)
 
 

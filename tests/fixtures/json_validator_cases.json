@@ -432,6 +432,26 @@
       "expected_errors": [
         "invalid_json"
       ]
+    },
+    {
+      "id": "large_integer_js_precision_parity",
+      "raw_input": "{\"checks\":[{\"label\":\"large integer normalization\",\"expected\":9007199254740993,\"actual\":\"9007199254740992\",\"correct\":true}],\"error_count\":0,\"answer\":\"검증\",\"confidence\":\"high\",\"search_used\":false}",
+      "expected_errors": []
+    },
+    {
+      "id": "small_exponent_decimal_format_parity",
+      "raw_input": "{\"checks\":[{\"label\":\"small exponent normalization\",\"expected\":0.000001,\"actual\":\"0.000001\",\"correct\":true}],\"error_count\":0,\"answer\":\"검증\",\"confidence\":\"high\",\"search_used\":false}",
+      "expected_errors": []
+    },
+    {
+      "id": "negative_exponent_format_parity",
+      "raw_input": "{\"checks\":[{\"label\":\"negative exponent normalization\",\"expected\":1e-7,\"actual\":\"1e-7\",\"correct\":true}],\"error_count\":0,\"answer\":\"검증\",\"confidence\":\"high\",\"search_used\":false}",
+      "expected_errors": []
+    },
+    {
+      "id": "large_exponent_format_parity",
+      "raw_input": "{\"checks\":[{\"label\":\"large exponent normalization\",\"expected\":1e21,\"actual\":\"1e+21\",\"correct\":true}],\"error_count\":0,\"answer\":\"검증\",\"confidence\":\"high\",\"search_used\":false}",
+      "expected_errors": []
     }
   ]
 }
