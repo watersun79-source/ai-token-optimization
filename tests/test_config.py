@@ -71,6 +71,27 @@ class PolicyConfigTests(unittest.TestCase):
         self.assertTrue(budget["avoid_duplicate_queries"])
         self.assertLessEqual(self.policy["limits"]["max_web_search_uses"], 3)
 
+    def test_source_priority_covers_required_research_sources(self):
+        research = self.policy["routing"]["internet_research"]
+        sources = " ".join(research["source_priority"]).lower()
+        self.assertIn("official documentation and release notes", sources)
+        self.assertIn("target repository, tests, issues, pull requests, and ci runs", sources)
+        self.assertIn("official github repositories and changelogs", sources)
+        self.assertIn("web search and exa", sources)
+
+    def test_token_optimization_deduplicates_and_stops_after_verification(self):
+        rules = " ".join(self.policy["limits"]["token_optimization"]).lower()
+        self.assertIn("deduplicate results", rules)
+        self.assertIn("stop once decision-critical facts are verified", rules)
+
+    def test_scheduled_search_limit_matches_configured_budget(self):
+        research = self.policy["routing"]["internet_research"]
+        budget = research["search_budget"]["default_max_searches"]
+        actions = " ".join(self.policy["scheduled_automation"]["on_each_run"]).lower()
+        self.assertEqual(budget, 3)
+        self.assertIn("default to at most three searches", actions)
+        self.assertNotIn("default to at most two searches", actions)
+
     def test_paid_external_ai_calls_are_not_implicitly_allowed(self):
         limits = self.policy["limits"]
         self.assertTrue(
