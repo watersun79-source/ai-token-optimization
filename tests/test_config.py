@@ -36,7 +36,7 @@ class PolicyConfigTests(unittest.TestCase):
         self.assertIsInstance(search_uses, int, "max_web_search_uses must be an integer")
         self.assertNotIsInstance(search_uses, bool, "max_web_search_uses must not be boolean")
         self.assertGreaterEqual(search_uses, 0)
-        self.assertLessEqual(search_uses, 2)
+        self.assertLessEqual(search_uses, 3)
 
     def test_secrets_and_execution_claims_protected(self):
         safety = self.policy["safety"]
@@ -58,6 +58,57 @@ class PolicyConfigTests(unittest.TestCase):
                 for item in actions
             )
         )
+
+    def test_research_is_free_first_and_bounded(self):
+        routing = self.policy["routing"]
+        research = routing["internet_research"]
+        self.assertTrue(research["enabled"])
+        self.assertTrue(research["free_first"])
+        self.assertTrue(research["paid_search_or_api_calls_require_explicit_approval"])
+        budget = research["search_budget"]
+        self.assertEqual(budget["default_max_searches"], 2)
+        self.assertTrue(budget["reuse_results_within_run"])
+        self.assertTrue(budget["avoid_duplicate_queries"])
+        self.assertEqual(self.policy["limits"]["max_web_search_uses"], 3)
+        self.assertLessEqual(
+            budget["default_max_searches"],
+            self.policy["limits"]["max_web_search_uses"],
+            "default search budget must not exceed the hard global limit",
+        )
+
+    def test_source_priority_covers_required_research_sources(self):
+        research = self.policy["routing"]["internet_research"]
+        sources = " ".join(research["source_priority"]).lower()
+        self.assertIn("official documentation and release notes", sources)
+        self.assertIn("target repository, tests, issues, pull requests, and ci runs", sources)
+        self.assertIn("official github repositories and changelogs", sources)
+        self.assertIn("web search and exa", sources)
+
+    def test_token_optimization_deduplicates_and_stops_after_verification(self):
+        rules = " ".join(self.policy["limits"]["token_optimization"]).lower()
+        self.assertIn("deduplicate results", rules)
+        self.assertIn("stop once decision-critical facts are verified", rules)
+
+    def test_scheduled_search_limit_matches_configured_budget(self):
+        research = self.policy["routing"]["internet_research"]
+        budget = research["search_budget"]["default_max_searches"]
+        actions = " ".join(self.policy["scheduled_automation"]["on_each_run"]).lower()
+        self.assertEqual(budget, 2)
+        self.assertIn("default to at most two searches", actions)
+        self.assertIn("use a third only when sources conflict", actions)
+        self.assertIn("never exceed three", actions)
+        self.assertNotIn("default to at most three searches", actions)
+
+    def test_paid_external_ai_calls_are_not_implicitly_allowed(self):
+        limits = self.policy["limits"]
+        self.assertTrue(
+            any("Never call paid external AI APIs unless explicitly approved" in rule
+                for rule in limits["token_optimization"])
+        )
+        rules = limits["token_optimization"]
+        self.assertTrue(any("zero external AI API calls" in rule for rule in rules))
+        self.assertTrue(any("separate token-count API request" in rule for rule in rules))
+        self.assertTrue(any("never create paid caches without explicit approval" in rule for rule in rules))
 
     def test_independent_review_is_restricted(self):
         review = self.policy["routing"]["independent_third_review"]

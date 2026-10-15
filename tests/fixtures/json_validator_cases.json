@@ -286,6 +286,172 @@
         "search_used": false
       },
       "expected_errors": []
+    },
+    {
+      "id": "integral_float_error_count_parity",
+      "input": {
+        "checks": [
+          {
+            "label": "integral error count",
+            "expected": "ok",
+            "actual": "ok",
+            "correct": true
+          }
+        ],
+        "error_count": 0,
+        "answer": "검증",
+        "confidence": "high",
+        "search_used": false
+      },
+      "expected_errors": []
+    },
+    {
+      "id": "fractional_error_count_rejected",
+      "input": {
+        "checks": [
+          {
+            "label": "1+1",
+            "expected": "2",
+            "actual": "2",
+            "correct": true
+          }
+        ],
+        "answer": "정상",
+        "confidence": "high",
+        "search_used": false,
+        "error_count": 0.5
+      },
+      "expected_errors": [
+        "error_count_must_be_integer"
+      ]
+    },
+    {
+      "id": "string_error_count_rejected",
+      "input": {
+        "checks": [
+          {
+            "label": "1+1",
+            "expected": "2",
+            "actual": "2",
+            "correct": true
+          }
+        ],
+        "answer": "정상",
+        "confidence": "high",
+        "search_used": false,
+        "error_count": "0"
+      },
+      "expected_errors": [
+        "error_count_must_be_integer"
+      ]
+    },
+    {
+      "id": "null_error_count_rejected",
+      "input": {
+        "checks": [
+          {
+            "label": "1+1",
+            "expected": "2",
+            "actual": "2",
+            "correct": true
+          }
+        ],
+        "answer": "정상",
+        "confidence": "high",
+        "search_used": false,
+        "error_count": null
+      },
+      "expected_errors": [
+        "error_count_must_be_integer"
+      ]
+    },
+    {
+      "id": "root_array_rejected",
+      "input": [],
+      "expected_errors": [
+        "root_must_be_object"
+      ]
+    },
+    {
+      "id": "root_string_rejected",
+      "input": "not an object",
+      "expected_errors": [
+        "root_must_be_object"
+      ]
+    },
+    {
+      "id": "empty_checks_rejected",
+      "input": {
+        "checks": [],
+        "error_count": 0,
+        "answer": "정상",
+        "confidence": "high",
+        "search_used": false
+      },
+      "expected_errors": [
+        "checks_must_be_nonempty_array"
+      ]
+    },
+    {
+      "id": "string_correct_rejected",
+      "input": {
+        "checks": [
+          {
+            "label": "boolean correct",
+            "expected": "same",
+            "actual": "same",
+            "correct": "true"
+          }
+        ],
+        "error_count": 0,
+        "answer": "정상",
+        "confidence": "high",
+        "search_used": false
+      },
+      "expected_errors": [
+        "checks[0]_correct_must_be_boolean"
+      ]
+    },
+    {
+      "id": "nonstandard_nan_rejected",
+      "raw_input": "{\"checks\":[{\"label\":\"1+1\",\"expected\":\"2\",\"actual\":\"2\",\"correct\":true}],\"error_count\":NaN,\"answer\":\"정상\",\"confidence\":\"high\",\"search_used\":false}",
+      "expected_errors": [
+        "invalid_json"
+      ]
+    },
+    {
+      "id": "nonstandard_infinity_rejected",
+      "raw_input": "{\"checks\":[{\"label\":\"1+1\",\"expected\":\"2\",\"actual\":\"2\",\"correct\":true}],\"error_count\":Infinity,\"answer\":\"정상\",\"confidence\":\"high\",\"search_used\":false}",
+      "expected_errors": [
+        "invalid_json"
+      ]
+    },
+    {
+      "id": "nonstandard_negative_infinity_rejected",
+      "raw_input": "{\"checks\":[{\"label\":\"1+1\",\"expected\":\"2\",\"actual\":\"2\",\"correct\":true}],\"error_count\":-Infinity,\"answer\":\"정상\",\"confidence\":\"high\",\"search_used\":false}",
+      "expected_errors": [
+        "invalid_json"
+      ]
+    },
+    {
+      "id": "large_integer_js_precision_parity",
+      "raw_input": "{\"checks\":[{\"label\":\"large integer normalization\",\"expected\":9007199254740993,\"actual\":\"9007199254740992\",\"correct\":true}],\"error_count\":0,\"answer\":\"검증\",\"confidence\":\"high\",\"search_used\":false}",
+      "expected_errors": []
+    },
+    {
+      "id": "small_exponent_decimal_format_parity",
+      "raw_input": "{\"checks\":[{\"label\":\"small exponent normalization\",\"expected\":0.000001,\"actual\":\"0.000001\",\"correct\":true}],\"error_count\":0,\"answer\":\"검증\",\"confidence\":\"high\",\"search_used\":false}",
+      "expected_errors": []
+    },
+    {
+      "id": "negative_exponent_format_parity",
+      "raw_input": "{\"checks\":[{\"label\":\"negative exponent normalization\",\"expected\":1e-7,\"actual\":\"1e-7\",\"correct\":true}],\"error_count\":0,\"answer\":\"검증\",\"confidence\":\"high\",\"search_used\":false}",
+      "expected_errors": []
+    },
+    {
+      "id": "large_exponent_format_parity",
+      "raw_input": "{\"checks\":[{\"label\":\"large exponent normalization\",\"expected\":1e21,\"actual\":\"1e+21\",\"correct\":true}],\"error_count\":0,\"answer\":\"검증\",\"confidence\":\"high\",\"search_used\":false}",
+      "expected_errors": []
     }
   ]
 }
