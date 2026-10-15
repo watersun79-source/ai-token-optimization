@@ -66,13 +66,14 @@ class PolicyConfigTests(unittest.TestCase):
         self.assertTrue(research["free_first"])
         self.assertTrue(research["paid_search_or_api_calls_require_explicit_approval"])
         budget = research["search_budget"]
-        self.assertEqual(budget["default_max_searches"], 3)
+        self.assertEqual(budget["default_max_searches"], 2)
         self.assertTrue(budget["reuse_results_within_run"])
         self.assertTrue(budget["avoid_duplicate_queries"])
-        self.assertEqual(
-            self.policy["limits"]["max_web_search_uses"],
+        self.assertEqual(self.policy["limits"]["max_web_search_uses"], 3)
+        self.assertLessEqual(
             budget["default_max_searches"],
-            "global web-search limit must match the configured research budget",
+            self.policy["limits"]["max_web_search_uses"],
+            "default search budget must not exceed the hard global limit",
         )
 
     def test_source_priority_covers_required_research_sources(self):
@@ -92,9 +93,11 @@ class PolicyConfigTests(unittest.TestCase):
         research = self.policy["routing"]["internet_research"]
         budget = research["search_budget"]["default_max_searches"]
         actions = " ".join(self.policy["scheduled_automation"]["on_each_run"]).lower()
-        self.assertEqual(budget, 3)
-        self.assertIn("default to at most three searches", actions)
-        self.assertNotIn("default to at most two searches", actions)
+        self.assertEqual(budget, 2)
+        self.assertIn("default to at most two searches", actions)
+        self.assertIn("use a third only when sources conflict", actions)
+        self.assertIn("never exceed three", actions)
+        self.assertNotIn("default to at most three searches", actions)
 
     def test_paid_external_ai_calls_are_not_implicitly_allowed(self):
         limits = self.policy["limits"]
