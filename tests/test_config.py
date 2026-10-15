@@ -69,7 +69,11 @@ class PolicyConfigTests(unittest.TestCase):
         self.assertEqual(budget["default_max_searches"], 3)
         self.assertTrue(budget["reuse_results_within_run"])
         self.assertTrue(budget["avoid_duplicate_queries"])
-        self.assertLessEqual(self.policy["limits"]["max_web_search_uses"], 3)
+        self.assertEqual(
+            self.policy["limits"]["max_web_search_uses"],
+            budget,
+            "global web-search limit must match the configured research budget",
+        )
 
     def test_source_priority_covers_required_research_sources(self):
         research = self.policy["routing"]["internet_research"]
