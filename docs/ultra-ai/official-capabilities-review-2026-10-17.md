@@ -9,25 +9,24 @@
 
 ## Gemini and Claude
 - Plugin discovery in ChatGPT on 2026-10-17 returned no dedicated Gemini or Anthropic Claude ChatGPT app/plugin.
+- Activepieces provider connections exist, but actual credential checks are mixed: Google Gemini connection listed models once; secondary Google Gemini api returned HTTP 401 invalid API key; Anthropic Claude returned HTTP 401 invalid x-api-key.
+- No Gemini/Claude generation call was made; Gemini billing tier is unknown and Claude connection must be repaired. See https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/provider-connection-audit-2026-10-17.md
 - Gemini app free limits: https://support.google.com/gemini/answer/16275805
 - Gemini API pricing/free tier: https://ai.google.dev/gemini-api/docs/pricing
 - Anthropic confirms Claude chat subscriptions and Claude Console/API are separate products: https://support.anthropic.com/en/articles/9876003-estoy-suscrito-a-un-plan-de-pago-de-claude-ai-por-que-tengo-que-pagar-por-separado-por-el-uso-de-la-api-en-console
-- Therefore, an app's free access does not prove a workflow's API call is free. No Gemini/Claude provider call was made in this turn; do not claim otherwise. Keep API calls disabled until the account's free usage and billing status are explicitly verified.
 
 ## Activepieces Tables and pagination
 - Official Tables flow docs: https://www.activepieces.com/docs/tables/in-flows
 - Official Find Records implementation: https://github.com/activepieces/activepieces/blob/main/packages/pieces/core/tables/src/lib/actions/find-records.ts
 - Find Records has an optional Limit field whose description says an empty limit returns all records. The implementation sends limit ?? 999999999 and cursor undefined to the API, then returns response.body.data without iterating a next cursor.
-- Sample volume tests in the Cloud project: 101 rows returned outputCount=101 (run 23OiaT74UbUlYEwgMG2pC); 201 rows returned outputCount=201 (run 67gFJzZanE68mLswLpMQn); 501 rows returned outputCount=501 (run U1Hqc2j98hqZuYEb3zNZf). Each succeeded in TESTING. All temporary rows were deleted and follow-up searches returned 0. Full 501-row details: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/find-records-volume-test-501-2026-10-17.md
-- These results verify at least 501 rows in the current Cloud project; larger volumes are not tested.
+- Sample volume tests in the Cloud project: 101 rows outputCount=101 (run 23OiaT74UbUlYEwgMG2pC); 201 rows outputCount=201 (run 67gFJzZanE68mLswLpMQn); 501 rows outputCount=501 (run U1Hqc2j98hqZuYEb3zNZf). Each succeeded in TESTING; all temporary rows were deleted and follow-up searches returned 0. Full details: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/find-records-volume-test-501-2026-10-17.md
 - Tables feature docs describe uniqueness on (projectId, fieldId, recordId), not a unique constraint on arbitrary runId. Atomic uniqueness for registry runId is not established; concurrent first-writer race remains unproven.
 
 ## Concurrency and queueing
 - Official guide: https://www.activepieces.com/docs/admin-guide/guides/manage-concurrency
-- Activepieces documents Max Concurrent Jobs as a per-project setting. When reached, new runs are queued and retried until a slot opens.
-- This is not a per-flow concurrency setting in the documented UI. Setting it to 1 in the existing shared project could serialize all flows, including five protected production flows, so do not change it as a mock-only fix.
+- Max Concurrent Jobs is a per-project setting. When reached, new runs queue and retry until a slot opens.
+- This is not documented as per-flow concurrency. Setting it to 1 in the shared project could serialize all flows, including five protected production flows, so do not change it as a mock-only fix.
 - The connected Activepieces tool catalog does not expose a project concurrency-settings action. No setting was changed.
-- If a dedicated mock project becomes available and can be safely configured, project-level concurrency 1 may be considered there. Do not create/upgrade a paid project without confirming free availability.
 
 ## Waitpoints / BARRIER
 - Official architecture docs: https://www.activepieces.com/docs/install/architecture/waitpoints
@@ -37,6 +36,5 @@
 
 ## Current test state
 - Mock coordinator EoQdyZftEyejxh4P85K5S: 21/21 valid, 0 invalid, two informational empty-fallback notes; draft/disabled.
-- Late-arrival recovery sample run Q68QOU6BW81R0qEGcZGmB; actual provider API calls 0.
 - Mock registry 0 rows; mock coordinator input 0 rows; existing mock results table remains at 14 rows.
 - Five protected production flows remain enabled/published; hourly automation schedule unchanged.
