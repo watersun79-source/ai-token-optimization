@@ -95,3 +95,10 @@
 - Activepieces MCP 문서(https://www.activepieces.com/docs/mcp/tools)는 일반 ROUTER 단계 추가/브랜치 구성 기능을 설명하지만, 이 문서만으로 일반 Router가 병렬 fan-out을 수행한다고 증명되지는 않음. 따라서 기존 AI 3AI 플로우에 일반 Router를 끼워 넣어 병렬 실행을 보장한다고 주장하지 않음.
 - Sub Flows 도구 메타데이터는 Call Flow 대상이 게시·활성화되어야 하고 Wait for Response를 켜면 호출 결과를 기다린다고 명시함. 비운영 테스트에서도 이를 사용하려면 하위 플로우 게시/활성화가 필요할 수 있어, 현재의 “운영 플로우 보호/초안 비활성 유지” 조건과 충돌할 가능성이 있으므로 진행하지 않음.
 - 결론: 모의 CODE 단계의 Promise.all은 검증됐지만, Activepieces 엔진 수준의 무료·안전한 병렬 fan-out 및 join 방식은 아직 미검증. 다음 조사 대상은 공식 BARRIER/Waitpoints 지원과 Cloud에서 사용할 수 있는 안전한 구성 경로다. 기존 플로우·자동화는 그대로 유지함.
+
+
+## 추가 재확인 — 브라우저 및 BARRIER 경로
+- 연결 브라우저 탭을 다시 조회했으나 `Browser access requires the originating browser context` 오류가 재현됨. 이 세션에서 Gemini/Claude 소비자 웹앱의 실제 응답을 확인할 수 없음. 두 모델을 사용했다고 주장하지 않음.
+- 기존 공식 BARRIER 감사 결과를 재확인함: 엔진 waitpoint API로는 BARRIER가 문서화되어 있지만 일반 비주얼 액션으로 확인되지 않았고, Cloud에서 사용자 정의 piece를 설치할 수 있는지 미검증. 사용자 정의 piece 관리에는 플랫폼 유료 기능 제한이 명시되어 있어, 무료 사용 가능성을 확인하기 전에는 이 경로를 진행하지 않음.
+- 따라서 현재 완료 범위는 mock-level 병렬 타이밍 및 merge 계약 테스트뿐임. 엔진 수준 병렬 호출, Gemini/Claude 실제 응답, 무료 요금 상태, 과거 Flow ID 불일치는 미완료로 유지.
+- 사용자 승인 없이 운영 흐름/자동화/연결/main을 변경하거나 유료 호출을 하지 않았음. 다음 작업은 브라우저 연결 컨텍스트가 복구되거나, 무료 플랜에서 사용 가능한 문서화된 엔진 수준 fan-out/join 경로가 확인될 때 이어서 진행함.
