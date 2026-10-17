@@ -18,9 +18,9 @@
 - Official Tables flow docs: https://www.activepieces.com/docs/tables/in-flows
 - Official Find Records implementation: https://github.com/activepieces/activepieces/blob/main/packages/pieces/core/tables/src/lib/actions/find-records.ts
 - Find Records has an optional Limit field whose description says an empty limit returns all records. The implementation sends limit ?? 999999999 and cursor undefined to the API, then returns response.body.data without iterating a next cursor.
-- 101-row mock probe: flow Find Records outputCount=101 (run 23OiaT74UbUlYEwgMG2pC). 201-row mock probe: outputCount=201 (run 67gFJzZanE68mLswLpMQn). Both succeeded in Activepieces TESTING. All test rows were deleted; post-cleanup searches returned 0. An attempted 501-row insertion was interrupted after 201 rows by the tool call budget; all partial rows were immediately deleted, and no 501-row flow test ran.
+- Sample volume tests in the Cloud project: 101 rows returned outputCount=101 (run 23OiaT74UbUlYEwgMG2pC); 201 rows returned outputCount=201 (run 67gFJzZanE68mLswLpMQn); 501 rows returned outputCount=501 (run U1Hqc2j98hqZuYEb3zNZf). Each test succeeded in TESTING. All temporary rows were deleted and follow-up searches returned 0. Full details: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/find-records-volume-test-501-2026-10-17.md
+- These results verify at least 501 rows in the current Cloud project; larger volumes are not yet tested.
 - Tables feature docs describe uniqueness on (projectId, fieldId, recordId), not a unique constraint on arbitrary runId. Atomic uniqueness for registry runId is not established; concurrent first-writer race remains unproven.
-- Next: split large tests into multiple orchestration calls and test 501 records, capturing only outputCount via ap_get_run; ensure cleanup before and after.
 
 ## Waitpoints / BARRIER
 - Official architecture docs: https://www.activepieces.com/docs/install/architecture/waitpoints
