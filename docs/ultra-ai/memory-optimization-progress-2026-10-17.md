@@ -62,3 +62,10 @@ Custom Instructions apply across chats when enabled, but GitHub/Slack history is
 1. Confirm a genuinely free Gemini/Claude execution route and billing/credits without generating content. If impossible, use consumer web apps manually when accessible and keep automated flow disabled.
 2. Configure webhook authentication in the draft and validate without running AI calls.
 3. Only after explicit cost-safe confirmation, run one clearly labelled sample test; read back results and document cost/API call counts.
+
+
+## Priority continuation — 2026-10-17 15:06 KST
+- Re-read GitHub protocol/index/latest report and Slack channel before acting.
+- Current Activepieces inventory: 3 enabled/published, 26 disabled. Historical records refer to 5 enabled production flows. No state changes; reconciliation required.
+- Automation `AI` confirmed enabled; hourly-on-the-hour Asia/Seoul schedule unchanged.
+- Gemini/Claude free consumer-app response: not accessed this run because no connected browser/app session was available. Provider generation calls 0; paid API calls 0; no credentials changed.
