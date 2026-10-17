@@ -51,3 +51,10 @@ The proposed isolated GitHub Actions runner cannot safely assume it has a local 
 
 ### Acceptance criteria remain unchanged
 A real test must execute two separate child-flow engine runs concurrently, capture distinct child run IDs and start/finish times, prove overlapping execution intervals, return both distinct synthetic payloads, and prove the parent does not finish before both child results arrive. Repeat three times. No provider APIs, secrets, production-flow changes, or weakening of network security.
+
+
+## Upstream E2E test baseline found (2026-10-18, follow-up)
+- Upstream Activepieces has an integration fixture at https://github.com/activepieces/activepieces/blob/860ce5b87c43856549586ee7b44007ba0937efdf/packages/server/api/test/integration/ce/flows/flow-run/execute-flow-e2e.test.ts
+- The fixture builds a real worker/engine test environment and a real Callable Flow → Code → Return Response child, plus a webhook parent using Call Flow with waitForResponse: true. It also demonstrates a webhook parent returning the child response.
+- This is a better implementation baseline than reverse-engineering public API bootstrapping. It is upstream's own test harness, but the inspected fixture is single-child; it does not prove concurrent fan-out/join.
+- Next engineering step: use this fixture pattern in an isolated test branch/harness and add two distinct child flows plus a parent dispatcher that launches both concurrently and waits for both. The assertion must inspect separate child run records/timestamps and the merged result; don't mark passing from Promise.all mock-only behavior. Do not modify Activepieces upstream or production Cloud flows.
