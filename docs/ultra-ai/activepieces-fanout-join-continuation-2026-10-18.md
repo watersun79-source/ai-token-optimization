@@ -82,3 +82,13 @@ Raw upstream source at pinned commit was inspected for `call-flow.ts`, `respond.
 
 ### Narrow next experiment (not yet run)
 Extend the existing upstream E2E test fixture with two Callable Flow children that return distinct payloads and a purpose-built parent orchestration step. First test whether two waitpoints can coexist under one parent run and resume independently; assert distinct child run IDs, callback correlation, parent suspension until both responses, and no dropped/duplicate callbacks. If the engine's resume model cannot support multiple waitpoints in one run, implement the join as an explicit coordinator that tracks child IDs/results outside the parent step and resumes once all children complete. Do not claim either design works until the real worker/engine E2E assertions pass.
+
+
+## Upstream E2E suite scope verified more precisely (2026-10-18)
+The pinned `execute-flow-e2e.test.ts` was queried for the exact test bodies:
+- `handles concurrent flow run executions without jobs getting stuck` starts five independent runs with `Promise.all(flowRunService.start(...))`, then polls each run until terminal status. It does not create parent-child relationships and does not join child outputs.
+- `executes parent → child subflow with wait-for-response in test step mode` proves one child response is resumed into the parent step.
+- Existing waitpoint tests cover loop iterations and a DELAY followed by a WEBHOOK pause in sequence. They do not establish two concurrently pending waitpoints for one parent run.
+- The E2E file itself states prerequisites: the engine must be built (including `cache/v7/common/main.js`), Bun must be available for piece installation, and the in-memory Redis test environment is started automatically. The API package script is `npm run test-ce-command` / Vitest integration tests, but this environment has not executed it.
+
+This narrows the acceptance gap: no test in the inspected suite currently demonstrates two child flow runs dispatched by one parent, both child results correlated and joined, and parent completion only after both results. Next implementation must add exactly that E2E test and run it in a real upstream workspace/CI runner; source inspection alone is not runtime proof.
