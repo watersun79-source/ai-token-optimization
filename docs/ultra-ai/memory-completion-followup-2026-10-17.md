@@ -1,6 +1,6 @@
 # AI Memory Completion Follow-up — 2026-10-17
 
-Status: PARTIAL — durable records and automation safeguards are in place; account-level and provider-access blockers remain.
+Status: PARTIAL — user confirms ChatGPT Custom Instructions have been saved; durable records and automation safeguards are in place. Gemini/Claude access and historical flow discrepancy remain blocked.
 
 ## Verified in this run
 - Read the canonical custom instructions, display copy, memory protocol, project index, prior 15:22 report, recent Slack history, and current Activepieces inventory.
@@ -14,12 +14,12 @@ Status: PARTIAL — durable records and automation safeguards are in place; acco
 ## Durable memory system
 - GitHub protocol/index and Slack channel C0C9649RQAZ remain the project memory source of truth.
 - Existing hourly automation `AI` was previously verified enabled with hourly-on-the-hour Asia/Seoul schedule. This run made no automation or schedule changes.
-- GitHub and Slack do not automatically inject their contents into every ChatGPT conversation. The user must manually save the 1053-character prompt in ChatGPT iOS Settings > Customize ChatGPT > Custom Instructions.
+- User confirmed on 2026-10-17 that the 1053-character prompt has been saved in ChatGPT Custom Instructions. This is user-reported; the setting screen was not independently inspected. OpenAI's official help says saved Custom Instructions apply immediately across chats when enabled.
+- GitHub and Slack records are not automatically injected into every conversation; the instruction now tells the assistant to retrieve the external records when needed.
 
 ## Remaining completion blockers
-1. User-side action: paste and save the canonical prompt in ChatGPT Settings. This workflow cannot directly modify the ChatGPT iOS settings screen.
-2. Browser access: open ChatGPT in a browser with the connected browser extension/context, then retry Gemini and Claude consumer apps. Do not substitute uncertain-cost API calls.
-3. Historical Activepieces inventory: locate an authoritative state-change/audit record or exact IDs for the two historical flows. Preserve current flow states until proven.
+1. Browser access: open ChatGPT in a browser with the connected browser extension/context, then retry Gemini and Claude consumer apps. This attempt still returns an originating browser context error. Do not substitute uncertain-cost API calls.
+2. Historical Activepieces inventory: locate an authoritative state-change/audit record or exact IDs for the two historical flows. Current read-only inventory again shows 3 ENABLED/published and 26 DISABLED; preserve current flow states until proven.
 
 ## Official guidance
 - OpenAI Custom Instructions: https://help.openai.com/en/articles/8096356-chatgpt-custom-instructions
@@ -28,4 +28,11 @@ Status: PARTIAL — durable records and automation safeguards are in place; acco
 - Claude usage limits: https://support.anthropic.com/en/articles/9797557-usage-limit-best-practices
 
 ## Next goal
-Complete the user-side Custom Instructions save; then, with a valid connected browser context, attempt actual free Gemini and Claude consumer-app responses and record the observed outputs. Continue reconciling flow history read-only.
+With a valid connected browser context, attempt actual free Gemini and Claude consumer-app responses and record observed outputs. Continue reconciling flow history read-only.
+
+
+## User confirmation — 2026-10-17
+- User stated: "맞춤형 지침 설정에 넣었어." Treat ChatGPT Custom Instructions deployment as user-confirmed complete; the settings screen was not independently inspected.
+- Official OpenAI guidance: saved Custom Instructions apply immediately across chats when enabled. Source: https://help.openai.com/en/articles/8096356-chatgpt-custom-instructions
+- Browser re-check failed with: "Browser access requires the originating browser context." Gemini/Claude consumer-app responses remain unverified; generation calls 0, paid API calls 0.
+- Activepieces re-check: 29 total flows; 3 ENABLED/published and 26 DISABLED. No statuses changed. Historical 5-vs-3 discrepancy remains unresolved.
