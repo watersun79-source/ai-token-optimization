@@ -138,3 +138,14 @@ Reviewed the official Activepieces network-security documentation at https://git
 - No network request, flow publish, configuration change, or provider API call was performed as part of this source review.
 
 This narrows the next action: the local engine environment must exist first, and its network mode/endpoint reachability must be confirmed before running the synthetic test. Docker/Podman is still unavailable in the current execution environment, so the engine-level test remains unexecuted.
+
+
+## SOURCE REVIEW — 2026-10-18: Synchronous webhook response semantics and timeout
+
+Reviewed the official Activepieces webhook runtime notes at https://github.com/activepieces/activepieces/blob/860ce5b87c43856549586ee7b44007ba0937efdf/brain/knowledge/eventing-webhooks/webhooks.md.
+
+- The official route inventory distinguishes `/:flowId/sync` (blocking request/response), `/:flowId` (async queue-and-return), `/:flowId/draft/sync`, and `/:flowId/draft`. A normal asynchronous webhook returning HTTP 200 means the request was queued, not that the flow finished.
+- The documented default `AP_WEBHOOK_TIMEOUT_SECONDS` is 30 seconds. A synchronous request can return 408 if the flow has not provided a response by then. Therefore the synthetic test must use short delays (e.g. 1–2 seconds), no Delay piece that pauses/requeues the flow, and an explicit Return Response step; keep the complete test well below the timeout.
+- A successful synchronous HTTP response alone is insufficient proof that two child runs overlapped. The test must also capture both child run IDs and execution timestamps from run history, confirm their intervals overlap, and confirm the parent received both expected response payloads before completing. If any of these cannot be observed, mark the run inconclusive rather than pass.
+- The `/sync` route documentation does not prove the exact URL shown by a specific local builder, nor prove that the Code sandbox can reach it. Those remain local-instance prerequisites.
+- No webhook request or flow run was triggered during this source review. No Cloud flow was published or modified, and no AI/provider API or paid call was made.
