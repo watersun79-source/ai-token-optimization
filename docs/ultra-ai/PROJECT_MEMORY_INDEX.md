@@ -93,3 +93,11 @@ Duplicate display copy (1010-character prompt): https://github.com/watersun79-so
 - Validation: 6/6 steps valid, 0 issues; structure re-read; draft remains DISABLED/unpublished. No AI generation/test call, publication, or enablement was performed.
 - Gemini direct connection reports ACTIVE and its model dropdown resolves, but free quota/billing is unverified. Direct Claude model dropdown returned no options; the draft therefore references the configured Activepieces-managed Claude model, whose billing state is also unverified. No live test is allowed until cost-safe access is proven.
 - The flow is sequential (not simultaneous); the first-pass prompts are independent. Before publishing, set webhook authentication (current draft's no-auth setting is not production-safe). Existing production flows and hourly automation were not changed.
+
+
+## Current authoritative correction — 2026-10-17 15:02 KST
+- Current custom-instruction body is 1010 JavaScript characters, begins `ULTRA AI — ALWAYS ON`, and is synchronized between canonical and display-copy files. Historical notes saying 992 or 1108 characters are superseded.
+- Canonical: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md
+- Display copy: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
+- iOS ChatGPT Settings was not changed. User must paste/save the canonical prompt manually.
+- Priority: (1) GitHub + Slack memory persistence; (2) Gemini + Claude free consumer apps. Never call paid API or upgrade. Preserve hourly schedule and production flows.
