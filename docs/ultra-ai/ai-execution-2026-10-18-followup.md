@@ -50,3 +50,17 @@
 - `main`, 운영 플로우, 기존 정각 예약, 연결·비밀값 변경 0건.
 - Activepieces 프로젝트 컨텍스트 도구 `ap_set_project_context`가 현재 사용 가능한 도구 목록에서 확인되지 않아, 추가 프로젝트 변경은 보류함.
 - 다음 목표: (1) Activepieces 프로젝트 컨텍스트를 올바르게 선택할 수 있는 도구를 복구/확인한 뒤 읽기 전용으로 플로우 ID 차이를 조사, (2) 연결 브라우저 컨텍스트에서 Gemini·Claude 무료 웹앱 응답을 실제 확인, (3) 매번 GitHub 저장 후 재조회와 Slack 게시 후 재조회를 계속 검증.
+
+
+## 실행 기록 — 2026-10-18 기억 유지 후속 조사
+- 작업 시작 시 프로토콜, 프로젝트 인덱스, 최신 실행 보고서, Slack 최근 메시지를 직접 재조회함.
+- Activepieces 읽기 전용 실행 이력 조사:
+  - Production 최근 10개 실행은 전부 SUCCEEDED였으나, 모두 flow ID `drNhxMhmCo3A0rKV0OhIZ`에 해당하며 최신 기록 시각은 2026-10-15 UTC. 이는 해당 플로우의 과거 실행 성공을 보여줄 뿐, 현재 Gemini/Claude 모델 응답이나 오늘의 자동화 실행 성공을 입증하지 않음.
+  - `AI 3AI 협업`(`kt2N9yCVA3dLkFiNPSMsH`) 및 `Slack`(`vtRwEYmcwDTunBZut265G`)에 대해 조회한 Production 실행 기록은 0건.
+  - Testing 최근 10개 기록은 조회됐고 모두 SUCCEEDED. 이는 별도 테스트 플로우의 테스트 실행이며 운영 실행과 구분함.
+- GitHub 저장소 코드 검색에서 과거 기록의 Flow ID `hgPVOZQYdFTezhoZ6wj5j`, `yRqt1nbG4ZqiIkDX72vhN`, `1MAbLTS7HS9LjDRqq9l4b`는 검색 결과 0건. 검색은 현재 기본 브랜치 범위이므로 모든 브랜치/삭제 기록에 존재하지 않는다고 단정할 수 없음.
+- Activepieces 프로젝트 컨텍스트 선택 도구는 현재 도구 목록에서 확인되지 않음. 플로우 수정·활성화·비활성화·실행은 하지 않음.
+- Gemini/Claude 무료 웹앱의 실제 응답은 브라우저 연결 컨텍스트가 없어 이번에도 확보하지 못함.
+- 비용: 생성 API 0회, 유료 API 0회, 구매/업그레이드 0건.
+- 보호 상태: `main`, 기존 운영 플로우, 매시간 정각 자동화, 연결 및 비밀값 변경 0건.
+- 다음 목표: Activepieces 프로젝트 컨텍스트 접근 경로를 확인한 후 현재 프로젝트와 과거 Flow ID 기록을 읽기 전용으로 대조한다. 이어서 브라우저 컨텍스트가 사용 가능해지면 Gemini와 Claude 소비자용 무료 웹앱의 실제 독립 응답을 확인한다.
