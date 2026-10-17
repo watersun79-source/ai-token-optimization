@@ -4,7 +4,7 @@ Last verified: 2026-10-17 (Asia/Seoul)
 Repository: https://github.com/watersun79-source/ai-token-optimization
 Working branch: ultra-ai/progress-2026-10-17
 Activepieces project: https://cloud.activepieces.com/projects/Fr9OAsxi4FbVSVLZkexYi/
-Coordinator progress log: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/scheduled-sequential-coordinator-tests-2026-10-17.md
+Coordinator log: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/scheduled-sequential-coordinator-tests-2026-10-17.md
 Official capability review: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/official-capabilities-review-2026-10-17.md
 Custom instructions (859 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 
@@ -22,14 +22,15 @@ Custom instructions (859 characters): https://github.com/watersun79-source/ai-to
 - Every report includes actual evidence, costs/API calls, cleanup, blockers and next actionable goal.
 
 ## Current state (verified 2026-10-17)
-- Existing automation “ULTRA AI” enabled; schedule unchanged: hourly on the hour, Asia/Seoul.
+- Existing automation ULTRA AI enabled; schedule unchanged: hourly on the hour, Asia/Seoul.
 - Five protected production Activepieces flows remain ENABLED/published; not edited or run.
 - Mock-only coordinator draft: EoQdyZftEyejxh4P85K5S, unpublished/disabled; configured every 15 minutes but not running on an active schedule.
 - Latest validation: 21/21 steps valid, 0 invalid; two informational notes about intentionally empty router fallback branches. Mock solution folder: 3 flows, 0 connection/table errors.
-- Sample tests cover MERGE_READY, MERGE_CONFLICT, PROCESSED archival, TIMED_OUT handling, empty-table behavior, and late-arrival recovery. Slack-reported late-recovery run: Q68QOU6BW81R0qEGcZGmB; previous timeout run: qzDZAB9Wvleow6TOgPo7l. These are sample/mock tests, not live Gemini/Claude calls.
+- Sample tests cover MERGE_READY, MERGE_CONFLICT, PROCESSED archival, TIMED_OUT handling, empty-table behavior and late-arrival recovery. Late-recovery sample run: Q68QOU6BW81R0qEGcZGmB; previous timeout run: qzDZAB9Wvleow6TOgPo7l.
+- 101 synthetic rows were inserted into the mock input table and queried with the read-only record-search tool (101 found). The flow Find Records step test also succeeded (23OiaT74UbUlYEwgMG2pC), but the oversized step output was truncated in the tool transcript, so exact count returned by that specific step remains unverified. All 101 synthetic rows were deleted and query confirmed 0 remain.
 - Temporary registry rows: 0; temporary coordinator input rows: 0; prior mock results table retains 14 rows.
 - Actual Gemini/Claude/OpenAI API calls during these tests: 0.
-- Unresolved: atomic unique/upsert/race safety in Tables; high-volume Find Records behavior needs a >100-record Cloud test; whether a custom piece can be installed in hosted Cloud to expose BARRIER.
+- Unresolved: atomic unique/upsert/race safety in Tables; large-result cursor behavior in the flow piece; whether a custom piece can be installed in hosted Cloud to expose BARRIER.
 
 ## Provider and connector availability
 - Internet research tools, GitHub and Slack connectors available and used.
