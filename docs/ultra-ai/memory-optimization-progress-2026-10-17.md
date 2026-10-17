@@ -1,36 +1,38 @@
 # ULTRA AI Memory Optimization Progress — 2026-10-17
 
 ## Status
-PARTIAL — the canonical custom-instructions prompt was optimized and written to GitHub. The ChatGPT settings UI was not modified, and Gemini/Claude were not called for generation because free access is not verified.
-
-## Goal
-Improve cross-chat continuity using a versioned GitHub source of truth, Slack progress logs, internet research, and honest checks of Gemini/Claude availability, while remaining free-first.
+PARTIAL — prompt and external memory records updated and verified. ChatGPT Settings UI is not changed. Gemini/Claude generation was not run because a genuinely free usable path is not verified.
 
 ## Completed and verified
-- Read the current custom-instructions file, memory protocol, project memory index, and latest Slack channel history.
-- Optimized the canonical prompt from 887 to 987 JavaScript characters, remaining below the 1,500-character Free/Go limit.
-- Updated canonical file: docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md
-- Synchronized display copy: docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
-- Canonical commit: c0c493cf15d95f49122b1a9c05b6dfbf6f87fb61
-- Display-copy commit: 0156fc2a448899008322e457b8ce0a5470a5260f
-- Confirmed the repository default branch is main; the project working branch is ultra-ai/progress-2026-10-17. GitHub fetch_file calls must use that full branch name, not just "ultra-ai" or "progress-2026-10-17".
-- Internet sources checked: OpenAI Custom Instructions FAQ, Gemini app limits and API pricing, Claude plan information and API billing.
-- Activepieces connection inventory returned five entries marked ACTIVE: OpenAI, Google Gemini, Google Gemini api, Slack, Anthropic Claude. ACTIVE is a stored connection status, not proof that provider authentication or generation works.
-- Slack history confirms Google Gemini read-only model-list request succeeded previously, billing tier unknown; secondary Gemini API and Claude read-only model-list requests failed HTTP 401. No generation call was made in this task.
+- Read the existing GitHub protocol, memory index, canonical prompt, and recent Slack history.
+- Optimized prompt: 987 JavaScript characters, below the ChatGPT Free/Go 1,500-character limit.
+- Updated canonical prompt: docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md
+  - Commit: 3a4c1b8caad5ccad51b74dd42d953b5851d9a40f
+- Updated display copy: docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
+  - Commit: 0156fc2a448899008322e457b8ce0a5470a5260f
+- Updated memory index: docs/ultra-ai/PROJECT_MEMORY_INDEX.md
+  - Commit: 5192f914a659434bfc26f6c4bf79afba2c385ffa
+- Streamlined memory protocol: docs/ultra-ai/ULTRA-AI-memory-protocol.md
+  - Commit: 878da856d9752b6f4dcc90e6a5a1fca169f6ba72
+- Re-read canonical prompt, display copy, protocol, and index from branch ultra-ai/progress-2026-10-17. All four show the updated 987-character count.
+- Posted a Slack status note in channel C0C9649RQAZ: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792198239072319
+- Web research checked official OpenAI Custom Instructions information, Gemini app limits/API pricing, and Claude free plan/API billing.
+- Activepieces connection inventory lists OpenAI, Google Gemini, Google Gemini api, Slack, and Anthropic Claude as ACTIVE. This label alone does not prove authentication or successful generation.
+- Previous read-only diagnostics: primary Gemini model-list request succeeded once, but billing/free tier is unknown; secondary Gemini API and Claude model-list requests returned HTTP 401. No generation call was made in this task.
+- Browser connector access failed because this session has no originating connected-browser context, so I could not operate the Gemini/Claude consumer websites directly.
 
 ## Cost and safety
-- Paid API calls: 0
 - Gemini/Claude generation calls: 0
+- Paid API calls: 0
 - Purchases/upgrades: 0
 - Production flow changes: 0
 - Existing hourly automation changes: 0
-- No credentials or secrets were read or published.
+- No secrets were read or published.
 
-## Important limitation
-Custom Instructions apply across chats when enabled, but repository and Slack records are not automatically injected into every chat. The user must paste the 987-character prompt into ChatGPT Settings > Customize ChatGPT > Custom Instructions. At the beginning of future ULTRA AI tasks, retrieve GitHub protocol/index/latest log and relevant Slack history; at the end, write back meaningful results.
+## Limitation
+Custom Instructions apply across chats when enabled, but GitHub/Slack history is not automatically injected into each chat. The user must paste the 987-character prompt into ChatGPT Settings > Customize ChatGPT > Custom Instructions. This session cannot directly change that settings UI.
 
 ## Remaining blockers / next goal
-1. Reconfirm provider availability through a genuinely free consumer app or safe connected tool; do not retry known invalid API credentials repeatedly.
-2. Verify Activepieces table uniqueness/concurrency and hosted Cloud BARRIER/custom-piece support from official documentation, without changing production flows or the existing hourly automation.
-3. Verify updated canonical and duplicate prompt files by fetching both from branch ultra-ai/progress-2026-10-17 and recounting the prompt.
-4. Update the memory index/protocol with the new 987-character count, then post a concise Slack status note if the Slack write tool allows it.
+1. User must paste the prompt into ChatGPT Settings to activate it globally.
+2. A connected browser context or working free provider integration is needed to actually use Gemini and Claude consumer apps in this workflow. Do not retry known invalid API credentials or call potentially billable APIs.
+3. Continue checking official Activepieces documentation for atomic duplicate prevention and hosted Cloud BARRIER/custom-piece support. Keep production flows and the existing hourly automation unchanged.
