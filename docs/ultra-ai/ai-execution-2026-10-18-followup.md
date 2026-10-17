@@ -157,3 +157,12 @@
 - This is the documented read-only route for checking remaining credits without executing any AI step. Current connected Activepieces tools do not expose the platform usage/billing endpoints, and Browser connector has no originating browser context, so the account's current plan/credit balance cannot be read from this session.
 - To proceed safely with actual provider tests, the only missing account-specific evidence is the current Usage page values (plan, credits used/limit or remaining, AI usage) plus provider-side billing/quota status for OpenAI, Gemini, and Claude. No API or AI step has been executed while these values remain unknown.
 - Next goal: obtain these read-only usage/billing values from the account UI or restore the connected browser context; then choose a test whose maximum cost is bounded by verified free quota. Production flows and the hourly schedule remain unchanged.
+
+## 격리된 엔진 병렬 실행 테스트 경로 설계 (2026-10-18)
+
+- 공식 `@activepieces/piece-subflows/streamCsvToSubflows` action schema를 읽기 전용으로 확인함: CSV를 배치 단위로 스트리밍하고, 각 배치마다 `Callable Flow` 자식 실행을 bounded concurrency로 dispatch함. 행 배치 크기 1–10,000, 연결 필요 없음. 대상 Callable Flow는 published 상태여야 함.
+- 따라서 현재 Cloud 프로젝트에서 비활성 초안 유지 정책을 깨지 않고 테스트하려면, 별도 로컬 self-hosted Activepieces 인스턴스에서 synthetic child flows만 publish하는 것이 가장 안전한 후보임. 테스트는 2개의 mock CSV 행, 각각 2초 대기, 자식 run의 시작/종료 타임스탬프 겹침 및 부모의 fan-in 완료 여부를 세 차례 확인하도록 설계함.
+- 테스트 계획 문서 생성 후 재조회 검증: `docs/ultra-ai/isolated-fanout-join-test-plan-2026-10-18.md`, commit `aa6965bf2f087a65f3b7a6e7d1c8dacb6c561847`, blob SHA `ed0c882febde5fdd84e26c0e3f4d9751a3d8f6f2`. 재조회에서 synthetic-only 조건, concurrency pass 기준, Docker/Podman 차단 사유가 확인됨.
+- 공식 self-host 문서: https://www.activepieces.com/docs/install/options/docker-compose. 요구사항: Docker Compose v2, 최소 2 vCPU/4 GB RAM, Windows는 WSL2. 현재 이 실행 환경에는 Docker/Podman이 설치되어 있지 않아 로컬 엔진 실행은 아직 불가. 이 문서는 계획만 저장한 것이며 실제 engine-level test 성공으로 보고하지 않음.
+- 기존 Cloud 플로우 7개(활성 3, 초안 4)와 매시간 정각 예약은 변경하지 않음. Gemini/Claude 실제 응답 0, AI 생성 API 0, 유료 API 0, 구매/업그레이드 0.
+- 다음 목표: Docker Compose v2가 있는 별도 로컬 머신에서 계획서의 synthetic-only 테스트를 실행하고, 세 번의 run ID/child timestamps를 수집. 그와 별개로 Platform Admin → Usage/Billing 및 외부 provider quota가 확인되기 전 실제 AI 생성 호출은 금지.
