@@ -114,3 +114,14 @@
 - Gemini/Claude 소비자 웹앱 접근 시도 결과: Browser connector가 `originating browser context` 오류를 반환. 실제 웹앱 응답 0, 생성 API 호출 0, 유료 API 호출 0. 연결 상태 ACTIVE는 무료 한도/청구 또는 실제 응답을 입증하지 않음.
 - 비용/안전: 구매·업그레이드 0, 운영 플로우 수정/실행/게시/비활성화 0, 매시간 정각 자동화 변경 0, main 변경 0. Activepieces 구조 응답에는 웹훅 인증 값이 포함될 수 있으므로 비밀값을 기록하거나 재출력하지 않음.
 - 다음 목표: 두 지침 파일을 재조회해 본문 일치를 검증하고 이 보고서를 GitHub에 저장 후 다시 읽기, Slack에 상태 요약을 게시 후 재조회. 병렬 실행은 공식 문서상 무료·안전한 구성과 엔진 동작이 명확해질 때까지 운영 변경 없이 조사 지속.
+
+## 실행 기록 — 2026-10-18 병렬 실행 방식 추가 공식 문서 검토
+
+- 최신 실행 기록과 프로젝트 인덱스, 프로토콜을 작업 시작 시 다시 읽음. Slack 채널 `C0C9649RQAZ`에서도 최근 병렬/합류 기록을 재조회함.
+- Activepieces 공식 Waitpoints 문서(https://www.activepieces.com/docs/install/architecture/waitpoints)를 다시 확인함. BARRIER는 여러 작업의 신호가 모두 도착할 때까지 기다리는 엔진 waitpoint로 설명되어 있으나, 문서에 명시된 알려진 제한은 deprecated V0 resume lookup이 한 실행의 임의 pending waitpoint를 반환한다는 점이며, 한 실행에 pending V0 waitpoint가 여러 개 있는 상황(병렬 분기 등)은 이 조회 문제가 해결되기 전 지원이 안전하다고 입증되지 않음.
+- 공식 Flow Control 문서(https://www.activepieces.com/docs/build-pieces/piece-reference/flow-control)는 waitpoint API를 piece 내부에서 사용하는 방법을 설명함. 현재 Cloud 프로젝트에서 사용자가 직접 만든 custom/private piece를 안전하게 설치·사용할 수 있는지, 해당 기능이 무료인지, BARRIER를 일반 플로우 단계로 호출할 수 있는지는 확인되지 않음.
+- Sub Flows piece 메타데이터 재조회: `Call Flow` 및 `Stream CSV to Subflows`는 대상 Callable Flow를 publish/enable해야 함. CSV action은 배치별 bounded concurrency를 명시하지만, CSV 대량 처리 전용이며 이 프로젝트의 비활성·미게시 테스트 조건과 충돌하므로 사용하지 않음.
+- 공식 AI Router 문서(https://www.activepieces.com/docs/flows/ai-router)는 기본적으로 한 경로만 실행하고 `Match = Every route that applies` 설정에서 일치하는 여러 경로를 실행한다고 설명함. 다만 AI 평가 모델 사용 비용/무료 여부가 확인되지 않아 테스트하지 않았고, 일반 Router만으로 병렬 실행을 보장한다고 간주하지 않음.
+- Activepieces 현재 플로우 목록 재조회 결과 7개: ENABLED/published 3개, DISABLED/draft 4개. 운영 플로우/예약/연결 설정 변경 0건. 기존 mock 테스트는 JavaScript `Promise.all` 코드 단계의 합성 테스트이며 엔진 수준 Gemini·Claude 병렬 실행 증거가 아님.
+- Gemini/Claude 소비자 웹앱 응답은 현재 연결된 브라우저 컨텍스트 오류 때문에 이번에도 확보하지 못함. 실제 응답 0건. 생성 API 호출 0회, 유료 API 호출 0회, 구매/업그레이드 0건.
+- 결론: 현재 안전 조건(무료 확인, 비활성 초안 유지, 운영 변경 금지)을 모두 지키면서 Activepieces Cloud 엔진 수준의 AI fan-out/join을 실제 검증할 수 있는 방법은 아직 입증되지 않음. 다음 목표는 사용자가 설치·실행할 수 있는 별도 무료 self-hosted test project/environment의 최소 요건과 안전한 검증 절차를 공식 문서로 정리하는 것. 설치나 운영 변경은 실행하지 않음.
