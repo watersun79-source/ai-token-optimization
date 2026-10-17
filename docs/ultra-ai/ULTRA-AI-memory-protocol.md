@@ -5,7 +5,7 @@ Slogan: ALWAYS ON · ALWAYS EVOLVING · MAXIMUM AVAILABLE CAPABILITY
 ## Source of truth
 - Repository: https://github.com/watersun79-source/ai-token-optimization
 - Working branch: ultra-ai/progress-2026-10-17
-- Canonical custom instructions: docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md (1010 characters; verified 2026-10-17)
+- Canonical custom instructions: docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md (1053 characters; verified 2026-10-17)
 - Display copy: docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 - Memory index: docs/ultra-ai/PROJECT_MEMORY_INDEX.md
 - Latest progress report: docs/ultra-ai/memory-optimization-progress-2026-10-17.md
@@ -81,3 +81,9 @@ On iOS, paste it into Settings > Customize ChatGPT > Custom Instructions with cu
 
 ## Inventory correction — 2026-10-17 15:06 KST
 - Current Activepieces read-only queries returned 3 ENABLED/published flows and 26 DISABLED flows. Older logs refer to 5 enabled production flows. Treat this as an unresolved state discrepancy, not as permission to enable/disable anything. Preserve all current statuses until the historical two flow IDs and intended state are reconciled.
+
+
+## Priority continuation — 2026-10-17 15:22 KST
+- Current canonical custom-instruction header is `AI — ALWAYS ON`; body length is 1053 JavaScript characters. Display copy must exactly match the body. The prompt now explicitly preserves current flow statuses until the historical 5-enabled vs current 3-enabled discrepancy is resolved.
+- Automation prompt updated with this unresolved goal and safeguards; the hourly schedule and enabled state remain unchanged.
+- Current Activepieces inventory read-only: 3 ENABLED/published, 26 DISABLED. Do not change states while reconciling history.
