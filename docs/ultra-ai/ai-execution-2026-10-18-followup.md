@@ -102,3 +102,15 @@
 - 기존 공식 BARRIER 감사 결과를 재확인함: 엔진 waitpoint API로는 BARRIER가 문서화되어 있지만 일반 비주얼 액션으로 확인되지 않았고, Cloud에서 사용자 정의 piece를 설치할 수 있는지 미검증. 사용자 정의 piece 관리에는 플랫폼 유료 기능 제한이 명시되어 있어, 무료 사용 가능성을 확인하기 전에는 이 경로를 진행하지 않음.
 - 따라서 현재 완료 범위는 mock-level 병렬 타이밍 및 merge 계약 테스트뿐임. 엔진 수준 병렬 호출, Gemini/Claude 실제 응답, 무료 요금 상태, 과거 Flow ID 불일치는 미완료로 유지.
 - 사용자 승인 없이 운영 흐름/자동화/연결/main을 변경하거나 유료 호출을 하지 않았음. 다음 작업은 브라우저 연결 컨텍스트가 복구되거나, 무료 플랜에서 사용 가능한 문서화된 엔진 수준 fan-out/join 경로가 확인될 때 이어서 진행함.
+
+
+## 실행 기록 — 2026-10-18 후속 상태 확인 및 맞춤 지침 최적화
+- 작업 시작 시 GitHub 프로토콜, 프로젝트 인덱스, 최신 실행 보고서, Slack 채널 C0C9649RQAZ 최근 기록을 다시 읽음.
+- Activepieces 읽기 전용 재조회: 총 7개 플로우, ENABLED/published 3개(`AI 3AI 협업`, `Slack`, `Gemini + Claude 협업 비서 (비용 확인 필요)`), DISABLED/unpublished 초안 4개. 운영 플로우 상태는 변경하지 않음.
+- `AI 3AI 협업` 구조 확인: ChatGPT 초안 → Gemini 검토 → Claude 검토 → 통합 → HTTP 응답 → Slack 알림 순차 체인(7/7 단계 구성됨). 실제 엔진 수준 병렬 실행은 확인되지 않음.
+- 공식 문서 조사: AI Router는 기본적으로 한 경로를 선택하고 `Every route that applies`에서 적용되는 경로를 복수 실행할 수 있지만, 라우팅 모델 요청과 비용이 관련되어 비용 확인 전 테스트하지 않음(https://www.activepieces.com/docs/flows/ai-router). Waitpoints 문서는 구형 V0 waitpoint 조회가 실행당 여러 pending waitpoint를 처리하지 못할 수 있고 병렬 분기 시 수정이 필요하다고 명시함(https://www.activepieces.com/docs/install/architecture/waitpoints). 따라서 무료·안전한 엔진 병렬 fan-out/join은 여전히 미검증.
+- 맞춤형 지침을 1,173자로 최적화함. GitHub의 canonical `ULTRA-AI-custom-instructions-ko-1500.md` 및 표시용 `CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md`를 브랜치 `ultra-ai/progress-2026-10-17`에서 갱신. Canonical commit `c9559a867f933a62314c65ca5bd9f2c994230cc1`; 표시본 commit `cda4becf8b253ec09e4935fac294d6d5fee5b7ce`. Canonical 파일 재조회에서 SHA `9481319cf792a6f2e85031b73bb45405c15eb300`, 실제 본문 길이 1,173자 및 선언 길이 일치 확인. 두 파일 본문 일치 여부는 후속 재조회 검증 대상으로 남김.
+- 사용자 설정 읽기 결과: personality는 `친근함`으로 확인됨. Custom Instructions의 실제 UI 내용/활성화/저장 상태는 이 도구로 읽을 수 없어 미확인. OpenAI 공식 안내는 iOS Settings → Customize ChatGPT, Enable customization 켬, 지침 입력을 안내하며 Free/Go 한도는 1,500자(https://help.openai.com/en/articles/8096356-chatgpt-custom-instructions).
+- Gemini/Claude 소비자 웹앱 접근 시도 결과: Browser connector가 `originating browser context` 오류를 반환. 실제 웹앱 응답 0, 생성 API 호출 0, 유료 API 호출 0. 연결 상태 ACTIVE는 무료 한도/청구 또는 실제 응답을 입증하지 않음.
+- 비용/안전: 구매·업그레이드 0, 운영 플로우 수정/실행/게시/비활성화 0, 매시간 정각 자동화 변경 0, main 변경 0. Activepieces 구조 응답에는 웹훅 인증 값이 포함될 수 있으므로 비밀값을 기록하거나 재출력하지 않음.
+- 다음 목표: 두 지침 파일을 재조회해 본문 일치를 검증하고 이 보고서를 GitHub에 저장 후 다시 읽기, Slack에 상태 요약을 게시 후 재조회. 병렬 실행은 공식 문서상 무료·안전한 구성과 엔진 동작이 명확해질 때까지 운영 변경 없이 조사 지속.
