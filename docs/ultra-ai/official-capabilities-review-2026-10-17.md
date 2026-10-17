@@ -17,10 +17,10 @@
 ## Activepieces Tables and pagination
 - Official Tables flow docs: https://www.activepieces.com/docs/tables/in-flows
 - Official Find Records implementation: https://github.com/activepieces/activepieces/blob/main/packages/pieces/core/tables/src/lib/actions/find-records.ts
-- Find Records has an optional Limit field whose description says an empty limit returns all records. The implementation sends limit ?? 999999999 and cursor undefined to the API, then returns response.body.data without iterating a next cursor. Effective behavior for large result sets must be tested in actual Cloud.
-- A mock probe inserted 101 synthetic rows. Activepieces record search returned 101 and all were deleted; post-cleanup search returned 0. Coordinator step test 23OiaT74UbUlYEwgMG2pC succeeded, but its large JSON output was truncated in the tool transcript, so the exact count returned by the flow piece itself remains unverified.
+- Find Records has an optional Limit field whose description says an empty limit returns all records. The implementation sends limit ?? 999999999 and cursor undefined to the API, then returns response.body.data without iterating a next cursor.
+- A 101-row mock probe: Activepieces Find Records step test SUCCEEDED (run 23OiaT74UbUlYEwgMG2pC); ap_get_run confirmed step_1 outputCount=101. Read-only record search also found 101. All rows were deleted; post-cleanup search returned 0. Thus the 101-row case passes in this Cloud project, but behavior beyond 101 remains untested.
 - Tables feature docs describe uniqueness on (projectId, fieldId, recordId), not a unique constraint on arbitrary runId. Atomic uniqueness for registry runId is not established; concurrent first-writer race remains unproven.
-- Next: create a mock-only count-only harness to measure the Find Records step output above 100 rows without returning huge row payloads.
+- Next: a mock-only count test at a larger batch size (e.g. 501 rows) and verify cleanup before/after.
 
 ## Waitpoints / BARRIER
 - Official architecture docs: https://www.activepieces.com/docs/install/architecture/waitpoints
