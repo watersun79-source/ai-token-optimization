@@ -37,3 +37,17 @@ The current tool environment does not provide a Docker/Podman runtime, and the c
 - This creates a possible isolated CI runner path without using the user's local machine or Activepieces Cloud production project. However, no workflow was created or run in this pass; the exact engine-level fan-out/join integration test still needs to be implemented and reviewed before a CI run can be treated as proof.
 - Do not run an unverified workflow that merely boots the engine and then claim fan-out/join is proven. The test must create or import two synthetic Callable Flow children, dispatch both from an isolated parent, capture each distinct run ID and start/end timestamps, assert overlapping intervals and both results, and assert parent completion occurs after both results.
 - A public GitHub runner may be free for standard runner minutes, but this does not guarantee that all other dependencies are free. Keep the test isolated, use no AI provider credentials, do not upload secrets, and do not publish or modify Activepieces Cloud flows.
+
+
+## API/bootstrap investigation (2026-10-18, follow-up)
+Official endpoint docs and upstream source were checked:
+- Create Flow API: https://www.activepieces.com/docs/endpoints/flows/create documents `POST /api/v1/flows` and explicitly requires an API key generated in the admin console.
+- Flow Run read API: https://www.activepieces.com/docs/endpoints/flow-runs/get documents `GET /api/v1/flow-runs/{id}` with run status, start/finish times, parentRunId, and step outputs.
+- Upstream import implementation: https://github.com/activepieces/activepieces/blob/860ce5b87c43856549586ee7b44007ba0937efdf/packages/server/api/src/app/flows/flow/flow.controller.ts handles `IMPORT_FLOW` as a flow operation.
+- A public example repository contains an importable flow JSON, but its example uses a real Outlook OAuth connection and is unsuitable for this synthetic test; it will not be reused or imported.
+
+### Consequence / next safe implementation step
+The proposed isolated GitHub Actions runner cannot safely assume it has a local Activepieces API key. No user key is available in this project context, and no secret should be added to a public repository. Do not put an API key in code, logs, or GitHub commits. The test implementation must either bootstrap a disposable local instance through a documented UI/auth flow inside the runner, or use a documented keyless local test mechanism verified from upstream source. If neither can be implemented without guessing, stop and report the specific bootstrap blocker instead of running a false-positive mock.
+
+### Acceptance criteria remain unchanged
+A real test must execute two separate child-flow engine runs concurrently, capture distinct child run IDs and start/finish times, prove overlapping execution intervals, return both distinct synthetic payloads, and prove the parent does not finish before both child results arrive. Repeat three times. No provider APIs, secrets, production-flow changes, or weakening of network security.
