@@ -185,3 +185,42 @@ The current flow therefore runs ChatGPT → Gemini → Claude → integration se
 The available Activepieces action inventory has no built-in generic fork/join action that concurrently dispatches two arbitrary steps and joins their returned payloads. Sub Flows Call Flow is one child per action; Stream CSV fan-out is for CSV batches and does not collect each child's completed response into a parent result. Existing workflow editor API can add Router branches, but source review found router branch execution sequential. Thus a no-code edit to the production chain cannot safely produce true concurrent reviewers with wait-all semantics.
 
 Do not change the production flow to “fire-and-forget” children unless a durable result barrier is designed and tested; doing so without a join could integrate missing/late reviews. The required next implementation is a tested custom Activepieces piece/server-side coordinator with per-child correlation/waitpoints, or a durable, idempotent result table/barrier with timeout and retry semantics. This is not implemented or deployed yet. No live AI calls, flow edits, publishes, or enables occurred during this audit.
+
+
+## Activepieces Cloud engine-level fan-out/join harness — execution evidence (2026-10-18)
+
+### Isolated test setup
+- Created folder `TEST ONLY · Concurrent Child Join E2E` (folder ID `0NK2sJLz8xnDlou2LKAkw`) and table `TEST ONLY · Concurrent Join Events` (table ID `FJbMGkvPftigznkeEGBQW`).
+- Test worker flow: `TEST ONLY · Join Child Worker` (flow ID `bMKzPS0kb73NtEDQbq9D5`, external ID `6OwqZHF62pCUOGPWRwonM`). It accepts a correlation `testId`, branch name and synthetic delay; creates one result row, then updates that same row on completion. The completion update is intentionally repeated against the same record ID to exercise idempotent retries. Delay errors are caught and persisted as `FAILED`.
+- Polling parent draft: `TEST ONLY · Polling Join Parent` (flow ID `4a8OSFX1yERP6TZ9D0Hob`). It dispatches A and B with `waitForResponse=false` before polling a durable table. Polling is bounded to seven iterations; each waits two seconds only while either branch has not reached a terminal status. The final verifier returns `JOIN_OK`, `JOIN_PARTIAL_FAILURE`, or `JOIN_TIMEOUT_OR_PARTIAL`.
+- A fixed-delay prototype (`TEST ONLY · Concurrent Join Parent`, flow ID `4BrtUZsKexpdxjIpWMtYR`) exposed the early-read bug: an 8-second wait could read A's start and B's completion before A completed. It was retained as a disabled diagnostic draft; the polling parent fixes that behavior.
+- The folder validator passed: 3 flows, no issues. All 10 listed flows individually passed structural validation; the intentionally skipped step in `Gemini + Claude 협업 비서 (비용 확인 필요)` remains skipped.
+- The child worker had to be published/enabled temporarily because Activepieces Call Flow requires a published/enabled Callable Flow. After the tests, it was explicitly disabled. Final status read-back confirms the three existing production flows remain ENABLED/published; the worker is DISABLED/published; both parent test flows are DISABLED/unpublished; all other test/mock flows remain DISABLED/unpublished.
+
+### Final-version repeated concurrency proof
+These are real Activepieces Cloud child-flow runs dispatched by a parent flow test run using synthetic webhook trigger data. They are not live external webhook events and did not call any AI provider. Each parent test returned `JOIN_OK`, two terminal result rows, and two distinct child run IDs. Completion timestamps below are the per-field `event.updated` values, while start timestamps are the initial `branch.created` values.
+
+| Test ID | Parent TESTING run | Child A run | Child B run | Start spread | Overlap |
+|---|---|---|---|---:|---|
+| `E2E-20261018-0834-16` | `rtXrSohzR7Gb6yD6izkIX` | `iqXrcHYgdTvaAgoCUUFAc` | `wZ0GNUlsAV2djKOEyUrbq` | 737 ms | Yes |
+| `E2E-20261018-0834-17` | `4BwBxJRcnWOGjdjKms92S` | `SqVvd728T6coDfH9xmpOA` | `dzKtUxdYltqXV3Nof7okA` | 745 ms | Yes |
+| `E2E-20261018-0834-18` | `yLtbcaYHamVYSxTHUeKk4` | `SkHuSVmS3N5kqw6FRqaYM` | `CjomQ66DbymQqqXBIkbkX` | 144 ms | Yes |
+
+Exact timing evidence:
+- Test 16: A started `23:54:28.718Z`, finished `23:54:34.299Z`; B started `23:54:29.455Z`, finished `23:54:30.887Z`. Overlap interval was approximately 1.432 s.
+- Test 17: B started `23:56:05.418Z`, finished `23:56:06.831Z`; A started `23:56:06.163Z`, finished `23:56:12.242Z`. Overlap interval was approximately 0.668 s.
+- Test 18: B started `23:56:38.513Z`, finished `23:56:41.344Z`; A started `23:56:38.657Z`, finished `23:56:44.504Z`. Overlap interval was approximately 2.687 s.
+- Polling parent reached readiness at iteration 5, 5 and 6 respectively, then completed with `JOIN_OK`. Each test's final result table contained exactly two rows, one per branch. Both branches were independently correlated by `testId` and branch name; completion order varied without cross-wiring.
+
+### Duplicate, stale-result, failure and timeout checks
+- Duplicate completion retry: parent test `vwQXBRqhBpwftur9wBRbc` for `E2E-20261018-0834-12` returned `JOIN_OK`; exactly two result rows remained despite each child updating its own row twice with the same values and record ID.
+- Stale-result isolation + child failure: parent test `6nLVwugzR7AzXtV5meRjD` for `E2E-20261018-0834-14` returned `JOIN_PARTIAL_FAILURE`, `doneA=true`, `doneB=false`, `failedB=true`. The B child's delay step failed on an intentionally invalid negative duration; its failure handler wrote a terminal `FAILED` row. Synthetic stale A/B success rows existed under a different test ID and were not counted by the parent filter.
+- Deadline/late child: parent test `hzNdr7dRHdD1sXR3PUTKQ` for `E2E-20261018-0834-15` returned `JOIN_TIMEOUT_OR_PARTIAL`, `doneA=true`, `doneB=false`; B was still `START/RUNNING` at the parent's final read. The B child later reached SUCCEEDED in 34.5 s, so it was delayed rather than abandoned. Stale success rows under a different test ID did not satisfy this run.
+- An initial failure-path attempt showed that placing the success update after a continue-on-failure step could overwrite a failure status. The flow was corrected so success updates live only in the delay's On-success branch and the failure update lives in On-failure. The final-version test 14 confirms the corrected result.
+- The polling loop does not break structurally after the first ready iteration; later iterations continue with zero-second delay but still perform table reads. This is correct for the bounded test harness but leaves room for a future optimization to avoid redundant post-ready reads.
+
+### Scope and remaining production gate
+- This establishes cloud-engine concurrent child execution plus durable-result polling for an isolated synthetic test harness; it is stronger than the previous single-Code-step Promise.all mock. It does not establish that Gemini and Claude were called concurrently, and no provider API was called.
+- The enabled production flow `AI 3AI 협업` remains sequential (ChatGPT → Gemini → Claude → integration). It was not edited, published, enabled/disabled, or run.
+- The test-only child worker is now DISABLED. Both parent test flows remain DISABLED/unpublished. The hourly `AI` automation was not changed or duplicated.
+- Before production rollout, still require: free quota/cost confirmation for Gemini/Claude; a draft implementation that maps real provider outputs into this barrier; explicit retry/idempotency and cancellation semantics for provider errors; and a separately approved rollout after a no-billing verification strategy exists. Do not claim the production multi-AI workflow is complete yet.
