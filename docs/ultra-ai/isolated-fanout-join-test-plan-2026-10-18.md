@@ -88,3 +88,14 @@ A source review of the official Activepieces pull request https://github.com/act
 The corrected join-test candidate is a parent Code step in a separate local instance that starts two local mock child-flow webhook requests concurrently with `Promise.all` and waits for both responses. This remains a test design only: the local webhook URL shape and worker-to-app network path must be verified, and no actual run has been performed. If the local Code sandbox cannot reach the local child endpoints, stop and record the failure; never use production endpoints as a fallback.
 
 Verified facts remain: Router branches are sequential; no AI/provider calls were made; the current execution environment has no Docker/Podman; production Cloud flows and the hourly automation remain unchanged.
+
+
+## CORRECTION — 2026-10-18: Waitpoints are not a generic BARRIER
+
+A fresh read of the current official Waitpoints documentation (https://www.activepieces.com/docs/install/architecture/waitpoints) shows that the documented waitpoint types are `DELAY` and `WEBHOOK`; it does not document a generic `BARRIER` type or a built-in parent fan-in action. The earlier statement in this plan that a BARRIER waits for dispatched batches was incorrect and is superseded by this correction.
+
+The Sub Flows schema exposes `Call Flow` with a `Wait for Response` option, but its target Callable Flow must be published and enabled. That is incompatible with the rule that all Cloud test flows remain disabled/unpublished, so do not enable or publish the Cloud draft for this experiment. The existing Cloud draft remains unchanged.
+
+The last three TESTING runs of the existing disabled/unpublished `MOCK ONLY · Promise.all 병렬 합류 검증기` passed synthetic in-code checks (run IDs: `RJdLgqGLJztcN0l8rQ41c`, `Bn6KY0PUmiu85EtdpS3h3`, `dEhaqSdQck9l095fH1CLU`). Each run recorded overlapping mock branch windows (~1.2 seconds), 10/10 join scenarios and 8/8 payload-contract cases. This proves only `Promise.all` concurrency and merge logic inside one Code step; it does **not** prove Activepieces engine-level subflow concurrency or a parent waiting for separate child runs.
+
+Current verified status: the isolated engine-level fan-out/join test is still blocked by the lack of Docker/Podman in this execution environment. Do not claim the engine-level test is complete. AI/provider calls 0; external network calls from the tested Code step 0; paid API calls 0; production flows and hourly automation unchanged.
