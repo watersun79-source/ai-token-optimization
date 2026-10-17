@@ -5,7 +5,7 @@ Slogan: ALWAYS ON · ALWAYS EVOLVING · MAXIMUM AVAILABLE CAPABILITY
 ## Source of truth
 - Repository: https://github.com/watersun79-source/ai-token-optimization
 - Working branch: ultra-ai/progress-2026-10-17
-- Canonical custom instructions: docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md (992 characters)
+- Canonical custom instructions: docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md (1010 characters; verified 2026-10-17)
 - Display copy: docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 - Memory index: docs/ultra-ai/PROJECT_MEMORY_INDEX.md
 - Latest progress report: docs/ultra-ai/memory-optimization-progress-2026-10-17.md
@@ -71,3 +71,9 @@ On iOS, paste it into Settings > Customize ChatGPT > Custom Instructions with cu
 - Security blocker: webhook draft uses no authentication only for unpublished construction; before any publication, configure and verify Header Auth or another appropriate authentication method.
 - The four AI actions are sequential in the flow, not simultaneous. The first two prompts are independent (neither sees the other's output); the following two steps cross-review each first-pass result.
 - Official references checked: Activepieces AI providers https://www.activepieces.com/docs/admin-guide/guides/setup-ai-providers ; Gemini API pricing https://ai.google.dev/gemini-api/docs/pricing?hl=ko ; Claude API pricing https://platform.claude.com/docs/en/about-claude/pricing.
+
+
+## Authoritative correction — 2026-10-17 15:02 KST
+- Current canonical custom-instruction body is 1010 JavaScript characters and begins `ULTRA AI — ALWAYS ON`. The display copy was synchronized to match. Older references to 992 or 1108 characters in historical notes are superseded and must not be treated as current.
+- Both files were updated on branch `ultra-ai/progress-2026-10-17`; verify by reading them back. ChatGPT iOS Settings was not changed; the user must paste/save the canonical prompt manually.
+- Priority remains: (1) GitHub + Slack for persistent ChatGPT memory; (2) Gemini + Claude free consumer-app collaboration. No paid API calls, purchases, or upgrades.
