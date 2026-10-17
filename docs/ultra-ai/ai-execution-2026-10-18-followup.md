@@ -125,3 +125,11 @@
 - Activepieces 현재 플로우 목록 재조회 결과 7개: ENABLED/published 3개, DISABLED/draft 4개. 운영 플로우/예약/연결 설정 변경 0건. 기존 mock 테스트는 JavaScript `Promise.all` 코드 단계의 합성 테스트이며 엔진 수준 Gemini·Claude 병렬 실행 증거가 아님.
 - Gemini/Claude 소비자 웹앱 응답은 현재 연결된 브라우저 컨텍스트 오류 때문에 이번에도 확보하지 못함. 실제 응답 0건. 생성 API 호출 0회, 유료 API 호출 0회, 구매/업그레이드 0건.
 - 결론: 현재 안전 조건(무료 확인, 비활성 초안 유지, 운영 변경 금지)을 모두 지키면서 Activepieces Cloud 엔진 수준의 AI fan-out/join을 실제 검증할 수 있는 방법은 아직 입증되지 않음. 다음 목표는 사용자가 설치·실행할 수 있는 별도 무료 self-hosted test project/environment의 최소 요건과 안전한 검증 절차를 공식 문서로 정리하는 것. 설치나 운영 변경은 실행하지 않음.
+
+## 다음 목표 조사 — 무료 별도 self-hosted 테스트 환경
+
+- Activepieces 공식 설치 문서(https://www.activepieces.com/docs/install/options/docker-compose)를 확인함. 권장 self-host 구성은 Docker Compose v2, 최소 2 vCPU/4 GB RAM이며 Windows에서는 WSL2가 필요함. PostgreSQL, Redis, app, worker로 구성됨.
+- 더 가벼운 개인 테스트 옵션(https://www.activepieces.com/docs/install/options/docker)은 Docker 하나로 단일 머신에서 실행되지만, PGLite와 메모리 큐를 사용하며 확장성이 제한됨. 개인용 mock/flow-control 테스트에는 후보가 될 수 있으나 BARRIER/custom-piece를 지원하는지는 별도 검증이 필요함.
+- 공식 라이선스 안내(https://www.activepieces.com/docs/about/license)는 핵심 기능이 MIT 오픈소스이고 Enterprise/Cloud 기능은 상용 라이선스라고 구분함. 이 사실만으로 BARRIER custom piece가 Cloud 무료 플랜에서 설치 가능하다고 해석하지 않음.
+- 현재 실행 환경에 Docker/WSL2 또는 사용자 PC 제어 권한이 확인되지 않아 설치 명령을 실행하지 않았고, 로컬 환경을 변경하지 않음. 다음 안전 단계는 사용자가 별도 테스트 머신에서 Docker가 있는지 확인한 뒤, isolated hobbyist container로 먼저 mock-only 테스트를 수행하는 것. 운영 Cloud 프로젝트, 운영 플로우, 예약에는 연결하지 않음.
+- 이번 조사 비용: 생성 API 0회, 유료 API 0회, 구매/업그레이드 0건. 실제 Gemini/Claude 웹앱 응답은 브라우저 연결 컨텍스트 오류로 0건.
