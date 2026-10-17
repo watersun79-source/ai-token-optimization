@@ -121,3 +121,15 @@ Two existing disabled, unpublished MOCK ONLY flows were run in the Activepieces 
 2. `MOCK ONLY · Result Merge Harness` (`Jsux341MqsaxUlrGFue1x`), run ID `LREVoMU0FFj06rqzJwkYl`, status SUCCEEDED. Supplied synthetic Gemini/Claude payloads merged as `MOCK_MERGE_OK`; both were validated and preserved. 8/8 contract cases passed. Output explicitly says this does not prove engine-level concurrency, persistent atomicity, or live AI execution.
 
 These are real Activepieces TESTING-mode run records with mock trigger data, not production/live trigger tests. They are useful unit/contract evidence only; the requested engine-level concurrent child-flow completion/join E2E remains unproven. No external AI/network calls were made by either test.
+
+
+## Repeatability check and production architecture finding (2026-10-18)
+- Repeated the disabled/unpublished synthetic concurrency test three times using Activepieces TESTING runs and then fetched each run record:
+  - `Kg1ikFjKjl88eCqXJFJS7`: SUCCEEDED, timing overlap true, 10/10 join scenarios, 8/8 contracts, 1204 ms.
+  - `BilHfarPmZiW2Iqs7dwic`: SUCCEEDED, timing overlap true, 10/10 join scenarios, 8/8 contracts, 1203 ms.
+  - `w3beLx8xbT77tMR4amo1h`: SUCCEEDED, timing overlap true, 10/10 join scenarios, 8/8 contracts, 1205 ms.
+  These repeat runs establish reproducibility of the same in-step synthetic Promise.all test only, not engine-level child-flow fan-out/join.
+- Inspected the current enabled production flow `AI 3AI 협업` (`kt2N9yCVA3dLkFiNPSMsH`): its configured sequence is ChatGPT draft → Gemini review → Claude review → final integration → HTTP response → Slack notification. Flow validation is valid (7/7 steps). This is a sequential chain, not parallel Gemini/Claude execution.
+- Inspected `Gemini + Claude 협업 비서 (비용 확인 필요)` (`drNhxMhmCo3A0rKV0OhIZ`): Gemini draft/self-review → Claude review/final answer → return response; OpenAI draft step is skipped. Validation reports valid with one intentionally skipped step. This also does not currently demonstrate parallel Gemini/Claude execution.
+- Activepieces lists active project connections for Google Gemini and Anthropic Claude, but connection presence does not establish free quota or price. No live AI flow was run to avoid possible paid calls.
+- Current tool catalog has no GitHub Actions workflow-dispatch action. Existing production flows and hourly automation were not changed. No test flow was published or enabled.
