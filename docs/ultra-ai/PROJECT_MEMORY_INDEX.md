@@ -9,14 +9,15 @@ Coordinator log: https://github.com/watersun79-source/ai-token-optimization/blob
 Volume test log: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/find-records-volume-test-501-2026-10-17.md
 Provider connection audit: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/provider-connection-audit-2026-10-17.md
 Official capability review: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/official-capabilities-review-2026-10-17.md
-Canonical custom instructions (887 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md
-Duplicate display copy: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
+Memory optimization progress: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/memory-optimization-progress-2026-10-17.md
+Canonical custom instructions (987 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md
+Duplicate display copy (987-character prompt): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 
 ## Operating contract
 - ULTRA AI loop: ANALYZE → CHECK → OPTIMIZE → EXECUTE → VERIFY → DEBUG → AUTO-FIX → RE-VERIFY → REPORT → NEXT GOAL.
 - Korean informal, concise; use tables/progress indicators for status; distinguish verified, unknown and failed.
 - Use internet for current/source-sensitive work; cite reliable sources.
-- For complex work, check both Gemini and Claude availability. Use both when actually connected and free/cost-safe. Never claim use without an observed call and response.
+- Check Gemini and Claude availability for every task; use both only when actually accessible through a free, cost-safe route. Never claim use without an observed call and response.
 - GitHub is the durable project record for memory, decisions, prompts and tests; Slack tracks status, blockers and next goals. Update both after meaningful work.
 - Free-first: no unverified/paid API calls, purchases, upgrades or uncertain billing.
 - Never reveal or commit secrets, API keys, tokens or webhook credentials.
@@ -33,8 +34,10 @@ Duplicate display copy: https://github.com/watersun79-source/ai-token-optimizati
 - Find Records volume tests: 101→101, 201→201, 501→501 (run U1Hqc2j98hqZuYEb3zNZf). All TESTING/sample data; all inserted rows deleted and follow-up searches returned 0.
 - Final table counts: temporary registry 0 rows; temporary coordinator input 0 rows; prior mock results table 14 rows.
 - Provider audit: Google Gemini read-only List Models succeeded once; billing tier unknown. Secondary Google Gemini api and Anthropic Claude connections failed read-only model-list authentication with HTTP 401 invalid key. No generation call made.
+- Max Concurrent Jobs is project-wide; do not set it to 1 in the shared project because it could affect the five protected production flows.
 - Unresolved: atomic unique/upsert/race safety in Tables; behavior beyond 501 records; hosted Cloud custom piece availability for BARRIER; Claude credential repair; Gemini free-tier/billing confirmation.
-- Max Concurrent Jobs is project-wide; do not set to 1 in the shared project because it could affect the five protected production flows.
+- Current optimization: canonical prompt and display copy synchronized to 987 characters. GitHub updates verified for both. ChatGPT Settings UI has not been modified; user must paste the prompt.
+- Latest optimization task: Gemini/Claude generation calls 0; paid API calls 0; production flows and hourly automation unchanged.
 
 ## Official references
 - ChatGPT Custom Instructions: https://help.openai.com/en/articles/8096356-chatgpt-custom-instructions
@@ -50,5 +53,5 @@ Duplicate display copy: https://github.com/watersun79-source/ai-token-optimizati
 - Activepieces Waitpoints: https://www.activepieces.com/docs/install/architecture/waitpoints
 
 ## Notes
-- ChatGPT Free/Go custom-instruction limit: 1,500 characters. Canonical prompt is 887 characters by JavaScript string length.
+- ChatGPT Free/Go custom-instruction limit: 1,500 characters. Canonical prompt is 987 characters by JavaScript string length.
 - GitHub/Slack are persistence aids, not guaranteed automatic synchronization to every chat. Custom Instructions must be pasted into Settings by the user; this session did not directly change the Settings UI.
