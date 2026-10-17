@@ -70,3 +70,15 @@ Source read directly: https://github.com/activepieces/activepieces/blob/860ce5b8
 ## Design decision needed before claiming engine-level join
 The existing native primitives establish two different capabilities: (a) one Call Flow can wait for one child's Return Response, and (b) Stream CSV to Subflows can concurrently dispatch many child runs without waiting for their final outputs. They do not establish native parallel calls with all child results joined.
 A viable implementation must test an explicit orchestrator that concurrently invokes two synchronous child webhook endpoints and awaits both responses, or implement a custom piece that does the equivalent using supported server context. It must run inside an isolated E2E engine harness, not as a same-step Promise.all mock. Verify network policy, sync timeout, and parent/child run IDs before choosing an implementation. No production flow has been changed.
+
+
+## Callback/waitpoint implementation detail checked (2026-10-18, follow-up)
+Raw upstream source at pinned commit was inspected for `call-flow.ts`, `respond.ts`, and `common.ts`:
+- `Call Flow` creates a WEBHOOK waitpoint only when `waitForResponse` is enabled, builds a resume URL from that waitpoint, and calls `context.run.waitForWaitpoint(waitpoint.id)` before dispatching the child.
+- Each `Call Flow` action execution is tied to its own parent run ID and its own waitpoint. On resume, it reads `context.resumePayload.body` and returns that one child response.
+- Child `Return Response` reads the callback URL stored for the child run and posts the response to that URL. The common dispatcher sends each child run through `POST ${apiUrl}/v1/webhooks/${flowId}` with the parent run ID and optional callback URL.
+- This source confirms the one-child wait/resume mechanism; it does not prove that a single parent run can safely create and await multiple waitpoints concurrently. That specific runtime behavior must be tested in the upstream E2E harness before implementing a custom parallel-join piece.
+- The webhook controller path guessed in this pass returned 404 at the pinned raw URL, so no route semantics are claimed from that file. No production code or cloud flows were changed.
+
+### Narrow next experiment (not yet run)
+Extend the existing upstream E2E test fixture with two Callable Flow children that return distinct payloads and a purpose-built parent orchestration step. First test whether two waitpoints can coexist under one parent run and resume independently; assert distinct child run IDs, callback correlation, parent suspension until both responses, and no dropped/duplicate callbacks. If the engine's resume model cannot support multiple waitpoints in one run, implement the join as an explicit coordinator that tracks child IDs/results outside the parent step and resumes once all children complete. Do not claim either design works until the real worker/engine E2E assertions pass.
