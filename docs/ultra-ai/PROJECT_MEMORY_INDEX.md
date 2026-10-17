@@ -11,8 +11,8 @@ Provider connection audit: https://github.com/watersun79-source/ai-token-optimiz
 Official capability review: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/official-capabilities-review-2026-10-17.md
 Memory optimization progress: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/memory-optimization-progress-2026-10-17.md
 Activepieces concurrency/BARRIER audit: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/activepieces-concurrency-barrier-audit-2026-10-17.md
-Canonical custom instructions (1108 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md
-Duplicate display copy (1108-character prompt): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
+Canonical custom instructions (992 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md
+Duplicate display copy (992-character prompt): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 
 ## Operating contract
 - ULTRA AI loop: ANALYZE → CHECK → OPTIMIZE → EXECUTE → VERIFY → DEBUG → AUTO-FIX → RE-VERIFY → REPORT → NEXT GOAL.
@@ -46,6 +46,11 @@ Duplicate display copy (1108-character prompt): https://github.com/watersun79-so
 - Gemini/Claude: consumer-web-app generation was not performed this turn because the connected browser context is unavailable. Existing provider audit still shows Gemini free/billing status unknown and prior secondary Gemini/Claude API diagnostics HTTP 401. Generation calls 0; paid API calls 0.
 - Slack recent history read successfully before this update; next action is post a concise sync/verification report after read-back.
 
+## Latest memory optimization (2026-10-17)
+- Canonical prompt and display copy synchronized to 992 JavaScript characters; exact body match verified in the continuation pass.
+- Every task's procedure: internet search; actual attempt to use free Gemini and Claude web apps; read GitHub memory protocol/index/latest report and Slack channel C0C9649RQAZ; record results to both and read back. Do not pretend inaccessible models were used.
+- Current provider blocker: no originating browser context for consumer web apps; previous secondary Gemini and Claude API diagnostics returned HTTP 401; free/billing state not verified. Generation calls 0; paid API calls 0.
+
 ## Official references
 - ChatGPT Custom Instructions: https://help.openai.com/en/articles/8096356-chatgpt-custom-instructions
 - ChatGPT Memory: https://help.openai.com/en/articles/8590148-memory-and-projects
@@ -60,7 +65,7 @@ Duplicate display copy (1108-character prompt): https://github.com/watersun79-so
 - Activepieces Waitpoints: https://www.activepieces.com/docs/install/architecture/waitpoints
 
 ## Notes
-- ChatGPT Free/Go custom-instruction limit: 1,500 characters. Canonical prompt is 1108 characters by JavaScript string length.
+- ChatGPT Free/Go custom-instruction limit: 1,500 characters. Canonical prompt is 992 characters by JavaScript string length.
 - GitHub/Slack are persistence aids, not guaranteed automatic synchronization to every chat. Custom Instructions must be pasted into Settings by the user; this session did not directly change the Settings UI.
 
 
