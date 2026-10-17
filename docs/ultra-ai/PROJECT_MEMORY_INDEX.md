@@ -62,3 +62,10 @@ Duplicate display copy (1108-character prompt): https://github.com/watersun79-so
 ## Notes
 - ChatGPT Free/Go custom-instruction limit: 1,500 characters. Canonical prompt is 1108 characters by JavaScript string length.
 - GitHub/Slack are persistence aids, not guaranteed automatic synchronization to every chat. Custom Instructions must be pasted into Settings by the user; this session did not directly change the Settings UI.
+
+
+## 2026-10-17 — persistent memory optimization
+- Custom instruction (1,108 characters): docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md
+- Duplicate instruction copy: docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
+- Memory loop protocol: docs/ultra-ai/ULTRA-AI-memory-protocol.md
+- Operating rule: web search each task; attempt Gemini/Claude free access; GitHub is canonical memory, Slack C0C9649RQAZ is progress/error log; verify free/cost conditions before API calls; protect production flows, hourly automation and main.
