@@ -10,6 +10,7 @@ Volume test log: https://github.com/watersun79-source/ai-token-optimization/blob
 Provider connection audit: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/provider-connection-audit-2026-10-17.md
 Official capability review: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/official-capabilities-review-2026-10-17.md
 Memory optimization progress: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/memory-optimization-progress-2026-10-17.md
+Activepieces concurrency/BARRIER audit: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/activepieces-concurrency-barrier-audit-2026-10-17.md
 Canonical custom instructions (987 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md
 Duplicate display copy (987-character prompt): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 
@@ -38,6 +39,7 @@ Duplicate display copy (987-character prompt): https://github.com/watersun79-sou
 - Unresolved: atomic unique/upsert/race safety in Tables; behavior beyond 501 records; hosted Cloud custom piece availability for BARRIER; Claude credential repair; Gemini free-tier/billing confirmation.
 - Current optimization: canonical prompt and display copy synchronized to 987 characters. GitHub updates verified for both. ChatGPT Settings UI has not been modified; user must paste the prompt.
 - Latest optimization task: Gemini/Claude generation calls 0; paid API calls 0; production flows and hourly automation unchanged.
+- Official Activepieces review: BARRIER exists at the engine/piece API level; custom/private piece management is documented as paid at platform level. The public Tables action list does not establish atomic upsert/unique-key behavior. Table product page states up to 10,000 rows. See the concurrency/BARRIER audit.
 
 ## Official references
 - ChatGPT Custom Instructions: https://help.openai.com/en/articles/8096356-chatgpt-custom-instructions
