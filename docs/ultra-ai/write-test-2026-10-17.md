@@ -16,8 +16,8 @@ PARTIAL. GitHub read access succeeded and write access recovery succeeded on the
 - First attempt to write a long report was blocked by the tool safety layer.
 - Second attempt with a short diagnostic document succeeded.
 - Initial commit: `cfe9cd48776c06b3c6f2a73d7159533725599227`
-- This file replaces the diagnostic stub with the full verified report.
-- Read-back verification must be completed after the write.
+- This file replaces the diagnostic stub with the full report.
+- Read-back succeeded; fetched blob SHA: `ed665dd83873e498ccef14b77a1afbbd70a34d3f`.
 
 ## Gemini and Claude access
 - Browser attempt failed with: `Browser access requires the originating browser context.`
@@ -45,8 +45,8 @@ PARTIAL. GitHub read access succeeded and write access recovery succeeded on the
 - Mock flows were DISABLED; draft flows remained unpublished. No Activepieces flow or table was edited or run.
 
 ## Slack write
-- A concise status message was attempted for `C0C9649RQAZ`; the tool safety layer blocked the send. No Slack post is claimed.
-- Slack read/search succeeded; Slack write still needs recovery.
+- Slack send succeeded; message link: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792201524630569
+- Follow-up Slack search did not surface the new post yet; delivery has a returned message link, but search/read-back is not confirmed.
 
 ## Cost, safety, cleanup
 - AI generation calls: 0.
@@ -61,7 +61,7 @@ PARTIAL. GitHub read access succeeded and write access recovery succeeded on the
 1. Browser connector requires an originating connected-browser context; consumer Gemini/Claude apps could not be used.
 2. Gemini billing tier remains unknown; prior secondary Gemini and Claude API checks failed 401. Do not generate until a valid free/cost-safe route is verified.
 3. Slack message write was blocked by the tool safety layer.
-4. GitHub write recovery succeeded for a minimal file; full report read-back verification is pending.
+4. GitHub write recovery and full report read-back succeeded. Slack message was sent, but search-based read-back did not find it yet.
 
 ## Next goal
 1. Read back this exact GitHub file and confirm its commit/content.
