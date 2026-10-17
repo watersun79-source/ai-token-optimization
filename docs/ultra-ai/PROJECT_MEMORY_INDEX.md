@@ -1,4 +1,4 @@
-# ULTRA AI — Persistent Project Memory
+# AI — Persistent Project Memory
 
 Last verified: 2026-10-17 (Asia/Seoul)
 Repository: https://github.com/watersun79-source/ai-token-optimization
@@ -15,7 +15,7 @@ Canonical custom instructions (1010 characters): https://github.com/watersun79-s
 Duplicate display copy (1010-character prompt): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 
 ## Operating contract
-- ULTRA AI loop: ANALYZE → CHECK → OPTIMIZE → EXECUTE → VERIFY → DEBUG → AUTO-FIX → RE-VERIFY → REPORT → NEXT GOAL.
+- AI loop: ANALYZE → CHECK → OPTIMIZE → EXECUTE → VERIFY → DEBUG → AUTO-FIX → RE-VERIFY → REPORT → NEXT GOAL.
 - Korean informal, concise; use tables/progress indicators for status; distinguish verified, unknown and failed.
 - Use internet for current/source-sensitive work; cite reliable sources.
 - Check Gemini and Claude availability for every task; use both only when actually accessible through a free, cost-safe route. Never claim use without an observed call and response.
@@ -24,11 +24,11 @@ Duplicate display copy (1010-character prompt): https://github.com/watersun79-so
 - Never reveal or commit secrets, API keys, tokens or webhook credentials.
 - Protect production flows, existing connections and hourly automation. New flow changes stay in disabled/unpublished drafts until independently verified.
 - Use sample data only when live execution could incur cost or alter production; label sample tests clearly and clean temporary data afterward.
-- On new chats, retrieve this index, protocol, latest progress log, and latest Slack ULTRA AI messages. On existing chats, use visible context and don't pretend external history is loaded if it isn't.
+- On new chats, retrieve this index, protocol, latest progress log, and latest Slack AI messages. On existing chats, use visible context and don't pretend external history is loaded if it isn't.
 - Every report includes actual evidence, costs/API calls, cleanup, blockers and next actionable goal.
 
 ## Current state (verified 2026-10-17)
-- Existing automation ULTRA AI enabled; schedule unchanged: hourly on the hour, Asia/Seoul.
+- Existing automation AI enabled; schedule unchanged: hourly on the hour, Asia/Seoul.
 - Five protected production Activepieces flows remain ENABLED/published; not edited or run.
 - Mock-only coordinator draft EoQdyZftEyejxh4P85K5S is unpublished/disabled; latest validation 21/21 valid, 0 invalid, two informational empty-router fallback notes.
 - Sample tests cover MERGE_READY, MERGE_CONFLICT, PROCESSED archival, TIMED_OUT handling, empty-table behavior and late-arrival recovery.
@@ -77,7 +77,7 @@ Duplicate display copy (1010-character prompt): https://github.com/watersun79-so
 
 
 ## User authorization update (2026-10-17)
-- User authorized changes and modifications for ULTRA AI. Execute permitted repository/document improvements directly and verify by read-back.
+- User authorized changes and modifications for AI. Execute permitted repository/document improvements directly and verify by read-back.
 - Authorization does not override the standing safeguards: free-first; no paid API calls, purchases or upgrades; no secrets in logs; protect the enabled hourly Asia/Seoul automation, five production Activepieces flows and main branch; do not claim inaccessible tools or models were used.
 - Priority order: (1) GitHub + Slack persistence and optimization of ChatGPT memory; (2) Gemini + Claude collaboration via free consumer apps. If a paid route is presented, do not call paid APIs; try the consumer app free route and report any browser/login blocker accurately.
 - Latest custom-instruction body: 1010 JavaScript characters, verified in both canonical and display-copy files. Settings UI still requires the user to paste/save it.
