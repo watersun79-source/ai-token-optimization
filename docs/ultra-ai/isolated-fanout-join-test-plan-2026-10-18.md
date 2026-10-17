@@ -111,3 +111,17 @@ Reviewed the official source at https://github.com/activepieces/activepieces/blo
 - Therefore the built-in patterns confirmed so far are: sequential Router; one Call Flow with optional child-response wait; or bounded-concurrency fire-and-forget CSV dispatch. No built-in generic parallel multi-child fan-in was proven by these sources.
 
 Safe next design to investigate: two independently dispatched child flows write synthetic result records under a unique request ID; a parent-side wait/poll or callback aggregator verifies both results before integration. This is architecture only, not yet validated. Before implementing, verify whether the current Activepieces Cloud exposes an appropriate callback/wait mechanism and atomic/idempotent record operations. Do not change the live Cloud flows, publish drafts, or use provider APIs.
+
+
+## NEXT CANDIDATE — synchronous webhook fan-out/join (not yet run)
+
+The current Webhook piece schema gives a more concrete isolated test candidate:
+- Each local child flow uses `Catch Webhook`, performs only a synthetic delay/result, then `Return Response`.
+- A local parent Code step attempts two HTTP POST requests concurrently with `Promise.all` to the children’s synchronous webhook URLs (the documented `/sync` mode), and validates that both response payloads arrive before the parent step completes.
+- The Webhook action guidance says only synchronous `/sync` requests receive a `Return Response`; ordinary webhook calls are not sufficient to prove parent waiting. Official piece schema was read through Activepieces piece discovery on 2026-10-18.
+- This is still a candidate, not a verified procedure: first confirm the local URL format from the local builder and confirm the Code runner can reach the local server. Use only loopback/local addresses in a separate self-hosted instance. If either prerequisite fails, stop; do not publish a Cloud test flow, use a public tunnel, or fall back to production endpoints.
+- Success requires three runs showing both child runs overlapping, both HTTP responses containing the expected synthetic IDs, and the parent returning only after both results. Record parent and child run IDs and timestamps. AI/provider calls and paid calls must remain zero.
+
+## Shared-table join caveat
+
+The current Tables piece schema exposes Create Record(s), Find Records and Update Record, but no documented atomic upsert/unique-key operation in the exposed action list. Create Record(s) is append-only and not idempotent. Therefore a shared-table requestId join must not be treated as race-safe or idempotent without separate proof; prefer the synchronous webhook response experiment above for the first isolated engine test.
