@@ -6,6 +6,7 @@ Working branch: ultra-ai/progress-2026-10-17
 Activepieces project: https://cloud.activepieces.com/projects/Fr9OAsxi4FbVSVLZkexYi/
 Coordinator log: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/scheduled-sequential-coordinator-tests-2026-10-17.md
 Volume test log: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/find-records-volume-test-501-2026-10-17.md
+Provider connection audit: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/provider-connection-audit-2026-10-17.md
 Official capability review: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/official-capabilities-review-2026-10-17.md
 Custom instructions (859 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 
@@ -27,17 +28,19 @@ Custom instructions (859 characters): https://github.com/watersun79-source/ai-to
 - Five protected production Activepieces flows remain ENABLED/published; not edited or run.
 - Mock-only coordinator draft: EoQdyZftEyejxh4P85K5S, unpublished/disabled; configured every 15 minutes but not running on an active schedule.
 - Latest validation: 21/21 steps valid, 0 invalid; two informational notes about intentionally empty router fallback branches. Mock solution folder: 3 flows, 0 connection/table errors.
-- Sample tests cover MERGE_READY, MERGE_CONFLICT, PROCESSED archival, TIMED_OUT handling, empty-table behavior and late-arrival recovery. Late-recovery sample run: Q68QOU6BW81R0qEGcZGmB; previous timeout run: qzDZAB9Wvleow6TOgPo7l.
+- Sample tests cover MERGE_READY, MERGE_CONFLICT, PROCESSED archival, TIMED_OUT handling, empty-table behavior and late-arrival recovery.
 - Find Records volume tests: 101 rows → outputCount 101 (run 23OiaT74UbUlYEwgMG2pC); 201 rows → outputCount 201 (run 67gFJzZanE68mLswLpMQn); 501 rows → outputCount 501 (run U1Hqc2j98hqZuYEb3zNZf). All TESTING/sample data; all inserted rows deleted and follow-up searches returned 0.
 - Final table counts: temporary registry 0 rows; temporary coordinator input 0 rows; prior mock results table 14 rows.
-- Actual Gemini/Claude/OpenAI API calls during these tests: 0.
-- Unresolved: atomic unique/upsert/race safety in Tables; behavior beyond 501 records; whether a custom piece can be installed in hosted Cloud to expose BARRIER.
+- Provider connection audit: Google Gemini connection successfully listed models once (read-only, no generation); secondary Google Gemini api and Anthropic Claude connection failed read-only model-list auth with HTTP 401 invalid key. No generation call was made. Google Gemini billing tier remains unknown.
+- Actual Gemini/Claude/OpenAI generation calls during these tests: 0.
+- Unresolved: atomic unique/upsert/race safety in Tables; behavior beyond 501 records; whether a custom piece can be installed in hosted Cloud to expose BARRIER; repair Claude and secondary Gemini credentials; verify Gemini free-tier/billing before generation.
 
 ## Provider and connector availability
 - Internet research tools, GitHub and Slack connectors available and used.
-- Plugin search on 2026-10-17 returned no dedicated Gemini or Anthropic Claude ChatGPT plugin. Activepieces provider flows must not be run until API cost/free status is verified.
-- Gemini consumer app access differs from Gemini API billing. Claude consumer app subscription differs from API Console billing. Do not call provider APIs until free access and billing status are verified.
-- If Gemini/Claude cannot be directly called in this environment, report the blocker; do not use fake outputs or run production flows to simulate them.
+- Activepieces provider pieces and connections exist. A connection labelled ACTIVE is not sufficient proof that credentials work.
+- No dedicated Gemini or Anthropic Claude ChatGPT plugin was found in plugin search.
+- Gemini consumer app access differs from Gemini API billing. Claude consumer app subscription differs from API Console billing. The US$5 Claude balance is paid balance, not free credit.
+- If a provider connection fails auth or billing is unknown, do not call generation or claim provider use. Report the repair steps without exposing secrets.
 
 ## Official references
 - ChatGPT Custom Instructions: https://help.openai.com/en/articles/8096356-chatgpt-custom-instructions
