@@ -112,3 +112,12 @@ A narrow, production-isolated proof should use the existing upstream E2E harness
 - Inspected the pinned `flow-run-service.ts` method contract. `flowRunService.start()` creates/queues a run with optional `parentRunId` and `failParentOnFailure`, then returns the newly created run record. It is not a synchronous helper that waits for a completed child response. That means a test orchestrator using the service alone must separately poll/query run completion and join results; simply awaiting `start()` would be a false positive.
 - Rechecked the user's Activepieces Cloud flow inventory. The same three published production flows remain ENABLED; all four test/mock flows remain DISABLED and unpublished. No flow was edited, enabled, disabled, or run during this pass.
 - The intended proof still requires upstream E2E worker execution and run-row assertions. This session has no Bun/Docker runtime and no Actions dispatch capability, so no actual engine test was executed. No paid AI API calls were made.
+
+
+## Activepieces Cloud test-mode execution results (2026-10-18)
+Two existing disabled, unpublished MOCK ONLY flows were run in the Activepieces TESTING environment using supplied synthetic trigger data. No publish/enable operation was performed and no production flow was changed.
+
+1. `MOCK ONLY · Promise.all 병렬 합류 검증기` (`jRWo1ktjzHHgoLcrPSyzx`), run ID `868iKHC0B0WyNtuTEXdKv`, status SUCCEEDED. Both synthetic branch starts recorded at 0 ms; both completions at 1202 ms; total elapsed 1202 ms (not ~2400 ms). Timing assertions passed. 10/10 join cases passed; 8/8 branch contract cases passed. Output explicitly limits this evidence to Promise.all concurrency within a single CODE step, not engine-level subflow/Router concurrency.
+2. `MOCK ONLY · Result Merge Harness` (`Jsux341MqsaxUlrGFue1x`), run ID `LREVoMU0FFj06rqzJwkYl`, status SUCCEEDED. Supplied synthetic Gemini/Claude payloads merged as `MOCK_MERGE_OK`; both were validated and preserved. 8/8 contract cases passed. Output explicitly says this does not prove engine-level concurrency, persistent atomicity, or live AI execution.
+
+These are real Activepieces TESTING-mode run records with mock trigger data, not production/live trigger tests. They are useful unit/contract evidence only; the requested engine-level concurrent child-flow completion/join E2E remains unproven. No external AI/network calls were made by either test.
