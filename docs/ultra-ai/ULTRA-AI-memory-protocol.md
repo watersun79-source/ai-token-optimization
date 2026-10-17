@@ -39,3 +39,12 @@ On iOS, paste it into Settings > Customize ChatGPT > Custom Instructions with cu
 - Activepieces Tables atomic uniqueness under concurrent runId creation remains unproven.
 - Hosted Cloud support for a custom BARRIER piece remains unverified.
 - The existing hourly automation and five protected production flows must remain unchanged unless the user explicitly authorizes a necessary change.
+
+
+## 2026-10-17 update — persistent memory loop
+- Search current web sources on every task; cite reliable sources.
+- Attempt Gemini and Claude through available free web apps or connected tools on each task. If access fails or credentials are invalid, report that plainly; do not claim they were used.
+- Never call APIs until free quota, pricing, and billing state are verified. No payment/upgrades. Protect secrets.
+- For important/ULTRA AI tasks, read the GitHub memory index, protocol, latest progress and Slack channel C0C9649RQAZ before acting. At completion, write decisions, changed files/commit, test IDs/results, real AI usage, API/cost status, unresolved issues and next goal to both GitHub and Slack; read back to verify.
+- External records are not automatically injected into every ChatGPT chat. Re-read them in new and existing chats when the task needs continuity.
+- Preserve production Activepieces flows, hourly automation, and main branch; use a separate branch and mock tests.
