@@ -86,3 +86,10 @@ Duplicate display copy (1010-character prompt): https://github.com/watersun79-so
 - Default for meaningful project work: Gemini and Claude each independently review the same evidence and criteria before either sees the other's review.
 - Merge by checking evidence, tests, and explicit disagreements; report consensus, conflicts, risks, and final decision.
 - If either is inaccessible, state the blocker and do not claim complete dual review. Free-first only; no uncertain/paid API calls or credit spending. Test orchestration in a disabled/unpublished draft; protect production flows and the hourly automation.
+
+
+## Dual-review flow draft status (2026-10-17)
+- Created disabled/unpublished Activepieces draft AI · Gemini + Claude 독립·교차 검토 (비용 확인 전 초안) (ID 1MAbLTS7HS9LjDRqq9l4b). It performs independent Gemini and Claude first-pass reviews from the same input, then each reviews the other's first-pass result, then packages all four outputs.
+- Validation: 6/6 steps valid, 0 issues; structure re-read; draft remains DISABLED/unpublished. No AI generation/test call, publication, or enablement was performed.
+- Gemini direct connection reports ACTIVE and its model dropdown resolves, but free quota/billing is unverified. Direct Claude model dropdown returned no options; the draft therefore references the configured Activepieces-managed Claude model, whose billing state is also unverified. No live test is allowed until cost-safe access is proven.
+- The flow is sequential (not simultaneous); the first-pass prompts are independent. Before publishing, set webhook authentication (current draft's no-auth setting is not production-safe). Existing production flows and hourly automation were not changed.
