@@ -17,18 +17,19 @@
 ## Activepieces Tables and pagination
 - Official Tables flow docs: https://www.activepieces.com/docs/tables/in-flows
 - Official Find Records implementation: https://github.com/activepieces/activepieces/blob/main/packages/pieces/core/tables/src/lib/actions/find-records.ts
-- Find Records has an optional Limit field whose description says an empty limit returns all records. The current implementation sends `limit ?? 999999999` and `cursor: undefined` to the API, then returns `response.body.data` without iterating a `next` cursor. The server's effective behavior for large result sets must be tested in the actual Cloud project; do not assert an exact 100-row cap from the action alone.
-- The Tables feature documentation describes records as rows and cells with a uniqueness constraint on (projectId, fieldId, recordId), not a unique constraint on arbitrary `runId`. This does not provide evidence of atomic uniqueness for the registry's runId. Concurrent first-writer race remains unproven.
-- Recommended next step: a disposable, mock-only >100-record test, with cleanup and row counts checked before and after. Do not run it against production flows.
+- Find Records has an optional Limit field whose description says an empty limit returns all records. The implementation sends limit ?? 999999999 and cursor undefined to the API, then returns response.body.data without iterating a next cursor. Effective behavior for large result sets must be tested in actual Cloud.
+- A mock probe inserted 101 synthetic rows. Activepieces record search returned 101 and all were deleted; post-cleanup search returned 0. Coordinator step test 23OiaT74UbUlYEwgMG2pC succeeded, but its large JSON output was truncated in the tool transcript, so the exact count returned by the flow piece itself remains unverified.
+- Tables feature docs describe uniqueness on (projectId, fieldId, recordId), not a unique constraint on arbitrary runId. Atomic uniqueness for registry runId is not established; concurrent first-writer race remains unproven.
+- Next: create a mock-only count-only harness to measure the Find Records step output above 100 rows without returning huge row payloads.
 
 ## Waitpoints / BARRIER
 - Official architecture docs: https://www.activepieces.com/docs/install/architecture/waitpoints
 - Official Flow Control docs: https://www.activepieces.com/docs/build-pieces/piece-reference/flow-control
-- BARRIER is a supported waitpoint type in the engine; docs describe pieces creating waitpoints via `ctx.run.createWaitpoint` and `ctx.run.waitForWaitpoint`.
-- The discovered built-in Subflows action catalog did not expose a visual BARRIER action. This implies a custom piece/action may be needed; hosted Cloud installation/availability of such a custom piece was not verified. Do not invent an action name or call internal endpoints.
+- BARRIER is a supported waitpoint type in the engine; docs describe pieces creating waitpoints via ctx.run.createWaitpoint and ctx.run.waitForWaitpoint.
+- Built-in Subflows action catalog did not expose a visual BARRIER action. A custom piece/action may be needed; hosted Cloud installation/availability was not verified. Do not invent an action name or call internal endpoints.
 
 ## Current test state
-- Mock coordinator `EoQdyZftEyejxh4P85K5S`: 21/21 valid, 0 invalid, two informational empty-fallback notes; draft/disabled.
-- Sample late-arrival recovery is documented in Slack run `Q68QOU6BW81R0qEGcZGmB`; all provider API calls remained 0.
+- Mock coordinator EoQdyZftEyejxh4P85K5S: 21/21 valid, 0 invalid, two informational empty-fallback notes; draft/disabled.
+- Late-arrival recovery sample run Q68QOU6BW81R0qEGcZGmB; actual provider API calls 0.
 - Mock registry 0 rows; mock coordinator input 0 rows; existing mock results table remains at 14 rows.
 - Five protected production flows remain enabled/published; hourly automation schedule unchanged.
