@@ -142,3 +142,11 @@
 - BARRIER waitpoint API는 fan-in primitive지만 일반 플로우 action으로 직접 쓸 수 있는지, Cloud에서 custom piece를 설치할 수 있는지, 무료인지 확인되지 않음. Sub Flows는 target Callable Flow publish/enable이 필요하므로 현재의 비활성 초안만 유지하는 정책 아래에서는 아직 채택하지 않음.
 - 현재 프로젝트 플로우 7개(활성 3, 비활성 초안 4). 운영 플로우, 기존 정각 자동화, main, 연결 및 비밀값 변경 0건. Gemini/Claude 생성 응답 0, API 생성 호출 0, 유료 API 0.
 - 결론: 기존 AI 3AI 협업 플로우는 순차 실행이며, Router만 바꾸어 병렬화할 수 있다고 안내하면 안 됨. 실제 병렬화의 다음 후보는 (a) 별도 self-hosted test instance에서 독립 실행을 오케스트레이션하고 fan-in을 검증하거나, (b) 하나의 Code step에서 실제 provider 호출을 Promise.all로 실행하는 방식이다. (b)는 유료/불확실 API 호출 및 credential exposure 위험 때문에 무료 조건이 확인되기 전 실행하지 않음.
+
+## 비용 안전성 추가 확인 — Activepieces AI credits (2026-10-18)
+
+- Activepieces 공식 pricing page(https://www.activepieces.com/pricing)는 Free plan을 $0/no card로 표시하고 월 1,000 credits를 제공한다고 설명함. 같은 페이지는 AI step에 모델 종류별 2/10/20 credits가 들고, Agentic action은 1 credit라고 안내함. Free quota 소진 시 실행은 credit refresh까지 대기하며 Plus/Team에서는 초과분이 과금될 수 있음.
+- 공식 AI Providers 안내(https://www.activepieces.com/docs/admin-guide/guides/setup-ai-providers)는 provider credentials를 직접 연결하는 BYOK 방식을 설명함. BYOK이면 AI step은 1 credit이지만 provider 토큰 비용은 사용자 provider 계정에 청구됨.
+- 현재 프로젝트 도구에서 확인 가능한 정보는 5개 연결이 ACTIVE이고 21개 Activepieces AI 모델이 표시된다는 사실뿐임. 실제 Free/Plus/Team 요금제, 잔여 credit balance, OpenAI/Gemini/Claude API 키의 무료 한도/청구 상태를 읽을 수 있는 도구는 확인되지 않음. 따라서 모델 목록이나 ACTIVE 상태를 무료라고 해석하지 않음.
+- 비용 확인을 위해 AI step, provider generation API, 기존 운영 플로우를 실행하지 않음. Gemini/Claude 실제 응답 0, 생성 API 0, 유료 API 0, 구매/업그레이드 0.
+- 다음 결정: 실제 provider 호출은 잔여 Activepieces credits와 외부 provider billing/quota를 읽기 전용으로 확인할 수 있을 때까지 보류. 그 전에는 synthetic mock만 사용.
