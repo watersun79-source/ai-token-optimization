@@ -141,3 +141,11 @@ Ran the existing disabled/unpublished MOCK ONLY merge flow's CODE step with addi
 - Both missing: run `ooBqpXE8nwCXV637BtggT`, SUCCEEDED; merge state `MOCK_MERGE_INCOMPLETE`; both errors `MISSING`.
 - Both malformed: run `CS04QBj9SpApMABJIpnga`, SUCCEEDED; merge state `MOCK_MERGE_INVALID`; Gemini `BAD_OUTER_STATUS`, Claude `NOT_OBJECT`.
 All three runs executed the embedded 8-case contract suite successfully and reported zero external AI/network calls. These are failure-path checks of the merge code with sample trigger data, not engine-level child-flow fan-out/join proof.
+
+
+## Native Activepieces fan-out/join capability assessment (2026-10-18)
+- Current upstream Sub Flows piece exposes three relevant primitives: Callable Flow trigger, Call Flow (one child; optional wait for its Return Response), and Stream CSV to Subflows (bounded fan-out but explicitly fire-and-forget; it does not return each child result to the parent).
+- Therefore neither repeated sequential Call Flow steps nor Stream CSV to Subflows alone establishes a native two-child concurrent wait-all join. Router is not accepted as a concurrency proof because source review of the router executor found branch execution awaited sequentially.
+- Safe implementation paths to evaluate next: (A) a purpose-built trusted server-side Activepieces piece/action that creates two distinct waitpoints, dispatches both child runs before awaiting either, and correlates each callback to its own waitpoint; (B) a durable result-table/barrier design with idempotency keys, child completion writes, parent polling/deadline, and atomic finalization. Option B requires careful persistence/race testing and cannot be approximated by arbitrary fixed delays. Do not publish or enable either design until it has isolated test coverage.
+- Upstream developer search also surfaced issue #13141 describing stale/retry callbacks cross-wiring results in multi-child waitpoint use. This reinforces the need to test unique waitpoint/run correlation and retry handling, not just elapsed-time overlap.
+- No new production changes were made. The engine-level fan-out/join remains open; evidence currently covers synthetic in-step concurrency and merge failure handling only.
