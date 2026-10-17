@@ -162,3 +162,17 @@ Read-only recheck performed after the source reviews:
 - No flow was published/enabled/disabled, no provider API was called, and no paid usage or purchase occurred during this recheck.
 
 Status remains: mock validation passed; engine-level fan-out/join not executed. The next real progress requires access to a separate host/runtime with Docker Compose v2 or another already-running isolated self-hosted Activepieces instance. Without that external runtime, repeating mock-only runs would not close the actual verification gap.
+
+
+## READ-ONLY RECHECK — 2026-10-18: Current AI collaboration flow is sequential
+
+The connected Activepieces flow-structure tool was used read-only for the current enabled production flows. No flow was run or modified.
+
+- `AI 3AI 협업` (`kt2N9yCVA3dLkFiNPSMsH`) has the configured step chain: ChatGPT draft → Gemini independent review → Claude independent review → final answer integration → HTTP response → Slack notification. The steps are linked as successive `next` relationships, not parallel branches.
+- `Gemini + Claude 협업 비서 (비용 확인 필요)` (`drNhxMhmCo3A0rKV0OhIZ`) has a skipped OpenAI draft followed by Gemini draft/review → Claude review/final answer → HTTP response. It is also sequential; skipping the OpenAI step does not make Gemini and Claude concurrent.
+- The disabled mock harness remains a single Code step using in-memory synthetic Promise.all. Its successful runs test JavaScript Promise.all/timing/merge contracts only; they do not exercise either production flow's AI pieces or Activepieces child-flow fan-out/join.
+- Consequence: current enabled collaboration is sequential in the observed structure. Parallel AI calls are **not implemented/proven** in the inspected production flows. Do not call the enabled production webhook to test this because it could invoke paid/provider APIs and send Slack messages.
+- Security note: flow-structure output can include webhook authentication configuration. Do not copy auth header values, connection identifiers/secrets, or credentials into documentation, logs, or chat replies. No such values were added to this GitHub update.
+- No provider API calls, flow executions, flow status changes, or production edits were performed during this read-only inspection.
+
+Next safe decision gate: do not modify production until an isolated execution environment is available and provider billing/quotas are confirmed. First validate actual concurrent child-flow request/response behavior using synthetic payloads in a separate local instance; then design a separate draft-only production migration for review.
