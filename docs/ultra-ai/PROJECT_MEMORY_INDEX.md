@@ -4,11 +4,13 @@ Last verified: 2026-10-17 (Asia/Seoul)
 Repository: https://github.com/watersun79-source/ai-token-optimization
 Working branch: ultra-ai/progress-2026-10-17
 Activepieces project: https://cloud.activepieces.com/projects/Fr9OAsxi4FbVSVLZkexYi/
+Memory protocol: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ULTRA-AI-memory-protocol.md
 Coordinator log: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/scheduled-sequential-coordinator-tests-2026-10-17.md
 Volume test log: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/find-records-volume-test-501-2026-10-17.md
 Provider connection audit: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/provider-connection-audit-2026-10-17.md
 Official capability review: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/official-capabilities-review-2026-10-17.md
-Custom instructions (859 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
+Canonical custom instructions (887 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md
+Duplicate display copy: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 
 ## Operating contract
 - ULTRA AI loop: ANALYZE → CHECK → OPTIMIZE → EXECUTE → VERIFY → DEBUG → AUTO-FIX → RE-VERIFY → REPORT → NEXT GOAL.
@@ -20,27 +22,19 @@ Custom instructions (859 characters): https://github.com/watersun79-source/ai-to
 - Never reveal or commit secrets, API keys, tokens or webhook credentials.
 - Protect production flows, existing connections and hourly automation. New flow changes stay in disabled/unpublished drafts until independently verified.
 - Use sample data only when live execution could incur cost or alter production; label sample tests clearly and clean temporary data afterward.
-- On new chats, retrieve this index, latest progress log, and latest Slack ULTRA AI messages. On existing chats, use visible context and don't pretend external history is loaded if it isn't.
+- On new chats, retrieve this index, protocol, latest progress log, and latest Slack ULTRA AI messages. On existing chats, use visible context and don't pretend external history is loaded if it isn't.
 - Every report includes actual evidence, costs/API calls, cleanup, blockers and next actionable goal.
 
 ## Current state (verified 2026-10-17)
 - Existing automation ULTRA AI enabled; schedule unchanged: hourly on the hour, Asia/Seoul.
 - Five protected production Activepieces flows remain ENABLED/published; not edited or run.
-- Mock-only coordinator draft: EoQdyZftEyejxh4P85K5S, unpublished/disabled; configured every 15 minutes but not running on an active schedule.
-- Latest validation: 21/21 steps valid, 0 invalid; two informational notes about intentionally empty router fallback branches. Mock solution folder: 3 flows, 0 connection/table errors.
+- Mock-only coordinator draft EoQdyZftEyejxh4P85K5S is unpublished/disabled; latest validation 21/21 valid, 0 invalid, two informational empty-router fallback notes.
 - Sample tests cover MERGE_READY, MERGE_CONFLICT, PROCESSED archival, TIMED_OUT handling, empty-table behavior and late-arrival recovery.
-- Find Records volume tests: 101 rows → outputCount 101 (run 23OiaT74UbUlYEwgMG2pC); 201 rows → outputCount 201 (run 67gFJzZanE68mLswLpMQn); 501 rows → outputCount 501 (run U1Hqc2j98hqZuYEb3zNZf). All TESTING/sample data; all inserted rows deleted and follow-up searches returned 0.
+- Find Records volume tests: 101→101, 201→201, 501→501 (run U1Hqc2j98hqZuYEb3zNZf). All TESTING/sample data; all inserted rows deleted and follow-up searches returned 0.
 - Final table counts: temporary registry 0 rows; temporary coordinator input 0 rows; prior mock results table 14 rows.
-- Provider connection audit: Google Gemini connection successfully listed models once (read-only, no generation); secondary Google Gemini api and Anthropic Claude connection failed read-only model-list auth with HTTP 401 invalid key. No generation call was made. Google Gemini billing tier remains unknown.
-- Actual Gemini/Claude/OpenAI generation calls during these tests: 0.
-- Unresolved: atomic unique/upsert/race safety in Tables; behavior beyond 501 records; whether a custom piece can be installed in hosted Cloud to expose BARRIER; repair Claude and secondary Gemini credentials; verify Gemini free-tier/billing before generation.
-
-## Provider and connector availability
-- Internet research tools, GitHub and Slack connectors available and used.
-- Activepieces provider pieces and connections exist. A connection labelled ACTIVE is not sufficient proof that credentials work.
-- No dedicated Gemini or Anthropic Claude ChatGPT plugin was found in plugin search.
-- Gemini consumer app access differs from Gemini API billing. Claude consumer app subscription differs from API Console billing. The US$5 Claude balance is paid balance, not free credit.
-- If a provider connection fails auth or billing is unknown, do not call generation or claim provider use. Report the repair steps without exposing secrets.
+- Provider audit: Google Gemini read-only List Models succeeded once; billing tier unknown. Secondary Google Gemini api and Anthropic Claude connections failed read-only model-list authentication with HTTP 401 invalid key. No generation call made.
+- Unresolved: atomic unique/upsert/race safety in Tables; behavior beyond 501 records; hosted Cloud custom piece availability for BARRIER; Claude credential repair; Gemini free-tier/billing confirmation.
+- Max Concurrent Jobs is project-wide; do not set to 1 in the shared project because it could affect the five protected production flows.
 
 ## Official references
 - ChatGPT Custom Instructions: https://help.openai.com/en/articles/8096356-chatgpt-custom-instructions
@@ -56,7 +50,5 @@ Custom instructions (859 characters): https://github.com/watersun79-source/ai-to
 - Activepieces Waitpoints: https://www.activepieces.com/docs/install/architecture/waitpoints
 
 ## Notes
-- Activepieces Max Concurrent Jobs is a project-wide setting; changing it could affect all five protected production flows. Do not set it to 1 in the shared project just to serialize the mock coordinator.
-- The current Activepieces connector does not expose a project concurrency-settings action. No setting was changed.
-- ChatGPT Free/Go custom-instruction limit: 1,500 characters. Prompt file is 859 characters by JS string length, under limit.
-- GitHub/Slack are persistence aids, not guaranteed automatic synchronization to every chat. ChatGPT custom instructions should be pasted into Settings by the user; this session did not directly change the settings UI.
+- ChatGPT Free/Go custom-instruction limit: 1,500 characters. Canonical prompt is 887 characters by JavaScript string length.
+- GitHub/Slack are persistence aids, not guaranteed automatic synchronization to every chat. Custom Instructions must be pasted into Settings by the user; this session did not directly change the Settings UI.
