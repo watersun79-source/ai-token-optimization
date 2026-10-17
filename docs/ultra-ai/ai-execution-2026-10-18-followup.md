@@ -88,3 +88,10 @@
 - 한계: 첫 테스트는 CODE 단계 안의 JavaScript `Promise.all` 동시성만 검증함. Activepieces 엔진 수준의 두 AI 액션 병렬 실행, 실제 Gemini/Claude 응답, 무료 사용 가능성, 운영 트리거에서의 동작은 증명하지 않음. 두 테스트 모두 합성 데이터만 사용했으며 운영 플로우를 실행하거나 게시하지 않음.
 - 비용/변경: 생성 API 0회, 유료 API 0회, 구매/업그레이드 0건. `main`, 운영 플로우, 기존 정각 자동화, 연결 및 비밀값 변경 0건.
 - 다음 목표: mock 초안의 테스트 입력/출력 계약을 계속 확인하고, Activepieces의 실제 분기 실행 기능이 운영을 건드리지 않는 별도 비운영 구조로 검증 가능한지 조사한다. Gemini/Claude 실제 무료 웹앱 응답과 과거 Flow ID 불일치는 여전히 미해결.
+
+
+## 공식 문서 조사 — 병렬 분기 구현 방식
+- Activepieces 공식 AI Router 문서(https://www.activepieces.com/docs/flows/ai-router)는 기본 설정에서 정확히 한 경로만 실행하고, `Match = Every route that applies`일 때만 여러 적용 경로를 실행한다고 설명함. 다만 이는 AI Router이며 라우팅 모델 동작/요금 검증이 필요하므로 무료-first 조건 아래 테스트하지 않음.
+- Activepieces MCP 문서(https://www.activepieces.com/docs/mcp/tools)는 일반 ROUTER 단계 추가/브랜치 구성 기능을 설명하지만, 이 문서만으로 일반 Router가 병렬 fan-out을 수행한다고 증명되지는 않음. 따라서 기존 AI 3AI 플로우에 일반 Router를 끼워 넣어 병렬 실행을 보장한다고 주장하지 않음.
+- Sub Flows 도구 메타데이터는 Call Flow 대상이 게시·활성화되어야 하고 Wait for Response를 켜면 호출 결과를 기다린다고 명시함. 비운영 테스트에서도 이를 사용하려면 하위 플로우 게시/활성화가 필요할 수 있어, 현재의 “운영 플로우 보호/초안 비활성 유지” 조건과 충돌할 가능성이 있으므로 진행하지 않음.
+- 결론: 모의 CODE 단계의 Promise.all은 검증됐지만, Activepieces 엔진 수준의 무료·안전한 병렬 fan-out 및 join 방식은 아직 미검증. 다음 조사 대상은 공식 BARRIER/Waitpoints 지원과 Cloud에서 사용할 수 있는 안전한 구성 경로다. 기존 플로우·자동화는 그대로 유지함.
