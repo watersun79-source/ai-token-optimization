@@ -11,8 +11,8 @@ Provider connection audit: https://github.com/watersun79-source/ai-token-optimiz
 Official capability review: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/official-capabilities-review-2026-10-17.md
 Memory optimization progress: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/memory-optimization-progress-2026-10-17.md
 Activepieces concurrency/BARRIER audit: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/activepieces-concurrency-barrier-audit-2026-10-17.md
-Canonical custom instructions (992 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md
-Duplicate display copy (992-character prompt): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
+Canonical custom instructions (1010 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md
+Duplicate display copy (1010-character prompt): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 
 ## Operating contract
 - ULTRA AI loop: ANALYZE → CHECK → OPTIMIZE → EXECUTE → VERIFY → DEBUG → AUTO-FIX → RE-VERIFY → REPORT → NEXT GOAL.
@@ -37,7 +37,7 @@ Duplicate display copy (992-character prompt): https://github.com/watersun79-sou
 - Provider audit: Google Gemini read-only List Models succeeded once; billing tier unknown. Secondary Google Gemini api and Anthropic Claude connections failed read-only model-list authentication with HTTP 401 invalid key. No generation call made.
 - Max Concurrent Jobs is project-wide; do not set it to 1 in the shared project because it could affect the five protected production flows.
 - Unresolved: atomic unique/upsert/race safety in Tables; behavior beyond 501 records; hosted Cloud custom piece availability for BARRIER; Claude credential repair; Gemini free-tier/billing confirmation.
-- Current optimization: canonical prompt is 1108 characters; display copy was synchronized in this run. ChatGPT Settings UI has not been modified by this workflow; do not claim otherwise.
+- Current optimization (2026-10-17): canonical prompt and display copy updated to 1010-character instruction body (within 1,500-character limit); both files read back and confirmed to include GitHub+Slack as first priority and free Gemini/Claude consumer apps as second priority. ChatGPT Settings UI has not been modified by this workflow; user must paste the prompt into Settings to apply it.
 - Latest optimization task: Gemini/Claude generation calls 0; paid API calls 0; production flows and hourly automation unchanged.
 - Official Activepieces review: BARRIER exists at the engine/piece API level; custom/private piece management is documented as paid at platform level. The public Tables action list does not establish atomic upsert/unique-key behavior. Table product page states up to 10,000 rows. See the concurrency/BARRIER audit.
 
@@ -74,3 +74,10 @@ Duplicate display copy (992-character prompt): https://github.com/watersun79-sou
 - Duplicate instruction copy: docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 - Memory loop protocol: docs/ultra-ai/ULTRA-AI-memory-protocol.md
 - Operating rule: web search each task; attempt Gemini/Claude free access; GitHub is canonical memory, Slack C0C9649RQAZ is progress/error log; verify free/cost conditions before API calls; protect production flows, hourly automation and main.
+
+
+## User authorization update (2026-10-17)
+- User authorized changes and modifications for ULTRA AI. Execute permitted repository/document improvements directly and verify by read-back.
+- Authorization does not override the standing safeguards: free-first; no paid API calls, purchases or upgrades; no secrets in logs; protect the enabled hourly Asia/Seoul automation, five production Activepieces flows and main branch; do not claim inaccessible tools or models were used.
+- Priority order: (1) GitHub + Slack persistence and optimization of ChatGPT memory; (2) Gemini + Claude collaboration via free consumer apps. If a paid route is presented, do not call paid APIs; try the consumer app free route and report any browser/login blocker accurately.
+- Latest custom-instruction body: 1010 JavaScript characters, verified in both canonical and display-copy files. Settings UI still requires the user to paste/save it.
