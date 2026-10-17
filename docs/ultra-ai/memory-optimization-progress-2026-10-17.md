@@ -33,9 +33,16 @@ Custom Instructions apply across chats when enabled, but GitHub/Slack history is
 
 ## This run's continuation (2026-10-17)
 - Re-read canonical prompt, protocol, index, recent Slack messages, and official OpenAI/Gemini/Claude web documentation.
-- Canonical prompt verified as 1108 JavaScript characters, within the 1,500-character limit. The previous display copy/index/protocol had stale 987-character references; this continuation synchronizes them to the current canonical version.
+- Canonical prompt verified as 1108 JavaScript characters, within the 1,500-character limit. The previous display copy/index/protocol had stale 992-character references; this continuation synchronizes them to the current canonical version.
 - Internet sources: OpenAI Custom Instructions FAQ; Google Gemini Apps limits; Anthropic Claude plan information. No Gemini or Claude generation calls were made because the browser connector has no originating browser context and API free/cost status is unresolved.
 - Costs: paid API calls 0; purchases/upgrades 0; production-flow edits 0; hourly automation edits 0.
+
+## Continued optimization (2026-10-17, latest pass)
+- Revised canonical prompt to explicitly attempt actual free-web-app use of Gemini and Claude on every task and require GitHub + Slack retrieval at task start and write/read-back at task end.
+- Canonical/display prompt exact body: 992 JavaScript characters, <= 1,500; canonical and display copy synced.
+- GitHub protocol, memory index, and this report updated to reflect the current prompt revision.
+- Internet: OpenAI official Custom Instructions FAQ, Google Gemini Apps limits, and Anthropic Claude plan info checked. Gemini/Claude generation calls 0 due no connected-browser context and unresolved API free/billing status; paid API calls 0.
+- Production flows changed: 0; hourly automation changed: 0; purchases/upgrades: 0.
 
 ## Remaining blockers / next goal
 1. User must paste the prompt into ChatGPT Settings to activate it globally.
