@@ -149,3 +149,24 @@ All three runs executed the embedded 8-case contract suite successfully and repo
 - Safe implementation paths to evaluate next: (A) a purpose-built trusted server-side Activepieces piece/action that creates two distinct waitpoints, dispatches both child runs before awaiting either, and correlates each callback to its own waitpoint; (B) a durable result-table/barrier design with idempotency keys, child completion writes, parent polling/deadline, and atomic finalization. Option B requires careful persistence/race testing and cannot be approximated by arbitrary fixed delays. Do not publish or enable either design until it has isolated test coverage.
 - Upstream developer search also surfaced issue #13141 describing stale/retry callbacks cross-wiring results in multi-child waitpoint use. This reinforces the need to test unique waitpoint/run correlation and retry handling, not just elapsed-time overlap.
 - No new production changes were made. The engine-level fan-out/join remains open; evidence currently covers synthetic in-step concurrency and merge failure handling only.
+
+
+## Activepieces validation sweep (2026-10-18, read-only)
+Validated all 7 currently listed flows with the Activepieces validator. Results: 
+- `AI 3AI 협업`: valid, 7/7 steps, 0 invalid, 0 skipped.
+- `Slack`: valid, 2/2 steps, 0 invalid, 0 skipped.
+- `Gemini + Claude 협업 비서 (비용 확인 필요)`: valid, 4 valid / 1 intentionally skipped / 0 invalid.
+- `MOCK ONLY · Result Merge Harness`: valid, 2/2 steps.
+- `MOCK ONLY · Promise.all 병렬 합류 검증기`: valid, 2/2 steps.
+- `AI JSON 검증 테스트 전용`: valid, 3/3 steps.
+- `TEST ONLY · JSON 출력 검증기`: valid, 2/2 steps.
+Validation is structural/configuration validation only; it does not prove live concurrency or run any AI provider calls. No flows were edited, enabled, or published during this sweep. The three enabled/published production flows remain in their prior state; all four test flows remain disabled and unpublished.
+
+## Acceptance gates before claiming completion
+1. Two real child runs must be dispatched before waiting on either result (not Promise.all over synthetic local functions and not sequential Call Flow steps).
+2. Each child has a distinct run ID and distinct waitpoint/correlation ID; deliberately reverse completion order and verify outputs cannot cross-wire.
+3. Parent remains waiting until both child responses are terminal; verify correct aggregation on success and explicit partial/error output on one child failure.
+4. Inject duplicate and delayed retry callbacks; confirm idempotency and that stale callbacks cannot satisfy another child's waitpoint.
+5. Enforce deadline/timeout and cancellation behavior; prove no stuck PAUSED parent or orphaned children.
+6. Repeat the engine-level E2E at least 3 times and inspect actual parent/child run records, timing intervals, statuses, and returned payloads.
+7. Only after all gates pass may a separate production rollout be considered; this current work did not change production.
