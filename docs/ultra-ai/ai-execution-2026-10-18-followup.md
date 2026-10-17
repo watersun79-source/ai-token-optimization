@@ -150,3 +150,10 @@
 - 현재 프로젝트 도구에서 확인 가능한 정보는 5개 연결이 ACTIVE이고 21개 Activepieces AI 모델이 표시된다는 사실뿐임. 실제 Free/Plus/Team 요금제, 잔여 credit balance, OpenAI/Gemini/Claude API 키의 무료 한도/청구 상태를 읽을 수 있는 도구는 확인되지 않음. 따라서 모델 목록이나 ACTIVE 상태를 무료라고 해석하지 않음.
 - 비용 확인을 위해 AI step, provider generation API, 기존 운영 플로우를 실행하지 않음. Gemini/Claude 실제 응답 0, 생성 API 0, 유료 API 0, 구매/업그레이드 0.
 - 다음 결정: 실제 provider 호출은 잔여 Activepieces credits와 외부 provider billing/quota를 읽기 전용으로 확인할 수 있을 때까지 보류. 그 전에는 synthetic mock만 사용.
+
+## Read-only billing/credits UI path found (2026-10-18)
+
+- Official Activepieces Usage guide: https://www.activepieces.com/docs/admin-guide/guides/usage. It states Platform Admin → Usage displays credits used and plan credit limit; project breakdown separates AI Usage, Runs Usage, and Total. Billing and Subscription provides the associated plan/billing breakdown.
+- This is the documented read-only route for checking remaining credits without executing any AI step. Current connected Activepieces tools do not expose the platform usage/billing endpoints, and Browser connector has no originating browser context, so the account's current plan/credit balance cannot be read from this session.
+- To proceed safely with actual provider tests, the only missing account-specific evidence is the current Usage page values (plan, credits used/limit or remaining, AI usage) plus provider-side billing/quota status for OpenAI, Gemini, and Claude. No API or AI step has been executed while these values remain unknown.
+- Next goal: obtain these read-only usage/billing values from the account UI or restore the connected browser context; then choose a test whose maximum cost is bounded by verified free quota. Production flows and the hourly schedule remain unchanged.
