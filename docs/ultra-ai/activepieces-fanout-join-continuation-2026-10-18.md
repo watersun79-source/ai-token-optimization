@@ -106,3 +106,9 @@ A narrow, production-isolated proof should use the existing upstream E2E harness
 - Checked the available local runtime: Node.js and Git are present; Docker, Podman, and Bun executables are absent.
 - Attempted to query the public upstream repository with Git; outbound DNS/network is unavailable in this execution container. The GitHub connector can read/write the user's documentation repository but does not expose an Actions workflow dispatch operation in the available tool set.
 - Therefore, this environment cannot honestly run the Activepieces upstream E2E suite. Do not treat a newly written workflow or source-only test sketch as a passing runtime result. The documented candidate design is a plan, not a completed test.
+
+
+## Follow-up service/API feasibility check (2026-10-18)
+- Inspected the pinned `flow-run-service.ts` method contract. `flowRunService.start()` creates/queues a run with optional `parentRunId` and `failParentOnFailure`, then returns the newly created run record. It is not a synchronous helper that waits for a completed child response. That means a test orchestrator using the service alone must separately poll/query run completion and join results; simply awaiting `start()` would be a false positive.
+- Rechecked the user's Activepieces Cloud flow inventory. The same three published production flows remain ENABLED; all four test/mock flows remain DISABLED and unpublished. No flow was edited, enabled, disabled, or run during this pass.
+- The intended proof still requires upstream E2E worker execution and run-row assertions. This session has no Bun/Docker runtime and no Actions dispatch capability, so no actual engine test was executed. No paid AI API calls were made.
