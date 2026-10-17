@@ -29,13 +29,13 @@ Duplicate display copy (1010-character prompt): https://github.com/watersun79-so
 
 ## Current state (verified 2026-10-17)
 - Existing automation AI enabled; schedule unchanged: hourly on the hour, Asia/Seoul.
-- Five protected production Activepieces flows remain ENABLED/published; not edited or run.
+- Latest read-only Activepieces inventory (2026-10-17 15:04 KST): 3 flows are ENABLED/published (`AI 3AI 협업`, `Slack`, `Gemini + Claude 협업 비서 (비용 확인 필요)`). Historical notes say 5; discrepancy unresolved. No flow status was changed.
 - Mock-only coordinator draft EoQdyZftEyejxh4P85K5S is unpublished/disabled; latest validation 21/21 valid, 0 invalid, two informational empty-router fallback notes.
 - Sample tests cover MERGE_READY, MERGE_CONFLICT, PROCESSED archival, TIMED_OUT handling, empty-table behavior and late-arrival recovery.
 - Find Records volume tests: 101→101, 201→201, 501→501 (run U1Hqc2j98hqZuYEb3zNZf). All TESTING/sample data; all inserted rows deleted and follow-up searches returned 0.
 - Final table counts: temporary registry 0 rows; temporary coordinator input 0 rows; prior mock results table 14 rows.
 - Provider audit: Google Gemini read-only List Models succeeded once; billing tier unknown. Secondary Google Gemini api and Anthropic Claude connections failed read-only model-list authentication with HTTP 401 invalid key. No generation call made.
-- Max Concurrent Jobs is project-wide; do not set it to 1 in the shared project because it could affect the five protected production flows.
+- Max Concurrent Jobs is project-wide; do not set it to 1 in the shared project because it could affect the protected production flows.
 - Unresolved: atomic unique/upsert/race safety in Tables; behavior beyond 501 records; hosted Cloud custom piece availability for BARRIER; Claude credential repair; Gemini free-tier/billing confirmation.
 - Current optimization (2026-10-17): canonical prompt and display copy updated to 1010-character instruction body (within 1,500-character limit); both files read back and confirmed to include GitHub+Slack as first priority and free Gemini/Claude consumer apps as second priority. ChatGPT Settings UI has not been modified by this workflow; user must paste the prompt into Settings to apply it.
 - Latest optimization task: Gemini/Claude generation calls 0; paid API calls 0; production flows and hourly automation unchanged.
@@ -113,3 +113,9 @@ Duplicate display copy (1010-character prompt): https://github.com/watersun79-so
 ## Production flow inventory discrepancy — 2026-10-17 15:02 KST
 - Current Activepieces enabled-only query returned 3 published flows: `AI 3AI 협업` (kt2N9yCVA3dLkFiNPSMsH), `Slack` (vtRwEYmcwDTunBZut265G), `Gemini + Claude 협업 비서 (비용 확인 필요)` (drNhxMhmCo3A0rKV0OhIZ).
 - Earlier memory records describe 5 production flows as enabled. This mismatch is unresolved. No flows were changed in this run. Preserve current states and investigate the discrepancy before making any modifications.
+
+
+## Priority execution update — 2026-10-17 15:06 KST
+- Priority 1 (GitHub + Slack persistence): protocol, index, recent report, and Slack channel were read first. Current enabled-flow inventory rechecked: exactly 3 ENABLED/published flows, plus 26 DISABLED flows. This contradicts historical notes that say 5 enabled; do not infer which flows should be enabled and do not change any status until historical IDs are reconciled.
+- Existing automation `AI` remains enabled with the same hourly-on-the-hour Asia/Seoul rule; no schedule change.
+- Gemini/Claude free consumer-app collaboration remains blocked in this execution: no connected browser/app session available. Generation calls 0; paid API calls 0. Provider credentials/billing were not touched.
