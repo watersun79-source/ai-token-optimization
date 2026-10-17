@@ -162,3 +162,15 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Activepieces project-context tool `ap_set_project_context` is absent from the current tool registry; additional project-level inspection deferred rather than attempting unsafe changes.
 - Generation API calls 0; paid API calls 0; purchases/upgrades 0; production flow, hourly automation, main branch, and secrets unchanged.
 - Next: restore browser context and project-context tool, then verify Gemini/Claude free web responses and continue read-only historical Flow ID investigation.
+
+
+## Latest execution — 2026-10-18 06:24 KST
+- Report: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ai-execution-2026-10-18-0624.md
+- Read-back checks: protocol, index, latest progress report, previous report, and Slack channel C0C9649RQAZ read at task start.
+- Current Activepieces connector reports 7 flows (3 enabled/published, 4 disabled/unpublished); historical index says 29 total (3 enabled, 26 disabled). Scope mismatch remains unresolved; no flow status changes. Historical IDs hgPVOZQYdFTezhoZ6wj5j and yRqt1nbG4ZqiIkDX72vhN have 0 production runs in current connector view, which does not prove their deletion/state.
+- AI 3AI flow structure: 7/7 valid/configured; production runs 0. Gemini+Claude flow: 4 configured steps, 1 skipped; historical successful production run on 2026-10-15 exists, but cost/free status is unknown. No AI generation called in this run.
+- Canonical custom-instruction body and display-copy body match after removing their metadata/Markdown wrapper (1053 characters including the trailing newline).
+- Browser list_tabs failed: “Browser access requires the originating browser context”; Gemini/Claude consumer-web responses 0 this run.
+- AI generation API 0, paid API 0, purchases/upgrades 0; production flows, hourly automation, and main branch unchanged.
+- Official sources: Activepieces MCP tools https://www.activepieces.com/docs/mcp/tools ; OpenAI Custom Instructions https://help.openai.com/en/articles/8096356-chatgpt-custom-instructions ; OpenAI Memory https://help.openai.com/en/articles/8590148-memory-in-chatgpt.
+- Next: restore project-context tool visibility and originating browser context; continue historical flow reconciliation read-only.
