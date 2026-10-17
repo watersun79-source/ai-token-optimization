@@ -186,3 +186,11 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Browser connector still has no originating browser context; Gemini/Claude consumer-web-app replies unavailable. Generation API calls 0; paid API calls 0; purchases/upgrades 0.
 - Latest Slack update was posted and confirmed by reading channel `C0C9649RQAZ`: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792275374304299
 - Next goal: find a read-only path to verify Activepieces remaining credits and external provider billing/quota, then choose a genuinely free isolated engine-level fan-out/join test. No production flow, schedule, connection, secret, or main-branch changes.
+
+## Latest blocker update — 2026-10-18 07:17 KST
+
+- Official read-only billing path: Activepieces Platform Admin → Usage shows credits used/limit and project AI/Runs/Total usage; Billing and Subscription shows plan/billing. Documentation: https://www.activepieces.com/docs/admin-guide/guides/usage
+- Current connected tools cannot read this account-level page and Browser connector has no originating browser context. Actual plan, remaining credits, and OpenAI/Gemini/Claude provider quota/billing remain unknown; do not execute any AI generation until verified.
+- Latest detailed report now includes this path and was read-back verified: commit `7fae0a7d56e9acf419c3d22200cef6edd23cd083`, blob `968ea2c1c7ecee362f1ba3f5853f8bf90eee3822`.
+- Slack status was posted and read-back verified: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792275413166969
+- Production flows and hourly automation remain unchanged; no AI generation API calls or paid API calls made.
