@@ -101,3 +101,10 @@ Duplicate display copy (1010-character prompt): https://github.com/watersun79-so
 - Display copy: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 - iOS ChatGPT Settings was not changed. User must paste/save the canonical prompt manually.
 - Priority: (1) GitHub + Slack memory persistence; (2) Gemini + Claude free consumer apps. Never call paid API or upgrade. Preserve hourly schedule and production flows.
+
+
+## Latest verified execution
+- Run: ULTRA-2026-10-17-1502-KST — https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/hourly-run-2026-10-17-1502.md
+- Custom instruction canonical and display copy read back and compared: both 1010 JavaScript characters; exact body match; both begin `ULTRA AI — ALWAYS ON`.
+- Slack summary was posted and read back in channel C0C9649RQAZ: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792217008539979
+- No paid API calls, purchases, upgrades, Activepieces changes, or schedule changes.
