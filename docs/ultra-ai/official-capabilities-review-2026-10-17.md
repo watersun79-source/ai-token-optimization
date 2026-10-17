@@ -18,9 +18,16 @@
 - Official Tables flow docs: https://www.activepieces.com/docs/tables/in-flows
 - Official Find Records implementation: https://github.com/activepieces/activepieces/blob/main/packages/pieces/core/tables/src/lib/actions/find-records.ts
 - Find Records has an optional Limit field whose description says an empty limit returns all records. The implementation sends limit ?? 999999999 and cursor undefined to the API, then returns response.body.data without iterating a next cursor.
-- Sample volume tests in the Cloud project: 101 rows returned outputCount=101 (run 23OiaT74UbUlYEwgMG2pC); 201 rows returned outputCount=201 (run 67gFJzZanE68mLswLpMQn); 501 rows returned outputCount=501 (run U1Hqc2j98hqZuYEb3zNZf). Each test succeeded in TESTING. All temporary rows were deleted and follow-up searches returned 0. Full details: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/find-records-volume-test-501-2026-10-17.md
-- These results verify at least 501 rows in the current Cloud project; larger volumes are not yet tested.
+- Sample volume tests in the Cloud project: 101 rows returned outputCount=101 (run 23OiaT74UbUlYEwgMG2pC); 201 rows returned outputCount=201 (run 67gFJzZanE68mLswLpMQn); 501 rows returned outputCount=501 (run U1Hqc2j98hqZuYEb3zNZf). Each succeeded in TESTING. All temporary rows were deleted and follow-up searches returned 0. Full 501-row details: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/find-records-volume-test-501-2026-10-17.md
+- These results verify at least 501 rows in the current Cloud project; larger volumes are not tested.
 - Tables feature docs describe uniqueness on (projectId, fieldId, recordId), not a unique constraint on arbitrary runId. Atomic uniqueness for registry runId is not established; concurrent first-writer race remains unproven.
+
+## Concurrency and queueing
+- Official guide: https://www.activepieces.com/docs/admin-guide/guides/manage-concurrency
+- Activepieces documents Max Concurrent Jobs as a per-project setting. When reached, new runs are queued and retried until a slot opens.
+- This is not a per-flow concurrency setting in the documented UI. Setting it to 1 in the existing shared project could serialize all flows, including five protected production flows, so do not change it as a mock-only fix.
+- The connected Activepieces tool catalog does not expose a project concurrency-settings action. No setting was changed.
+- If a dedicated mock project becomes available and can be safely configured, project-level concurrency 1 may be considered there. Do not create/upgrade a paid project without confirming free availability.
 
 ## Waitpoints / BARRIER
 - Official architecture docs: https://www.activepieces.com/docs/install/architecture/waitpoints
