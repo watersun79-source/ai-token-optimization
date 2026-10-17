@@ -224,3 +224,19 @@ Exact timing evidence:
 - The enabled production flow `AI 3AI 협업` remains sequential (ChatGPT → Gemini → Claude → integration). It was not edited, published, enabled/disabled, or run.
 - The test-only child worker is now DISABLED. Both parent test flows remain DISABLED/unpublished. The hourly `AI` automation was not changed or duplicated.
 - Before production rollout, still require: free quota/cost confirmation for Gemini/Claude; a draft implementation that maps real provider outputs into this barrier; explicit retry/idempotency and cancellation semantics for provider errors; and a separately approved rollout after a no-billing verification strategy exists. Do not claim the production multi-AI workflow is complete yet.
+
+
+## Free-first provider/cost audit (2026-10-18)
+Read-only configuration inspection of the enabled production flow `AI 3AI 협업` found:
+- OpenAI draft and final integration use the project's `OpenAI` connection and model `gpt-5.6-luna`. These are direct provider calls; no test was run because they may incur OpenAI API charges.
+- Gemini review uses the `Google Gemini` connection and model `gemini-3.5-flash-lite`. Google's current official pricing page lists a free tier for this model, but the available Activepieces connector does not expose this project's remaining Google quota or billing state. Model-level free-tier availability is not proof that this particular connection is currently within free quota.
+- Claude review uses the `@activepieces/piece-ai / askAi` action with model `anthropic/claude-sonnet-4.6` and provider `activepieces`, not a separately listed Anthropic project connection. Activepieces' official pricing says its Cloud Free plan includes 1,000 credits/month and AI steps consume additional credits based on model tier; the current tool catalog does not expose the project's remaining credit balance or exact tier for this step.
+- Anthropic's official API help says Claude API and Workbench usage use prepaid credits; the current production step is routed through Activepieces' provider, so do not assume the user's Claude web free plan makes this automation step free.
+- Consequently, no provider was invoked. Before changing production, inspect the Activepieces Usage/Billing screen and Google AI Studio/Cloud quota, then establish a hard cost cap. Do not run OpenAI or Claude steps merely to test concurrency. The test-only join harness has already been verified without AI provider calls.
+
+Official references:
+- Gemini model pricing/free-tier table: https://ai.google.dev/gemini-api/docs/pricing
+- Gemini API billing tiers: https://ai.google.dev/gemini-api/docs/billing
+- Activepieces pricing and AI-credit rules: https://www.activepieces.com/pricing
+- Activepieces AI Providers setup: https://www.activepieces.com/docs/admin-guide/guides/setup-ai-providers
+- Anthropic Claude API billing: https://support.claude.com/en/articles/8977456-how-do-i-pay-for-my-claude-api-usage
