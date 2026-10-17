@@ -11,8 +11,8 @@ Provider connection audit: https://github.com/watersun79-source/ai-token-optimiz
 Official capability review: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/official-capabilities-review-2026-10-17.md
 Memory optimization progress: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/memory-optimization-progress-2026-10-17.md
 Activepieces concurrency/BARRIER audit: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/activepieces-concurrency-barrier-audit-2026-10-17.md
-Canonical custom instructions (987 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md
-Duplicate display copy (987-character prompt): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
+Canonical custom instructions (1108 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md
+Duplicate display copy (1108-character prompt): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 
 ## Operating contract
 - ULTRA AI loop: ANALYZE → CHECK → OPTIMIZE → EXECUTE → VERIFY → DEBUG → AUTO-FIX → RE-VERIFY → REPORT → NEXT GOAL.
@@ -37,9 +37,14 @@ Duplicate display copy (987-character prompt): https://github.com/watersun79-sou
 - Provider audit: Google Gemini read-only List Models succeeded once; billing tier unknown. Secondary Google Gemini api and Anthropic Claude connections failed read-only model-list authentication with HTTP 401 invalid key. No generation call made.
 - Max Concurrent Jobs is project-wide; do not set it to 1 in the shared project because it could affect the five protected production flows.
 - Unresolved: atomic unique/upsert/race safety in Tables; behavior beyond 501 records; hosted Cloud custom piece availability for BARRIER; Claude credential repair; Gemini free-tier/billing confirmation.
-- Current optimization: canonical prompt and display copy synchronized to 987 characters. GitHub updates verified for both. ChatGPT Settings UI has not been modified; user must paste the prompt.
+- Current optimization: canonical prompt is 1108 characters; display copy was synchronized in this run. ChatGPT Settings UI has not been modified by this workflow; do not claim otherwise.
 - Latest optimization task: Gemini/Claude generation calls 0; paid API calls 0; production flows and hourly automation unchanged.
 - Official Activepieces review: BARRIER exists at the engine/piece API level; custom/private piece management is documented as paid at platform level. The public Tables action list does not establish atomic upsert/unique-key behavior. Table product page states up to 10,000 rows. See the concurrency/BARRIER audit.
+
+## Latest cross-chat memory check (2026-10-17)
+- Internet: OpenAI official Custom Instructions FAQ confirms instructions apply across chats including existing conversations when enabled, and Go/Free have a 1,500-character limit. Chat history/memory may not retain every detail; external GitHub/Slack records require explicit retrieval.
+- Gemini/Claude: consumer-web-app generation was not performed this turn because the connected browser context is unavailable. Existing provider audit still shows Gemini free/billing status unknown and prior secondary Gemini/Claude API diagnostics HTTP 401. Generation calls 0; paid API calls 0.
+- Slack recent history read successfully before this update; next action is post a concise sync/verification report after read-back.
 
 ## Official references
 - ChatGPT Custom Instructions: https://help.openai.com/en/articles/8096356-chatgpt-custom-instructions
@@ -55,5 +60,5 @@ Duplicate display copy (987-character prompt): https://github.com/watersun79-sou
 - Activepieces Waitpoints: https://www.activepieces.com/docs/install/architecture/waitpoints
 
 ## Notes
-- ChatGPT Free/Go custom-instruction limit: 1,500 characters. Canonical prompt is 987 characters by JavaScript string length.
+- ChatGPT Free/Go custom-instruction limit: 1,500 characters. Canonical prompt is 1108 characters by JavaScript string length.
 - GitHub/Slack are persistence aids, not guaranteed automatic synchronization to every chat. Custom Instructions must be pasted into Settings by the user; this session did not directly change the Settings UI.
