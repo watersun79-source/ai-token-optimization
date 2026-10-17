@@ -37,7 +37,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Provider audit: Google Gemini read-only List Models succeeded once; billing tier unknown. Secondary Google Gemini api and Anthropic Claude connections failed read-only model-list authentication with HTTP 401 invalid key. No generation call made.
 - Max Concurrent Jobs is project-wide; do not set it to 1 in the shared project because it could affect the protected production flows.
 - Unresolved: atomic unique/upsert/race safety in Tables; behavior beyond 501 records; hosted Cloud custom piece availability for BARRIER; Claude credential repair; Gemini free-tier/billing confirmation.
-- Current optimization (2026-10-17): canonical prompt and display copy updated to 1010-character instruction body (within 1,500-character limit); both files read back and confirmed to include GitHub+Slack as first priority and free Gemini/Claude consumer apps as second priority. ChatGPT Settings UI has not been modified by this workflow; user must paste the prompt into Settings to apply it.
+- Current optimization (2026-10-17): canonical prompt and display copy updated to 1053-character instruction body (within 1,500-character limit); both files read back and confirmed to include GitHub+Slack as first priority and free Gemini/Claude consumer apps as second priority. ChatGPT Settings UI has not been modified by this workflow; user must paste the prompt into Settings to apply it.
 - Latest optimization task: Gemini/Claude generation calls 0; paid API calls 0; production flows and hourly automation unchanged.
 - Official Activepieces review: BARRIER exists at the engine/piece API level; custom/private piece management is documented as paid at platform level. The public Tables action list does not establish atomic upsert/unique-key behavior. Table product page states up to 10,000 rows. See the concurrency/BARRIER audit.
 
@@ -126,3 +126,6 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Canonical and display-copy prompt body now 1053 JavaScript characters (within 1500); read-back comparison pending until the next verification step.
 - Existing hourly automation prompt updated to carry forward the exact unresolved inventory discrepancy and next steps; schedule and enabled state unchanged.
 - Gemini/Claude still not invoked in this run: connected browser requires originating browser context; no generation or paid API calls.
+
+- Latest execution report (2026-10-17 15:22 KST): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/hourly-run-2026-10-17-1522.md
+- Latest Slack verification: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792218123952119
