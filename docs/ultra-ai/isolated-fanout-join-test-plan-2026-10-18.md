@@ -125,3 +125,16 @@ The current Webhook piece schema gives a more concrete isolated test candidate:
 ## Shared-table join caveat
 
 The current Tables piece schema exposes Create Record(s), Find Records and Update Record, but no documented atomic upsert/unique-key operation in the exposed action list. Create Record(s) is append-only and not idempotent. Therefore a shared-table requestId join must not be treated as race-safe or idempotent without separate proof; prefer the synchronous webhook response experiment above for the first isolated engine test.
+
+
+## SOURCE REVIEW — 2026-10-18: Local webhook test has a network-boundary prerequisite
+
+Reviewed the official Activepieces network-security documentation at https://github.com/activepieces/activepieces/blob/860ce5b87c43856549586ee7b44007ba0937efdf/docs/install/architecture/network-security.mdx.
+
+- The documented default for user-code egress is `AP_NETWORK_MODE=UNRESTRICTED`; `STRICT` blocks loopback and private addresses from Code-step user code unless explicitly allow-listed.
+- This does **not** establish the setting used by the user's hosted Cloud project, nor does it establish that a local Code sandbox can reach a local webhook endpoint. Do not infer either from the documentation.
+- The proposed local Code-step → `/sync` webhook test has a hard prerequisite: inspect the isolated self-hosted instance's own network mode and verify the endpoint path from that instance's configuration before attempting a request. Do not weaken network security or add an allow-list entry merely to make the test pass.
+- If the test requires changing network security settings, exposing a public tunnel, or using production Cloud endpoints, stop and report the blocker rather than proceeding.
+- No network request, flow publish, configuration change, or provider API call was performed as part of this source review.
+
+This narrows the next action: the local engine environment must exist first, and its network mode/endpoint reachability must be confirmed before running the synthetic test. Docker/Podman is still unavailable in the current execution environment, so the engine-level test remains unexecuted.
