@@ -80,3 +80,11 @@ Do not adapt the production AI workflow until all of these are true:
 - Existing hourly automation: enabled and unchanged.
 - Gemini/Claude consumer-app responses in this turn: 0.
 - AI generation API calls: 0; paid API calls: 0; purchases/upgrades: 0.
+
+## CORRECTION — 2026-10-18: CSV dispatcher is fire-and-forget
+
+A source review of the official Activepieces pull request https://github.com/activepieces/activepieces/pull/14281 found that `Stream CSV to Subflows` dispatches bounded-concurrency child runs but explicitly has **no fan-in**. Therefore it cannot prove that the parent waits for child completion. Any earlier wording in this document that implied the CSV action itself joins child runs is superseded by this correction.
+
+The corrected join-test candidate is a parent Code step in a separate local instance that starts two local mock child-flow webhook requests concurrently with `Promise.all` and waits for both responses. This remains a test design only: the local webhook URL shape and worker-to-app network path must be verified, and no actual run has been performed. If the local Code sandbox cannot reach the local child endpoints, stop and record the failure; never use production endpoints as a fallback.
+
+Verified facts remain: Router branches are sequential; no AI/provider calls were made; the current execution environment has no Docker/Podman; production Cloud flows and the hourly automation remain unchanged.
