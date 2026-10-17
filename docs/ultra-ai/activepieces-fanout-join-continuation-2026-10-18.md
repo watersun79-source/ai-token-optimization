@@ -92,3 +92,17 @@ The pinned `execute-flow-e2e.test.ts` was queried for the exact test bodies:
 - The E2E file itself states prerequisites: the engine must be built (including `cache/v7/common/main.js`), Bun must be available for piece installation, and the in-memory Redis test environment is started automatically. The API package script is `npm run test-ce-command` / Vitest integration tests, but this environment has not executed it.
 
 This narrows the acceptance gap: no test in the inspected suite currently demonstrates two child flow runs dispatched by one parent, both child results correlated and joined, and parent completion only after both results. Next implementation must add exactly that E2E test and run it in a real upstream workspace/CI runner; source inspection alone is not runtime proof.
+
+
+## Candidate runtime proof design (2026-10-18, implementation planning)
+A narrow, production-isolated proof should use the existing upstream E2E harness and real worker/database, not Activepieces Cloud drafts and not Code-step localhost fetches:
+1. Create two separate enabled/published Callable Flow fixtures, each with a unique input token and a small controlled delay before Return Response. Keep the test entirely in the E2E fixture database.
+2. Add a test-only trusted piece action (or equivalent server-side test orchestrator) that dispatches both children through the supported synchronous webhook route using the upstream server HTTP client and starts both requests before awaiting either. Do not weaken Code sandbox network restrictions or allow-list loopback.
+3. Each child returns a distinct result containing its token and timestamps. Query the E2E database for the two distinct child flow-run rows and record their actual start/finish times. Capture the parent's step output and terminal finish time.
+4. Assert: exactly two child runs were created; tokens/results match their respective child; child intervals overlap; parent output contains both results; parent finish time is not earlier than either child finish time; errors/timeouts fail the test; repeat three times.
+5. Validate endpoint path, sync webhook timeout, child run correlation, and whether the trusted test piece can reach the local app through the test context before choosing the final implementation. The pinned E2E setup binds a local ephemeral port, but this environment cannot run Docker/Bun and has no direct GitHub checkout/Actions dispatch tool, so these runtime assumptions remain untested here.
+
+### Execution environment check
+- Checked the available local runtime: Node.js and Git are present; Docker, Podman, and Bun executables are absent.
+- Attempted to query the public upstream repository with Git; outbound DNS/network is unavailable in this execution container. The GitHub connector can read/write the user's documentation repository but does not expose an Actions workflow dispatch operation in the available tool set.
+- Therefore, this environment cannot honestly run the Activepieces upstream E2E suite. Do not treat a newly written workflow or source-only test sketch as a passing runtime result. The documented candidate design is a plan, not a completed test.
