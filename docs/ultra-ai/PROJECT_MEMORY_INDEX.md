@@ -5,6 +5,7 @@ Repository: https://github.com/watersun79-source/ai-token-optimization
 Working branch: ultra-ai/progress-2026-10-17
 Activepieces project: https://cloud.activepieces.com/projects/Fr9OAsxi4FbVSVLZkexYi/
 Coordinator log: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/scheduled-sequential-coordinator-tests-2026-10-17.md
+Volume test log: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/find-records-volume-test-501-2026-10-17.md
 Official capability review: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/official-capabilities-review-2026-10-17.md
 Custom instructions (859 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 
@@ -27,10 +28,10 @@ Custom instructions (859 characters): https://github.com/watersun79-source/ai-to
 - Mock-only coordinator draft: EoQdyZftEyejxh4P85K5S, unpublished/disabled; configured every 15 minutes but not running on an active schedule.
 - Latest validation: 21/21 steps valid, 0 invalid; two informational notes about intentionally empty router fallback branches. Mock solution folder: 3 flows, 0 connection/table errors.
 - Sample tests cover MERGE_READY, MERGE_CONFLICT, PROCESSED archival, TIMED_OUT handling, empty-table behavior and late-arrival recovery. Late-recovery sample run: Q68QOU6BW81R0qEGcZGmB; previous timeout run: qzDZAB9Wvleow6TOgPo7l.
-- Find Records volume tests: 101 synthetic rows returned 101 (run 23OiaT74UbUlYEwgMG2pC); 201 synthetic rows returned 201 (run 67gFJzZanE68mLswLpMQn). Both were TESTING/sample-data runs; all inserted rows were deleted and follow-up queries returned 0. A separate attempt to insert 501 rows was interrupted after 201 rows by the orchestration tool call budget; those 201 partial rows were immediately deleted and verified gone. No 501-row flow test ran.
-- Final table state: temporary registry 0 rows; temporary coordinator input 0 rows; prior mock results table remains at 14 rows.
+- Find Records volume tests: 101 rows → outputCount 101 (run 23OiaT74UbUlYEwgMG2pC); 201 rows → outputCount 201 (run 67gFJzZanE68mLswLpMQn); 501 rows → outputCount 501 (run U1Hqc2j98hqZuYEb3zNZf). All were Activepieces TESTING/sample-data runs. Every inserted row was deleted and follow-up search returned 0.
+- Final table counts: temporary registry 0 rows; temporary coordinator input 0 rows; prior mock results table 14 rows.
 - Actual Gemini/Claude/OpenAI API calls during these tests: 0.
-- Unresolved: atomic unique/upsert/race safety in Tables; behavior beyond 201 records; whether a custom piece can be installed in hosted Cloud to expose BARRIER.
+- Unresolved: atomic unique/upsert/race safety in Tables; behavior beyond 501 records; whether a custom piece can be installed in hosted Cloud to expose BARRIER.
 
 ## Provider and connector availability
 - Internet research tools, GitHub and Slack connectors available and used.
