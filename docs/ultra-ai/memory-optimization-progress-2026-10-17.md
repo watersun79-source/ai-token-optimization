@@ -48,3 +48,17 @@ Custom Instructions apply across chats when enabled, but GitHub/Slack history is
 1. User must paste the prompt into ChatGPT Settings to activate it globally.
 2. A connected browser context or working free provider integration is needed to actually use Gemini and Claude consumer apps in this workflow. Do not retry known invalid API credentials or call potentially billable APIs.
 3. Continue official documentation research and safe mock-only validation of Activepieces race prevention; keep production flows and the existing hourly automation unchanged.
+
+
+## 2026-10-17 — Gemini + Claude independent/cross-review draft
+- Created new Activepieces draft AI · Gemini + Claude 독립·교차 검토 (비용 확인 전 초안), flow ID 1MAbLTS7HS9LjDRqq9l4b: https://cloud.activepieces.com/projects/Fr9OAsxi4FbVSVLZkexYi/flows/1MAbLTS7HS9LjDRqq9l4b
+- Steps: Gemini first-pass review and Claude first-pass review receive the same request independently; Gemini then critiques Claude's first pass; Claude critiques Gemini's first pass; a code step packages all four results.
+- Validation passed: 6/6 steps valid, 0 issues. Flow structure was read back; status is DISABLED and published=false. No live flow test or AI generation was run; no paid API calls or credit spend; no publish/enable.
+- Provider verification: Gemini connection status ACTIVE and model options resolve, but free quota/billing remains unverified. Direct Claude connection returned 0 model options. The draft uses the existing Activepieces-managed Claude Sonnet provider, but its cost/credit status is unknown. Keep the draft untested until free/cost-safe access is confirmed.
+- Safety: current webhook has authType none in the unpublished draft only. Header Auth or another appropriate method must be configured before publication. Existing enabled production flows and the hourly Asia/Seoul automation were not changed.
+- Official docs checked: https://www.activepieces.com/docs/admin-guide/guides/setup-ai-providers ; https://ai.google.dev/gemini-api/docs/pricing?hl=ko ; https://platform.claude.com/docs/en/about-claude/pricing.
+
+## Next goal
+1. Confirm a genuinely free Gemini/Claude execution route and billing/credits without generating content. If impossible, use consumer web apps manually when accessible and keep automated flow disabled.
+2. Configure webhook authentication in the draft and validate without running AI calls.
+3. Only after explicit cost-safe confirmation, run one clearly labelled sample test; read back results and document cost/API call counts.
