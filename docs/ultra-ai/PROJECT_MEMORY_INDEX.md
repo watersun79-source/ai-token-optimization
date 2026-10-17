@@ -27,10 +27,10 @@ Custom instructions (859 characters): https://github.com/watersun79-source/ai-to
 - Mock-only coordinator draft: EoQdyZftEyejxh4P85K5S, unpublished/disabled; configured every 15 minutes but not running on an active schedule.
 - Latest validation: 21/21 steps valid, 0 invalid; two informational notes about intentionally empty router fallback branches. Mock solution folder: 3 flows, 0 connection/table errors.
 - Sample tests cover MERGE_READY, MERGE_CONFLICT, PROCESSED archival, TIMED_OUT handling, empty-table behavior and late-arrival recovery. Late-recovery sample run: Q68QOU6BW81R0qEGcZGmB; previous timeout run: qzDZAB9Wvleow6TOgPo7l.
-- 101 synthetic rows were inserted into the mock input table and queried with the read-only record-search tool (101 found). The flow Find Records step test also succeeded (23OiaT74UbUlYEwgMG2pC), but the oversized step output was truncated in the tool transcript, so exact count returned by that specific step remains unverified. All 101 synthetic rows were deleted and query confirmed 0 remain.
+- Pagination probe: 101 synthetic rows inserted, flow Find Records step test SUCCEEDED (23OiaT74UbUlYEwgMG2pC); detailed run fetch confirmed step_1 outputCount=101. Read-only record search also found 101. All 101 synthetic rows deleted; follow-up query confirmed 0 remain.
 - Temporary registry rows: 0; temporary coordinator input rows: 0; prior mock results table retains 14 rows.
 - Actual Gemini/Claude/OpenAI API calls during these tests: 0.
-- Unresolved: atomic unique/upsert/race safety in Tables; large-result cursor behavior in the flow piece; whether a custom piece can be installed in hosted Cloud to expose BARRIER.
+- Unresolved: atomic unique/upsert/race safety in Tables; behavior beyond 101 records not yet tested; whether a custom piece can be installed in hosted Cloud to expose BARRIER.
 
 ## Provider and connector availability
 - Internet research tools, GitHub and Slack connectors available and used.
