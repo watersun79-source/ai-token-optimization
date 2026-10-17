@@ -176,3 +176,12 @@ The connected Activepieces flow-structure tool was used read-only for the curren
 - No provider API calls, flow executions, flow status changes, or production edits were performed during this read-only inspection.
 
 Next safe decision gate: do not modify production until an isolated execution environment is available and provider billing/quotas are confirmed. First validate actual concurrent child-flow request/response behavior using synthetic payloads in a separate local instance; then design a separate draft-only production migration for review.
+
+
+## READ-ONLY VALIDATION — 2026-10-18
+
+After inspecting the two enabled AI collaboration flows, ran Activepieces validation only (not execution):
+- `AI 3AI 협업`: valid, 7/7 steps valid, 0 issues.
+- `Gemini + Claude 협업 비서 (비용 확인 필요)`: valid, 4 valid steps, 1 intentionally skipped step, 0 invalid steps, 0 issues.
+- Validation means the configured flow schema is accepted; it does not prove provider credentials/quotas, actual API cost, runtime success, or parallel execution.
+- No changes were made to either flow, and neither flow was executed.
