@@ -53,3 +53,11 @@ On iOS, paste it into Settings > Customize ChatGPT > Custom Instructions with cu
 - For important/AI tasks, read the GitHub memory index, protocol, latest progress and Slack channel C0C9649RQAZ before acting. At completion, write decisions, changed files/commit, test IDs/results, real AI usage, API/cost status, unresolved issues and next goal to both GitHub and Slack; read back to verify.
 - External records are not automatically injected into every ChatGPT chat. Re-read them in new and existing chats when the task needs continuity.
 - Preserve production Activepieces flows, hourly automation, and main branch; use a separate branch and mock tests.
+
+## Gemini + Claude dual independent review (2026-10-17)
+- For meaningful AI/project decisions, code, automation changes, troubleshooting, and important recommendations, obtain separate independent reviews from both Gemini and Claude when each is genuinely accessible through a free, cost-safe route.
+- Give each reviewer the same task, evidence, constraints, and acceptance criteria independently; do not show Gemini's conclusions to Claude or Claude's conclusions to Gemini before their first-pass reviews.
+- Compare both reviews against source evidence and tests. Produce a consensus list, disagreements, unsupported claims, risks, and a final decision. Do not treat majority agreement as proof.
+- If either model cannot be accessed, report which one was unavailable and why; do not fabricate a review or mark the dual-review step complete.
+- Free-first remains mandatory: do not call paid/uncertain APIs, spend credits, or change billing. Existing production flows and hourly automation remain protected. Implement dual-review orchestration only in a disabled/unpublished draft and validate with sample data before any production rollout.
+- For trivial low-risk conversational tasks, avoid unnecessary repeated model calls; dual review is the default for meaningful project work, not a reason to waste tokens on every small exchange.
