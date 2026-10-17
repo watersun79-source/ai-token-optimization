@@ -99,3 +99,15 @@ The Sub Flows schema exposes `Call Flow` with a `Wait for Response` option, but 
 The last three TESTING runs of the existing disabled/unpublished `MOCK ONLY · Promise.all 병렬 합류 검증기` passed synthetic in-code checks (run IDs: `RJdLgqGLJztcN0l8rQ41c`, `Bn6KY0PUmiu85EtdpS3h3`, `dEhaqSdQck9l095fH1CLU`). Each run recorded overlapping mock branch windows (~1.2 seconds), 10/10 join scenarios and 8/8 payload-contract cases. This proves only `Promise.all` concurrency and merge logic inside one Code step; it does **not** prove Activepieces engine-level subflow concurrency or a parent waiting for separate child runs.
 
 Current verified status: the isolated engine-level fan-out/join test is still blocked by the lack of Docker/Podman in this execution environment. Do not claim the engine-level test is complete. AI/provider calls 0; external network calls from the tested Code step 0; paid API calls 0; production flows and hourly automation unchanged.
+
+
+## SOURCE REVIEW — 2026-10-18: What Call Flow actually waits for
+
+Reviewed the official source at https://github.com/activepieces/activepieces/blob/860ce5b87c43856549586ee7b44007ba0937efdf/packages/pieces/core/subflows/src/lib/actions/call-flow.ts and https://github.com/activepieces/activepieces/blob/860ce5b87c43856549586ee7b44007ba0937efdf/packages/pieces/core/subflows/src/lib/actions/stream-csv-to-flow.ts.
+
+- `Call Flow` with `Wait for Response = true` creates a `WEBHOOK` waitpoint, registers the parent run to wait on it, and passes a callback URL to the child dispatch. The parent resumes when the child returns a response. This is a documented single-call request/response pattern.
+- `Stream CSV to Subflows` dispatches batches using `fanOutBatches` with `MAX_IN_FLIGHT = 5`, but calls `dispatchToSubflow` with `failParentOnFailure: false` and no callback URL or waitpoint. Its awaited loop concerns dispatching batches, not awaiting child result payloads. Do not use it as a parent-result join.
+- The Router engine source at https://github.com/activepieces/activepieces/blob/3d0b6ef9/packages/engine/src/lib/handler/router-executor.ts executes matching branch children in a `for` loop with `await flowExecutor.execute(...)`, so Router branches are sequential.
+- Therefore the built-in patterns confirmed so far are: sequential Router; one Call Flow with optional child-response wait; or bounded-concurrency fire-and-forget CSV dispatch. No built-in generic parallel multi-child fan-in was proven by these sources.
+
+Safe next design to investigate: two independently dispatched child flows write synthetic result records under a unique request ID; a parent-side wait/poll or callback aggregator verifies both results before integration. This is architecture only, not yet validated. Before implementing, verify whether the current Activepieces Cloud exposes an appropriate callback/wait mechanism and atomic/idempotent record operations. Do not change the live Cloud flows, publish drafts, or use provider APIs.
