@@ -58,3 +58,15 @@ A real test must execute two separate child-flow engine runs concurrently, captu
 - The fixture builds a real worker/engine test environment and a real Callable Flow → Code → Return Response child, plus a webhook parent using Call Flow with waitForResponse: true. It also demonstrates a webhook parent returning the child response.
 - This is a better implementation baseline than reverse-engineering public API bootstrapping. It is upstream's own test harness, but the inspected fixture is single-child; it does not prove concurrent fan-out/join.
 - Next engineering step: use this fixture pattern in an isolated test branch/harness and add two distinct child flows plus a parent dispatcher that launches both concurrently and waits for both. The assertion must inspect separate child run records/timestamps and the merged result; don't mark passing from Promise.all mock-only behavior. Do not modify Activepieces upstream or production Cloud flows.
+
+
+## Exact fan-out semantics confirmed from upstream source (2026-10-18, follow-up)
+Source read directly: https://github.com/activepieces/activepieces/blob/860ce5b87c43856549586ee7b44007ba0937efdf/packages/pieces/core/subflows/src/lib/actions/stream-csv-to-flow.ts and https://github.com/activepieces/activepieces/blob/860ce5b87c43856549586ee7b44007ba0937efdf/packages/pieces/core/subflows/src/lib/fan-out.ts
+- `Stream CSV to Subflows` uses `MAX_IN_FLIGHT = 5`, so it has bounded concurrent dispatch.
+- The action awaits `dispatchToSubflow` requests and returns `{ rowsProcessed, batchesDispatched }`; it does not wait for the child flow runs to finish or aggregate their response payloads. Its official architecture decision calls it fire-and-forget.
+- Therefore it is valid for concurrent dispatch, but it is not a fan-out + wait-for-all-results join primitive. Do not use it as evidence of joined child outputs.
+- The upstream E2E suite also has a separate test for concurrent independent flow-run executions, but that alone is not a parent/child fan-out-and-join test.
+
+## Design decision needed before claiming engine-level join
+The existing native primitives establish two different capabilities: (a) one Call Flow can wait for one child's Return Response, and (b) Stream CSV to Subflows can concurrently dispatch many child runs without waiting for their final outputs. They do not establish native parallel calls with all child results joined.
+A viable implementation must test an explicit orchestrator that concurrently invokes two synchronous child webhook endpoints and awaits both responses, or implement a custom piece that does the equivalent using supported server context. It must run inside an isolated E2E engine harness, not as a same-step Promise.all mock. Verify network policy, sync timeout, and parent/child run IDs before choosing an implementation. No production flow has been changed.
