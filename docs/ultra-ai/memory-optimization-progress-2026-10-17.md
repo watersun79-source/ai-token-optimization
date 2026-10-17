@@ -78,3 +78,5 @@ Custom Instructions apply across chats when enabled, but GitHub/Slack history is
 - Activepieces read-only inventory: 3 ENABLED/published, 26 DISABLED; five-enabled historical records remain unresolved. No flow changes.
 - Gemini/Claude consumer apps unavailable in this run because the connected browser requires an originating browser context. Generation calls 0; paid API calls 0; no credential changes.
 - Next: verify canonical/display body match, write/read-back current run report in GitHub and Slack, continue ID reconciliation without status changes, and only attempt Gemini/Claude through a real free route.
+
+- Slack update posted and read back: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792218123952119
