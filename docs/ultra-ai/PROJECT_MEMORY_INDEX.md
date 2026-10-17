@@ -194,3 +194,11 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Latest detailed report now includes this path and was read-back verified: commit `7fae0a7d56e9acf419c3d22200cef6edd23cd083`, blob `968ea2c1c7ecee362f1ba3f5853f8bf90eee3822`.
 - Slack status was posted and read-back verified: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792275413166969
 - Production flows and hourly automation remain unchanged; no AI generation API calls or paid API calls made.
+
+## Latest test-design update — 2026-10-18
+
+- Isolated synthetic-only engine fan-out/join test plan: [isolated-fanout-join-test-plan-2026-10-18.md](https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/isolated-fanout-join-test-plan-2026-10-18.md). It uses Subflows → Stream CSV to Subflows with two mock rows and a local published Callable Flow, and verifies overlapping child run timestamps plus parent fan-in across three runs. No AI provider calls are included.
+- Current schema confirms `streamCsvToSubflows` dispatches batches with bounded concurrency and requires a published Callable Flow. This is not usable in the current Cloud project without violating the disabled/unpublished test-flow policy, so use a separate local self-hosted instance.
+- Actual local execution is blocked because Docker/Podman is absent in the current execution environment. Official self-host requirements: Docker Compose v2, at least 2 vCPU/4 GB RAM; Windows requires WSL2. Plan document created and read-back verified (blob `ed0c882febde5fdd84e26c0e3f4d9751a3d8f6f2`); execution not yet done.
+- Latest detailed report: [ai-execution-2026-10-18-followup.md](https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ai-execution-2026-10-18-followup.md), commit `82abd33839f2452f236d1591fb653372e1dadeb2`, blob `0ba4c284ce6a346f8a2a2ac34fd77087038e28dd`.
+- Current project inventory and hourly automation unchanged; AI-generation API calls 0, paid API calls 0, purchases/upgrades 0. Next step is to execute the synthetic test on a machine with Docker Compose v2; separately verify Activepieces credits and provider billing/quota before any real AI call.
