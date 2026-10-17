@@ -43,7 +43,7 @@ On iOS, paste it into Settings > Customize ChatGPT > Custom Instructions with cu
 - Secondary Gemini API and Claude: previous read-only model-list requests failed HTTP 401; no generation calls were made.
 - Activepieces Tables atomic uniqueness under concurrent runId creation remains unproven.
 - Hosted Cloud support for a custom BARRIER piece remains unverified.
-- The existing hourly automation and five protected production flows must remain unchanged unless the user explicitly authorizes a necessary change.
+- The existing hourly automation and the currently verified enabled production flows must remain unchanged unless the user explicitly authorizes a necessary change.
 
 
 ## 2026-10-17 update — persistent memory loop
@@ -77,3 +77,7 @@ On iOS, paste it into Settings > Customize ChatGPT > Custom Instructions with cu
 - Current canonical custom-instruction body is 1010 JavaScript characters and begins `ULTRA AI — ALWAYS ON`. The display copy was synchronized to match. Older references to 992 or 1108 characters in historical notes are superseded and must not be treated as current.
 - Both files were updated on branch `ultra-ai/progress-2026-10-17`; verify by reading them back. ChatGPT iOS Settings was not changed; the user must paste/save the canonical prompt manually.
 - Priority remains: (1) GitHub + Slack for persistent ChatGPT memory; (2) Gemini + Claude free consumer-app collaboration. No paid API calls, purchases, or upgrades.
+
+
+## Inventory correction — 2026-10-17 15:06 KST
+- Current Activepieces read-only queries returned 3 ENABLED/published flows and 26 DISABLED flows. Older logs refer to 5 enabled production flows. Treat this as an unresolved state discrepancy, not as permission to enable/disable anything. Preserve all current statuses until the historical two flow IDs and intended state are reconciled.
