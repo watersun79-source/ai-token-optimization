@@ -170,3 +170,18 @@ Validation is structural/configuration validation only; it does not prove live c
 5. Enforce deadline/timeout and cancellation behavior; prove no stuck PAUSED parent or orphaned children.
 6. Repeat the engine-level E2E at least 3 times and inspect actual parent/child run records, timing intervals, statuses, and returned payloads.
 7. Only after all gates pass may a separate production rollout be considered; this current work did not change production.
+
+
+## Production flow step-settings audit (2026-10-18, read-only)
+Read the full step settings for the enabled/published flow `AI 3AI 협업` (flow ID `kt2N9yCVA3dLkFiNPSMsH`). The actual configured dependency chain is:
+1. `step_1` ChatGPT draft (`@activepieces/piece-openai / ask_chatgpt`).
+2. `step_2` Gemini review (`@activepieces/piece-google-gemini / generate_content`), with prompt referencing `step_1` output.
+3. `step_3` Claude review (`@activepieces/piece-ai / askAi`), with prompt referencing `step_1` output but structurally placed after step_2.
+4. `step_4` OpenAI integration, referencing both `step_2` and `step_3` outputs.
+5. HTTP response, then Slack notification.
+The current flow therefore runs ChatGPT → Gemini → Claude → integration sequentially. Even though the two reviewer prompts independently reference the initial draft, the step graph makes Claude wait for Gemini. This is direct configuration evidence, not an inference from the display name.
+
+## Runtime capability blocker and safe next move
+The available Activepieces action inventory has no built-in generic fork/join action that concurrently dispatches two arbitrary steps and joins their returned payloads. Sub Flows Call Flow is one child per action; Stream CSV fan-out is for CSV batches and does not collect each child's completed response into a parent result. Existing workflow editor API can add Router branches, but source review found router branch execution sequential. Thus a no-code edit to the production chain cannot safely produce true concurrent reviewers with wait-all semantics.
+
+Do not change the production flow to “fire-and-forget” children unless a durable result barrier is designed and tested; doing so without a join could integrate missing/late reviews. The required next implementation is a tested custom Activepieces piece/server-side coordinator with per-child correlation/waitpoints, or a durable, idempotent result table/barrier with timeout and retry semantics. This is not implemented or deployed yet. No live AI calls, flow edits, publishes, or enables occurred during this audit.
