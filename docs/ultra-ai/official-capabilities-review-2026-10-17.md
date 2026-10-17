@@ -18,9 +18,9 @@
 - Official Tables flow docs: https://www.activepieces.com/docs/tables/in-flows
 - Official Find Records implementation: https://github.com/activepieces/activepieces/blob/main/packages/pieces/core/tables/src/lib/actions/find-records.ts
 - Find Records has an optional Limit field whose description says an empty limit returns all records. The implementation sends limit ?? 999999999 and cursor undefined to the API, then returns response.body.data without iterating a next cursor.
-- A 101-row mock probe: Activepieces Find Records step test SUCCEEDED (run 23OiaT74UbUlYEwgMG2pC); ap_get_run confirmed step_1 outputCount=101. Read-only record search also found 101. All rows were deleted; post-cleanup search returned 0. Thus the 101-row case passes in this Cloud project, but behavior beyond 101 remains untested.
+- 101-row mock probe: flow Find Records outputCount=101 (run 23OiaT74UbUlYEwgMG2pC). 201-row mock probe: outputCount=201 (run 67gFJzZanE68mLswLpMQn). Both succeeded in Activepieces TESTING. All test rows were deleted; post-cleanup searches returned 0. An attempted 501-row insertion was interrupted after 201 rows by the tool call budget; all partial rows were immediately deleted, and no 501-row flow test ran.
 - Tables feature docs describe uniqueness on (projectId, fieldId, recordId), not a unique constraint on arbitrary runId. Atomic uniqueness for registry runId is not established; concurrent first-writer race remains unproven.
-- Next: a mock-only count test at a larger batch size (e.g. 501 rows) and verify cleanup before/after.
+- Next: split large tests into multiple orchestration calls and test 501 records, capturing only outputCount via ap_get_run; ensure cleanup before and after.
 
 ## Waitpoints / BARRIER
 - Official architecture docs: https://www.activepieces.com/docs/install/architecture/waitpoints
