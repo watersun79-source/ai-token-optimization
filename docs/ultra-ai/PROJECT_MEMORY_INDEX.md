@@ -143,3 +143,13 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - User confirms the canonical 1053-character ChatGPT Custom Instructions have been saved in settings. This is user-reported, not screen-inspected; official OpenAI help says saved instructions apply across chats when enabled: https://help.openai.com/en/articles/8096356-chatgpt-custom-instructions
 - Latest status report: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/memory-completion-followup-2026-10-17.md
 - Remaining blockers: browser connector lacks originating browser context for Gemini/Claude consumer apps; historical Activepieces 5-vs-3 enabled-flow discrepancy unresolved. Current inventory rechecked: 3 ENABLED/published, 26 DISABLED; no status changes.
+
+
+## Latest execution — AI-2026-10-18-0606-KST-memory-recovery
+- Report: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ai-execution-2026-10-18-0606.md
+- Verified at 2026-10-18 06:06 KST. GitHub protocol/index/progress/previous report and Slack channel C0C9649RQAZ were read at start.
+- Canonical/display custom-instruction bodies match exactly at 1,053 characters.
+- Activepieces read-only inventory: 29 total; 3 ENABLED/published, 26 DISABLED. Historical IDs hgPVOZQYdFTezhoZ6wj5j and yRqt1nbG4ZqiIkDX72vhN remain absent from current inventory and GitHub code search; cause unresolved.
+- Browser connector failed due to missing originating browser context; Gemini/Claude real responses 0. Paid API calls 0; purchases/upgrades 0; flow/automation/main changes 0.
+- Official docs checked: OpenAI Memory and Custom Instructions, Activepieces MCP tools, Gemini Apps limits.
+- Next: restore browser context for genuine free Gemini/Claude reviews; continue read-only historical flow ID investigation. Preserve all existing flow states and hourly Asia/Seoul automation.
