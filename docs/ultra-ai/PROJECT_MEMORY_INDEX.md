@@ -174,3 +174,15 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - AI generation API 0, paid API 0, purchases/upgrades 0; production flows, hourly automation, and main branch unchanged.
 - Official sources: Activepieces MCP tools https://www.activepieces.com/docs/mcp/tools ; OpenAI Custom Instructions https://help.openai.com/en/articles/8096356-chatgpt-custom-instructions ; OpenAI Memory https://help.openai.com/en/articles/8590148-memory-in-chatgpt.
 - Next: restore project-context tool visibility and originating browser context; continue historical flow reconciliation read-only.
+
+## Current verified state — 2026-10-18 07:16 KST
+
+- Latest detailed execution log: [ai-execution-2026-10-18-followup.md](https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ai-execution-2026-10-18-followup.md). The report was updated and read-back verified through commit `b35f4513790806d4b76338005c54b27a3729e81e`; the preceding concurrency correction is in commit `7175a657c433f12120249b4cced0128fda8871d1`.
+- Activepieces current flow inventory: 7 total; 3 enabled/published and 4 disabled/draft. Preserve these statuses and the existing hourly automation.
+- Important source correction: Activepieces engine `router-executor.ts` processes matching Router branches sequentially, awaiting `flowExecutor.execute(...)` inside a `for` loop. AI Router's “every route that applies” must not be described as concurrent execution.
+- Synthetic Promise.all mock tests prove JavaScript concurrency inside one CODE step only; they do not prove engine-level independent AI-action concurrency or actual Gemini/Claude calls.
+- Activepieces pricing docs currently show Free $0 with 1,000 monthly credits, AI steps costing 2/10/20 credits, and BYOK provider token costs billed separately. Actual plan, remaining credits, and provider billing/quota are not available through current connected tools. Do not run AI generation until read-only balance and billing/quota are verified.
+- Waitpoint BARRIER is documented as an engine fan-in primitive, but safe use from this Cloud project/custom piece and free availability are unverified. Sub Flows calls require the target Callable Flow to be published/enabled; do not publish/enable test flows under the current draft-only constraint.
+- Browser connector still has no originating browser context; Gemini/Claude consumer-web-app replies unavailable. Generation API calls 0; paid API calls 0; purchases/upgrades 0.
+- Latest Slack update was posted and confirmed by reading channel `C0C9649RQAZ`: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792275374304299
+- Next goal: find a read-only path to verify Activepieces remaining credits and external provider billing/quota, then choose a genuinely free isolated engine-level fan-out/join test. No production flow, schedule, connection, secret, or main-branch changes.
