@@ -108,3 +108,8 @@ Duplicate display copy (1010-character prompt): https://github.com/watersun79-so
 - Custom instruction canonical and display copy read back and compared: both 1010 JavaScript characters; exact body match; both begin `ULTRA AI — ALWAYS ON`.
 - Slack summary was posted and read back in channel C0C9649RQAZ: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792217008539979
 - No paid API calls, purchases, upgrades, Activepieces changes, or schedule changes.
+
+
+## Production flow inventory discrepancy — 2026-10-17 15:02 KST
+- Current Activepieces enabled-only query returned 3 published flows: `AI 3AI 협업` (kt2N9yCVA3dLkFiNPSMsH), `Slack` (vtRwEYmcwDTunBZut265G), `Gemini + Claude 협업 비서 (비용 확인 필요)` (drNhxMhmCo3A0rKV0OhIZ).
+- Earlier memory records describe 5 production flows as enabled. This mismatch is unresolved. No flows were changed in this run. Preserve current states and investigate the discrepancy before making any modifications.
