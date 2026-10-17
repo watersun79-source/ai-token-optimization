@@ -1,4 +1,4 @@
-# ULTRA AI Memory Optimization Progress — 2026-10-17
+# AI Memory Optimization Progress — 2026-10-17
 
 ## Status
 PARTIAL — the prompt, memory protocol, project index, and progress logging have been updated and verified. The ChatGPT Settings UI has not been changed. Gemini/Claude generation was not run because a genuinely free usable route is not verified.
