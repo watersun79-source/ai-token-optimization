@@ -81,3 +81,8 @@ Duplicate display copy (1010-character prompt): https://github.com/watersun79-so
 - Authorization does not override the standing safeguards: free-first; no paid API calls, purchases or upgrades; no secrets in logs; protect the enabled hourly Asia/Seoul automation, five production Activepieces flows and main branch; do not claim inaccessible tools or models were used.
 - Priority order: (1) GitHub + Slack persistence and optimization of ChatGPT memory; (2) Gemini + Claude collaboration via free consumer apps. If a paid route is presented, do not call paid APIs; try the consumer app free route and report any browser/login blocker accurately.
 - Latest custom-instruction body: 1010 JavaScript characters, verified in both canonical and display-copy files. Settings UI still requires the user to paste/save it.
+
+## Dual-review policy — Gemini + Claude (2026-10-17)
+- Default for meaningful project work: Gemini and Claude each independently review the same evidence and criteria before either sees the other's review.
+- Merge by checking evidence, tests, and explicit disagreements; report consensus, conflicts, risks, and final decision.
+- If either is inaccessible, state the blocker and do not claim complete dual review. Free-first only; no uncertain/paid API calls or credit spending. Test orchestration in a disabled/unpublished draft; protect production flows and the hourly automation.
