@@ -69,3 +69,12 @@ Custom Instructions apply across chats when enabled, but GitHub/Slack history is
 - Current Activepieces inventory: 3 enabled/published, 26 disabled. Historical records refer to 5 enabled production flows. No state changes; reconciliation required.
 - Automation `AI` confirmed enabled; hourly-on-the-hour Asia/Seoul schedule unchanged.
 - Gemini/Claude free consumer-app response: not accessed this run because no connected browser/app session was available. Provider generation calls 0; paid API calls 0; no credentials changed.
+
+
+## Priority continuation — 2026-10-17 15:22 KST
+- Internet checked: OpenAI's official Custom Instructions page says instructions apply across existing and new chats after being saved; Free/Go limit is 1,500 characters. OpenAI Memory docs say memory does not retain every detail. Sources: https://help.openai.com/en/articles/8096356-chatgpt-custom-instructions and https://help.openai.com/en/articles/8590148-memory-in-chatgpt.
+- Updated canonical instructions to `AI — ALWAYS ON`, corrected the false assumption that five flows are currently enabled, and added a do-not-change-statuses safeguard. Prompt body is 1053 JavaScript characters.
+- Updated existing automation prompt only; title `AI`, enabled state, and hourly-on-the-hour Asia/Seoul schedule unchanged.
+- Activepieces read-only inventory: 3 ENABLED/published, 26 DISABLED; five-enabled historical records remain unresolved. No flow changes.
+- Gemini/Claude consumer apps unavailable in this run because the connected browser requires an originating browser context. Generation calls 0; paid API calls 0; no credential changes.
+- Next: verify canonical/display body match, write/read-back current run report in GitHub and Slack, continue ID reconciliation without status changes, and only attempt Gemini/Claude through a real free route.
