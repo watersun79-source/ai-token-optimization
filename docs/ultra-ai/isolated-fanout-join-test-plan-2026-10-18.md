@@ -149,3 +149,16 @@ Reviewed the official Activepieces webhook runtime notes at https://github.com/a
 - A successful synchronous HTTP response alone is insufficient proof that two child runs overlapped. The test must also capture both child run IDs and execution timestamps from run history, confirm their intervals overlap, and confirm the parent received both expected response payloads before completing. If any of these cannot be observed, mark the run inconclusive rather than pass.
 - The `/sync` route documentation does not prove the exact URL shown by a specific local builder, nor prove that the Code sandbox can reach it. Those remain local-instance prerequisites.
 - No webhook request or flow run was triggered during this source review. No Cloud flow was published or modified, and no AI/provider API or paid call was made.
+
+
+## RECHECK — 2026-10-18: Current cloud inventory and local runner availability
+
+Read-only recheck performed after the source reviews:
+- Activepieces returned exactly 7 flows: 3 ENABLED/published (`AI 3AI 협업`, `Slack`, `Gemini + Claude 협업 비서 (비용 확인 필요)`) and 4 DISABLED/unpublished drafts. No flow status was changed.
+- The mock-only `Promise.all` flow still validates with 2/2 valid steps and no validation issues.
+- Its five latest TESTING runs all report `SUCCEEDED`; the three most recent are `dEhaqSdQck9l095fH1CLU` (2.7s), `Bn6KY0PUmiu85EtdpS3h3` (4.7s), and `RJdLgqGLJztcN0l8rQ41c` (3.2s). These are synthetic Code-step harness runs, not evidence of separate Activepieces child-flow execution.
+- The current execution container was checked again: Node.js v22.16.0 and Python 3.13.5 are present; `docker`, `podman`, and `nerdctl` are not available on PATH. No local Activepieces engine can be started using those runtimes in this environment.
+- The existing hourly `AI` automation remains enabled with its hourly-on-the-hour schedule. It was read, not modified.
+- No flow was published/enabled/disabled, no provider API was called, and no paid usage or purchase occurred during this recheck.
+
+Status remains: mock validation passed; engine-level fan-out/join not executed. The next real progress requires access to a separate host/runtime with Docker Compose v2 or another already-running isolated self-hosted Activepieces instance. Without that external runtime, repeating mock-only runs would not close the actual verification gap.
