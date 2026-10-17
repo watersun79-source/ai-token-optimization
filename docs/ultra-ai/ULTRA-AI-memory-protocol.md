@@ -1,4 +1,4 @@
-# ULTRA AI Persistent Memory Protocol
+# AI Persistent Memory Protocol
 Updated: 2026-10-17
 Slogan: ALWAYS ON · ALWAYS EVOLVING · MAXIMUM AVAILABLE CAPABILITY
 
@@ -12,7 +12,7 @@ Slogan: ALWAYS ON · ALWAYS EVOLVING · MAXIMUM AVAILABLE CAPABILITY
 - Slack progress channel: C0C9649RQAZ
 - Activepieces project: https://cloud.activepieces.com/projects/Fr9OAsxi4FbVSVLZkexYi/
 
-## Start every ULTRA AI task
+## Start every AI task
 1. Use internet search for current information and cite reliable sources.
 2. Read this protocol, PROJECT_MEMORY_INDEX.md, the latest GitHub progress report, and relevant recent Slack messages.
 3. Check the current external state; saved notes may be stale.
@@ -50,6 +50,6 @@ On iOS, paste it into Settings > Customize ChatGPT > Custom Instructions with cu
 - Search current web sources on every task; cite reliable sources.
 - Attempt Gemini and Claude through available free web apps or connected tools on each task. If access fails or credentials are invalid, report that plainly; do not claim they were used.
 - Never call APIs until free quota, pricing, and billing state are verified. No payment/upgrades. Protect secrets.
-- For important/ULTRA AI tasks, read the GitHub memory index, protocol, latest progress and Slack channel C0C9649RQAZ before acting. At completion, write decisions, changed files/commit, test IDs/results, real AI usage, API/cost status, unresolved issues and next goal to both GitHub and Slack; read back to verify.
+- For important/AI tasks, read the GitHub memory index, protocol, latest progress and Slack channel C0C9649RQAZ before acting. At completion, write decisions, changed files/commit, test IDs/results, real AI usage, API/cost status, unresolved issues and next goal to both GitHub and Slack; read back to verify.
 - External records are not automatically injected into every ChatGPT chat. Re-read them in new and existing chats when the task needs continuity.
 - Preserve production Activepieces flows, hourly automation, and main branch; use a separate branch and mock tests.
