@@ -29,3 +29,11 @@ Therefore, neither the existing mock nor the documented single-child wait action
 
 ## Blocker
 The current tool environment does not provide a Docker/Podman runtime, and the connected Activepieces tools do not expose an isolated engine endpoint. Consequently, engine-level concurrency remains unverified. Do not publish the cloud test drafts as a workaround.
+
+
+## Additional execution-path research (2026-10-18)
+- Official self-host docs require Docker Compose v2 and at least 2 vCPU / 4 GB RAM for the standard four-container setup: https://www.activepieces.com/docs/install/options/docker-compose
+- The current GitHub repository is public. GitHub documents standard GitHub-hosted Actions runners as free for public repositories: https://docs.github.com/en/billing/concepts/product-billing/github-actions
+- This creates a possible isolated CI runner path without using the user's local machine or Activepieces Cloud production project. However, no workflow was created or run in this pass; the exact engine-level fan-out/join integration test still needs to be implemented and reviewed before a CI run can be treated as proof.
+- Do not run an unverified workflow that merely boots the engine and then claim fan-out/join is proven. The test must create or import two synthetic Callable Flow children, dispatch both from an isolated parent, capture each distinct run ID and start/end timestamps, assert overlapping intervals and both results, and assert parent completion occurs after both results.
+- A public GitHub runner may be free for standard runner minutes, but this does not guarantee that all other dependencies are free. Keep the test isolated, use no AI provider credentials, do not upload secrets, and do not publish or modify Activepieces Cloud flows.
