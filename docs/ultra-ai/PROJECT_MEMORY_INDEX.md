@@ -11,8 +11,8 @@ Provider connection audit: https://github.com/watersun79-source/ai-token-optimiz
 Official capability review: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/official-capabilities-review-2026-10-17.md
 Memory optimization progress: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/memory-optimization-progress-2026-10-17.md
 Activepieces concurrency/BARRIER audit: https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/activepieces-concurrency-barrier-audit-2026-10-17.md
-Canonical custom instructions (1010 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md
-Duplicate display copy (1010-character prompt): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
+Canonical custom instructions (1053 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/ULTRA-AI-custom-instructions-ko-1500.md
+Duplicate display copy (1053-character prompt): https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 
 ## Operating contract
 - AI loop: ANALYZE → CHECK → OPTIMIZE → EXECUTE → VERIFY → DEBUG → AUTO-FIX → RE-VERIFY → REPORT → NEXT GOAL.
@@ -119,3 +119,10 @@ Duplicate display copy (1010-character prompt): https://github.com/watersun79-so
 - Priority 1 (GitHub + Slack persistence): protocol, index, recent report, and Slack channel were read first. Current enabled-flow inventory rechecked: exactly 3 ENABLED/published flows, plus 26 DISABLED flows. This contradicts historical notes that say 5 enabled; do not infer which flows should be enabled and do not change any status until historical IDs are reconciled.
 - Existing automation `AI` remains enabled with the same hourly-on-the-hour Asia/Seoul rule; no schedule change.
 - Gemini/Claude free consumer-app collaboration remains blocked in this execution: no connected browser/app session available. Generation calls 0; paid API calls 0. Provider credentials/billing were not touched.
+
+
+## Priority continuation — 2026-10-17 15:22 KST
+- Canonical ChatGPT custom instructions updated from `ULTRA AI — ALWAYS ON` to `AI — ALWAYS ON`, honoring the user's project-name correction; removed the incorrect assertion that 5 Activepieces flows are currently enabled and added a safeguard to preserve all statuses until the 3-vs-5 discrepancy is reconciled.
+- Canonical and display-copy prompt body now 1053 JavaScript characters (within 1500); read-back comparison pending until the next verification step.
+- Existing hourly automation prompt updated to carry forward the exact unresolved inventory discrepancy and next steps; schedule and enabled state unchanged.
+- Gemini/Claude still not invoked in this run: connected browser requires originating browser context; no generation or paid API calls.
