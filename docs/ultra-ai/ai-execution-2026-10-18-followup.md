@@ -133,3 +133,12 @@
 - 공식 라이선스 안내(https://www.activepieces.com/docs/about/license)는 핵심 기능이 MIT 오픈소스이고 Enterprise/Cloud 기능은 상용 라이선스라고 구분함. 이 사실만으로 BARRIER custom piece가 Cloud 무료 플랜에서 설치 가능하다고 해석하지 않음.
 - 현재 실행 환경에 Docker/WSL2 또는 사용자 PC 제어 권한이 확인되지 않아 설치 명령을 실행하지 않았고, 로컬 환경을 변경하지 않음. 다음 안전 단계는 사용자가 별도 테스트 머신에서 Docker가 있는지 확인한 뒤, isolated hobbyist container로 먼저 mock-only 테스트를 수행하는 것. 운영 Cloud 프로젝트, 운영 플로우, 예약에는 연결하지 않음.
 - 이번 조사 비용: 생성 API 0회, 유료 API 0회, 구매/업그레이드 0건. 실제 Gemini/Claude 웹앱 응답은 브라우저 연결 컨텍스트 오류로 0건.
+
+## 중요 정정 — Activepieces Router는 다중 일치 경로를 순차 실행 (2026-10-18)
+
+- Activepieces 공식 엔진 소스 `packages/engine/src/lib/handler/router-executor.ts`를 직접 읽음: https://github.com/activepieces/activepieces/blob/3d0b6ef9/packages/engine/src/lib/handler/router-executor.ts
+- `EXECUTE_ALL_MATCH`는 조건이 맞는 여러 경로를 처리하지만, 실제 실행 루프는 `for` 안에서 각 `flowExecutor.execute(...)`를 `await`한 다음 다음 경로로 이동함. 따라서 “Every route that applies”는 여러 경로를 실행한다는 뜻이지, 엔진 수준 병렬 실행을 뜻하지 않음.
+- 이 소스 근거에 따라 AI Router를 병렬 fan-out 솔루션 후보로 간주하던 해석을 정정함. AI Router 평가 모델의 비용 이슈와 무관하게, 현재 확인한 엔진 구현은 Router 분기 자체가 순차 실행임.
+- BARRIER waitpoint API는 fan-in primitive지만 일반 플로우 action으로 직접 쓸 수 있는지, Cloud에서 custom piece를 설치할 수 있는지, 무료인지 확인되지 않음. Sub Flows는 target Callable Flow publish/enable이 필요하므로 현재의 비활성 초안만 유지하는 정책 아래에서는 아직 채택하지 않음.
+- 현재 프로젝트 플로우 7개(활성 3, 비활성 초안 4). 운영 플로우, 기존 정각 자동화, main, 연결 및 비밀값 변경 0건. Gemini/Claude 생성 응답 0, API 생성 호출 0, 유료 API 0.
+- 결론: 기존 AI 3AI 협업 플로우는 순차 실행이며, Router만 바꾸어 병렬화할 수 있다고 안내하면 안 됨. 실제 병렬화의 다음 후보는 (a) 별도 self-hosted test instance에서 독립 실행을 오케스트레이션하고 fan-in을 검증하거나, (b) 하나의 Code step에서 실제 provider 호출을 Promise.all로 실행하는 방식이다. (b)는 유료/불확실 API 호출 및 credential exposure 위험 때문에 무료 조건이 확인되기 전 실행하지 않음.
