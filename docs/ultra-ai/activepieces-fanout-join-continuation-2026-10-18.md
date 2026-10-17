@@ -133,3 +133,11 @@ These are real Activepieces TESTING-mode run records with mock trigger data, not
 - Inspected `Gemini + Claude 협업 비서 (비용 확인 필요)` (`drNhxMhmCo3A0rKV0OhIZ`): Gemini draft/self-review → Claude review/final answer → return response; OpenAI draft step is skipped. Validation reports valid with one intentionally skipped step. This also does not currently demonstrate parallel Gemini/Claude execution.
 - Activepieces lists active project connections for Google Gemini and Anthropic Claude, but connection presence does not establish free quota or price. No live AI flow was run to avoid possible paid calls.
 - Current tool catalog has no GitHub Actions workflow-dispatch action. Existing production flows and hourly automation were not changed. No test flow was published or enabled.
+
+
+## Actual merge-input failure-path tests (2026-10-18)
+Ran the existing disabled/unpublished MOCK ONLY merge flow's CODE step with additional supplied test payloads, then fetched each execution result:
+- Gemini missing, Claude valid: run `TVIJiVIwfTmMhJgt3DDY4`, SUCCEEDED; merge state `MOCK_MERGE_PARTIAL`; Gemini error `MISSING`; Claude preserved as valid.
+- Both missing: run `ooBqpXE8nwCXV637BtggT`, SUCCEEDED; merge state `MOCK_MERGE_INCOMPLETE`; both errors `MISSING`.
+- Both malformed: run `CS04QBj9SpApMABJIpnga`, SUCCEEDED; merge state `MOCK_MERGE_INVALID`; Gemini `BAD_OUTER_STATUS`, Claude `NOT_OBJECT`.
+All three runs executed the embedded 8-case contract suite successfully and reported zero external AI/network calls. These are failure-path checks of the merge code with sample trigger data, not engine-level child-flow fan-out/join proof.
