@@ -28,7 +28,7 @@ Custom instructions (859 characters): https://github.com/watersun79-source/ai-to
 - Mock-only coordinator draft: EoQdyZftEyejxh4P85K5S, unpublished/disabled; configured every 15 minutes but not running on an active schedule.
 - Latest validation: 21/21 steps valid, 0 invalid; two informational notes about intentionally empty router fallback branches. Mock solution folder: 3 flows, 0 connection/table errors.
 - Sample tests cover MERGE_READY, MERGE_CONFLICT, PROCESSED archival, TIMED_OUT handling, empty-table behavior and late-arrival recovery. Late-recovery sample run: Q68QOU6BW81R0qEGcZGmB; previous timeout run: qzDZAB9Wvleow6TOgPo7l.
-- Find Records volume tests: 101 rows → outputCount 101 (run 23OiaT74UbUlYEwgMG2pC); 201 rows → outputCount 201 (run 67gFJzZanE68mLswLpMQn); 501 rows → outputCount 501 (run U1Hqc2j98hqZuYEb3zNZf). All were Activepieces TESTING/sample-data runs. Every inserted row was deleted and follow-up search returned 0.
+- Find Records volume tests: 101 rows → outputCount 101 (run 23OiaT74UbUlYEwgMG2pC); 201 rows → outputCount 201 (run 67gFJzZanE68mLswLpMQn); 501 rows → outputCount 501 (run U1Hqc2j98hqZuYEb3zNZf). All TESTING/sample data; all inserted rows deleted and follow-up searches returned 0.
 - Final table counts: temporary registry 0 rows; temporary coordinator input 0 rows; prior mock results table 14 rows.
 - Actual Gemini/Claude/OpenAI API calls during these tests: 0.
 - Unresolved: atomic unique/upsert/race safety in Tables; behavior beyond 501 records; whether a custom piece can be installed in hosted Cloud to expose BARRIER.
@@ -48,9 +48,12 @@ Custom instructions (859 characters): https://github.com/watersun79-source/ai-to
 - Claude API and subscription are separate: https://support.anthropic.com/en/articles/9876003-estoy-suscrito-a-un-plan-de-pago-de-claude-ai-por-que-tengo-que-pagar-por-separado-por-el-uso-de-la-api-en-console
 - Activepieces Tables in flows: https://www.activepieces.com/docs/tables/in-flows
 - Activepieces Find Records source: https://github.com/activepieces/activepieces/blob/main/packages/pieces/core/tables/src/lib/actions/find-records.ts
+- Activepieces concurrency settings: https://www.activepieces.com/docs/admin-guide/guides/manage-concurrency
 - Activepieces Flow Control: https://www.activepieces.com/docs/build-pieces/piece-reference/flow-control
 - Activepieces Waitpoints: https://www.activepieces.com/docs/install/architecture/waitpoints
 
 ## Notes
+- Activepieces Max Concurrent Jobs is a project-wide setting; changing it could affect all five protected production flows. Do not set it to 1 in the shared project just to serialize the mock coordinator.
+- The current Activepieces connector does not expose a project concurrency-settings action. No setting was changed.
 - ChatGPT Free/Go custom-instruction limit: 1,500 characters. Prompt file is 859 characters by JS string length, under limit.
 - GitHub/Slack are persistence aids, not guaranteed automatic synchronization to every chat. ChatGPT custom instructions should be pasted into Settings by the user; this session did not directly change the settings UI.
