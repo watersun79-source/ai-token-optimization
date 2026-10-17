@@ -61,3 +61,13 @@ On iOS, paste it into Settings > Customize ChatGPT > Custom Instructions with cu
 - If either model cannot be accessed, report which one was unavailable and why; do not fabricate a review or mark the dual-review step complete.
 - Free-first remains mandatory: do not call paid/uncertain APIs, spend credits, or change billing. Existing production flows and hourly automation remain protected. Implement dual-review orchestration only in a disabled/unpublished draft and validate with sample data before any production rollout.
 - For trivial low-risk conversational tasks, avoid unnecessary repeated model calls; dual review is the default for meaningful project work, not a reason to waste tokens on every small exchange.
+
+
+## Dual-review draft implementation (2026-10-17)
+- Created Activepieces draft flow: AI · Gemini + Claude 독립·교차 검토 (비용 확인 전 초안), flow ID 1MAbLTS7HS9LjDRqq9l4b, URL https://cloud.activepieces.com/projects/Fr9OAsxi4FbVSVLZkexYi/flows/1MAbLTS7HS9LjDRqq9l4b.
+- Flow has 6 steps: webhook trigger; Gemini independent first review; Claude independent first review; Gemini critiques Claude's first review; Claude critiques Gemini's first review; CODE step packages all four outputs.
+- Static validation passed: 6/6 valid, 0 issues. Read-back structure confirms the draft is DISABLED and unpublished. No flow test, AI generation call, publish, or enable action was performed.
+- Cost/access blockers: Google Gemini connection appears ACTIVE and model dropdown resolved, but ACTIVE status does not prove free quota. Direct Anthropic Claude model dropdown returned 0 options for the configured connection; the draft uses the configured Activepieces managed AI provider's Claude Sonnet model, whose billing/credits are not confirmed. Therefore do not test or publish this draft until cost and provider access are verified.
+- Security blocker: webhook draft uses no authentication only for unpublished construction; before any publication, configure and verify Header Auth or another appropriate authentication method.
+- The four AI actions are sequential in the flow, not simultaneous. The first two prompts are independent (neither sees the other's output); the following two steps cross-review each first-pass result.
+- Official references checked: Activepieces AI providers https://www.activepieces.com/docs/admin-guide/guides/setup-ai-providers ; Gemini API pricing https://ai.google.dev/gemini-api/docs/pricing?hl=ko ; Claude API pricing https://platform.claude.com/docs/en/about-claude/pricing.
