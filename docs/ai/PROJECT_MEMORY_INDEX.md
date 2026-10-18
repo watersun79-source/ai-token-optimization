@@ -4,14 +4,14 @@ Last verified: 2026-10-18 (Asia/Seoul)
 Repository: https://github.com/watersun79-source/ai-token-optimization
 Working branch: ai/continuation-readonly-audit-2026-10-18
 Activepieces project: https://cloud.activepieces.com/projects/Fr9OAsxi4FbVSVLZkexYi/
-Memory protocol: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/AI-memory-protocol.md
+Memory protocol: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/AI-memory-protocol.md
 Coordinator log: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/scheduled-sequential-coordinator-tests-2026-10-17.md
 Volume test log: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/find-records-volume-test-501-2026-10-17.md
 Provider connection audit: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/provider-connection-audit-2026-10-17.md
 Official capability review: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/official-capabilities-review-2026-10-17.md
 Memory optimization progress: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/memory-optimization-progress-2026-10-17.md
 Activepieces concurrency/BARRIER audit: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/activepieces-concurrency-barrier-audit-2026-10-17.md
-Canonical custom instructions (1053 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/AI-custom-instructions-ko-1500.md
+Canonical custom instructions (1053 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/AI-custom-instructions-ko-1500.md
 Duplicate display copy (1053-character prompt): https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 
 ## Operating contract
@@ -70,9 +70,9 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 
 ## 2026-10-17 — persistent memory optimization
-- Custom instruction (1,108 characters): docs/ultra-ai/AI-custom-instructions-ko-1500.md
+- Custom instruction (1,108 characters): docs/ai/AI-custom-instructions-ko-1500.md
 - Duplicate instruction copy: docs/ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
-- Memory loop protocol: docs/ultra-ai/AI-memory-protocol.md
+- Memory loop protocol: docs/ai/AI-memory-protocol.md
 - Operating rule: web search each task; attempt Gemini/Claude free access; GitHub is canonical memory, Slack C0C9649RQAZ is progress/error log; verify free/cost conditions before API calls; protect production flows, hourly automation and main.
 
 
@@ -97,7 +97,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 ## Current authoritative correction — 2026-10-17 15:02 KST
 - Current custom-instruction body is 1010 JavaScript characters, begins `AI — ALWAYS ON`, and is synchronized between canonical and display-copy files. Historical notes saying 992 or 1108 characters are superseded.
-- Canonical: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/AI-custom-instructions-ko-1500.md
+- Canonical: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/AI-custom-instructions-ko-1500.md
 - Display copy: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 - iOS ChatGPT Settings was not changed. User must paste/save the canonical prompt manually.
 - Priority: (1) GitHub + Slack memory persistence; (2) Gemini + Claude free consumer apps. Never call paid API or upgrade. Preserve hourly schedule and production flows.
