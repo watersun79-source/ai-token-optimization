@@ -292,3 +292,13 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Non-production evidence read back: Concurrent Join Parent test run `KYDtzNjTMeO530TzxVwgk` succeeded and final step matched 4 events; Polling Join Parent test run `yLtbcaYHamVYSxTHUeKk4` succeeded and final readiness flags were true with 2 child events; MOCK Promise.all run `w3beLx8xbT77tMR4amo1h` succeeded. Both join flows pass static validation (6/6 and 2/2 steps). These do not prove live AI-provider parallelism.
 - Project ID cannot be independently confirmed with currently exposed read-only tools. ACTIVE provider connections do not establish free quota. Model-provider API calls 0; purchases/upgrades 0; flows/connections/schedule/main unchanged.
 - Next: find a read-only project identity route and actual scheduler output; do not call provider APIs until free quota and no-billing path are verified.
+
+
+## AI automation cost-guard follow-up — 2026-10-18
+
+- Report: [AI-automation-cost-guard-followup-2026-10-18.md](https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/AI-automation-cost-guard-followup-2026-10-18.md), commit `a36454255b9236e025f4befc88c2e0296bfd3027`.
+- GitHub Actions run `39083678022` is completed/success on `main`; validates Python and JS tests only, not runtime provider-call blocking.
+- Current policy `config/policy.json` disallows paid provider API calls and blocks unknown quota; regression test exists in `tests/test_config.py`.
+- Read-only flow inspection shows enabled `AI 3AI 협업` has sequential ChatGPT/Gemini/Claude configured steps and no queryable production runs; enabled `Gemini + Claude 협업 비서` has Gemini/Claude configured sequentially and a skipped OpenAI step. Active connection is not quota proof; no provider actions were run.
+- Model-provider API calls 0; purchases/upgrades 0; no Activepieces flow, connection, secret, hourly schedule, or `main` change.
+- Next: read-only billing/quota and scheduler output verification. Do not trigger provider flows until no-billing free quota is verified; do not automatically alter production flows.
