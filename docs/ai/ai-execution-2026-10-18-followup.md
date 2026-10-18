@@ -305,3 +305,15 @@
 - 구조 응답에 webhook 인증 값이 포함되어 있었으나 보고서/Slack에는 복사하지 않았다. 운영 흐름·연결·테이블·예약·main은 수정하지 않았다.
 - 다음 목표: 최근 실행이 없는 두 흐름은 실행을 유발하지 않고 trigger source, run history 및 upstream caller를 확인할 수 있는 읽기 전용 근거를 조사한다. 실제 테스트는 무료/비용 안전성이 확인되기 전까지 보류한다.
 - 비용/변경: 생성 API 0회, 유료 API 0회, 구매/업그레이드 0건, 운영 설정 변경 0건.
+
+
+## 대체 경로 조사 — 2026-10-19 07:25 KST
+- 사용자 요청에 따라 Activepieces 프로젝트 범위 MCP 도구를 호출하지 않고, GitHub/Slack 기록과 공식 Activepieces MCP 문서만 사용해 독립 진단함.
+- 시작 시 `docs/ai/AI-memory-protocol.md`, `docs/ai/PROJECT_MEMORY_INDEX.md`, 이 최신 후속 보고서, Slack 채널 `C0C9649RQAZ` 최신 기록을 실제로 읽음. 작업 브랜치 `ai/continuation-readonly-audit-2026-10-18` 존재를 확인함.
+- 공식 도구 참조: https://www.activepieces.com/docs/mcp/tools 및 https://www.activepieces.com/docs/mcp/overview
+- 공식 문서는 `ap_set_project_context`와 `ap_list_folders`를 Discovery 카테고리에 두며, Discovery는 항상 사용 가능(locked/read-only)이라고 설명함. 따라서 이 두 도구가 현재 런타임 목록에 없는 현상은 일반적인 프로젝트별 카테고리 OFF만으로 설명되지 않음. `ap_move_flow_to_folder`는 Flow Management 카테고리이므로 해당 카테고리 OFF가 원인일 가능성은 있으나 현재 ON/OFF 설정은 읽을 수 없어 미확인.
+- 현재 런타임에 노출된 Activepieces 도구 정의만 확인함; Activepieces 도구를 호출하지 않음. 현재 도구 목록 기준: `ap_list_folders` 없음, `ap_set_project_context` 없음, `ap_move_flow_to_folder`도 없음. 이전 메시지에서 `ap_move_flow_to_folder`가 포함된다고 한 것은 잘못된 보고였음.
+- 대체 경로 검토: Activepieces Platform MCP는 별도 플랫폼 연결로 List Projects/Custom API Call 등을 제공한다고 공식 페이지에 설명되어 있으나, 현재 연결된 도구 목록에서 그 별도 플랫폼 연결을 확인하지 못함. 사용 가능한 자격 증명/API 키가 확인되지 않아 REST API를 직접 호출하지 않았고, 키 생성이나 유료/불확실 API 사용도 하지 않음.
+- 가장 적합한 다음 경로: (1) ChatGPT에서 기존 Activepieces 연결의 연결 변경/재인증 화면을 통한 재연결 여부를 사용자 UI에서 확인하되, 이미 연결된 계정 오류가 나면 중복 승인하지 않음; (2) 재연결 후에도 Discovery 도구가 없으면 해당 MCP 연결의 tool-list 동기화/서버 측 등록 문제로 OpenAI/Activepieces 지원에 문의하고, 위 공식 도구 참조와 현재 런타임 목록 비교를 첨부함; (3) 별도 Activepieces Platform MCP가 실제로 연결 가능할 때만 읽기 전용 List Projects로 프로젝트 ID를 확인함. 프로젝트 ID 추측이나 프로젝트 범위 도구 호출로 우회하지 않음.
+- Gemini/Claude 웹앱 응답은 브라우저 컨텍스트 오류 때문에 이번 회차에도 미확인. 공급자 생성 API 0회, 유료 API 0회, 구매/업그레이드 0건. 운영 플로우/연결/테이블, 기존 정각 자동화, GitHub main 변경 0건.
+- 다음 목표: MCP tool-list refresh/reconnect 지원 경로를 연결 관리자/지원에서 확인하고, Discovery 도구가 실제 노출된 뒤에만 프로젝트 ID 및 parent/trigger 감사로 진행. 비용 확인 경로가 없는 한 공급자 API 호출 금지 유지.
