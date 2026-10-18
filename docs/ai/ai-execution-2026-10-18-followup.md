@@ -243,3 +243,12 @@
 - ChatGPT 플러그인/커넥터 카탈로그도 조회했으나, 이번 검색 결과에서 사용 가능한 Activepieces 전용 ChatGPT 앱/커넥터는 찾지 못함. 따라서 현재 대화에서 연결을 대신 생성하거나 Platform MCP의 List Projects를 직접 호출할 수 없음. 연결을 만들었다고 주장하지 않음.
 - 문서상 경로와 달리 사용자의 현재 연결에는 필요한 프로젝트 Discovery 도구가 없으므로, 이 세션 안에서 다른 Activepieces 프로젝트 도구를 호출해 우회하지 않음. 실제로 필요한 다음 조치는 사용자가 Activepieces Platform MCP를 별도 MCP 클라이언트/연결 설정에서 연결하는 것. 연결 완료 후 실제 도구가 노출되면 읽기 전용 프로젝트 목록 확인부터 재개할 수 있음.
 - 현재 실행에서 수행한 것: 공식 문서 재검증, ChatGPT 연결 카탈로그 검색, GitHub 보고서 갱신 및 재조회, Slack 기록 게시 및 재조회. API 호출/프로젝트 데이터 접근/운영 변경/유료 호출은 0건.
+
+
+## 실행 기록 — 2026-10-19 현재 선택 프로젝트 읽기 전용 점검
+- 사용자가 Activepieces에서 확인한 현재 선택 프로젝트: `Personal Project`, ID `Fr9OAsxi4FbVSVLZkexYi`. Activepieces 답변은 이 프로젝트가 자동 선택된다고 명시했으므로, 해당 컨텍스트에서 읽기 전용 조회를 시작함. `ap_set_project_context`와 별도 `List Projects` 도구는 여전히 이 세션 도구 목록에 없음.
+- `ap_list_flows(limit=100)` 결과: 흐름 10개. ENABLED + published 3개(`AI 3AI 협업`, `Slack`, `Gemini + Claude 협업 비서 (비용 확인 필요)`); 나머지 7개는 DISABLED. 기존 상태는 변경하지 않음.
+- 활성 3개 흐름의 구조를 읽기 전용으로 검사함. 각 단계는 설정 완료로 표시됨. 첫 번째 흐름은 ChatGPT → Gemini → Claude → 최종 통합 → HTTP 응답 → Slack 구조. 두 번째는 webhook → Slack 메시지 구조. 세 번째는 OpenAI 단계가 skip 설정이며 Gemini → Claude → webhook 응답 구조. 이 구조는 공급자 호출 시 비용이 발생할 가능성을 배제하지 못하므로 흐름 실행/테스트는 하지 않음.
+- 활성 3개 흐름 각각에 대해 최근 PRODUCTION 실행 5건 조회: `AI 3AI 협업` 0건, `Slack` 0건, `Gemini + Claude 협업 비서 (비용 확인 필요)` 최근 5건 모두 SUCCEEDED (2026-10-15 UTC). 각 흐름의 FAILED 10건 조회 결과 0건, QUOTA_EXCEEDED 조회 결과 0건. 이 결과는 조회한 필터/범위에 한정되며 전체 기간의 모든 실행을 의미하지 않음.
+- 안전 조치: 어떤 흐름도 실행/테스트/수정/게시/비활성화하지 않음. 연결·테이블·예약·`main`은 변경하지 않음. 공급자 API 호출 및 유료 호출 0회. 웹훅 비밀값은 로그/Slack 보고서에 복사하지 않음.
+- 다음 목표: Gemini/Claude 협업 흐름의 실제 비용·무료 한도를 확인하기 전에는 실행하지 않고, 읽기 전용으로 해당 흐름의 설정/연결 메타데이터를 추가 점검한 뒤 근거 있는 개선안만 기록함.
