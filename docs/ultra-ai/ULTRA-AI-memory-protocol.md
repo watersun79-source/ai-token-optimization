@@ -104,3 +104,5 @@ On iOS, paste it into Settings > Customize ChatGPT > Custom Instructions with cu
 - Persistent continuity loop: read this protocol, `PROJECT_MEMORY_INDEX.md`, latest execution report, and Slack channel `C0C9649RQAZ`; after meaningful changes, update GitHub and Slack, then read both back. If a connector is unavailable, record that limitation rather than claiming it worked.
 - Remaining blockers: account-specific free quota/billing cannot be inspected through the current connected tools; browser connector has no originating browser context; production Gemini/Claude execution remains sequential and must not be switched to unproven parallel orchestration.
 
+### Character-count correction — 2026-10-18
+- Read-back comparison confirms canonical and display custom-instruction files are byte-for-byte identical (same Git blob SHA `8011eca50e723a123709f3868335bb968984998b`). The file declares `문자 수: 1230`; counting the normalized body after removing that header yields 1,229 JavaScript UTF-16 code units. Both are under the 1,500-character limit. Do not claim ChatGPT Settings were changed automatically.
