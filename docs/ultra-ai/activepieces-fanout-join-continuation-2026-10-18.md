@@ -251,3 +251,31 @@ Read-only re-audit after all test runs:
 - The pre-existing hourly `AI` automation was privately checked and remains enabled, hourly on the hour, Asia/Seoul. It was not edited, rescheduled, or duplicated.
 - No Gemini, Claude, or OpenAI API invocation occurred during this audit. Current project tooling does not expose Activepieces remaining AI credits or the Google account's actual quota/billing state, so production-provider parallelization remains gated on user-visible billing/quota confirmation.
 - No production flow was edited, executed, enabled/disabled, or republished in this sweep.
+
+## Strict no-paid-API guardrail and continuation plan (2026-10-18)
+
+### Non-negotiable cost policy
+- Do not call OpenAI API, Gemini API, Claude API, or any other model-provider API from Activepieces, CI, scripts, tests, or tool actions unless the user explicitly changes this rule.
+- Treat an unknown price, unknown account quota, unknown credit balance, or unverified free-tier eligibility as **not safe to call**. Public free-tier documentation does not prove the user's account has free quota.
+- Use synthetic payloads, static fixtures, upstream source inspection, configuration validation, and read-only account/flow inspection only. Do not run production flows as a way to test provider connectivity.
+- Never add API keys or OAuth secrets to GitHub, workflow files, test fixtures, logs, or Slack. Do not enable or publish test flows as a shortcut.
+- Preserve the existing enabled production flows and hourly automation; no schedule duplication or changes.
+
+### Current verified state
+- Test-only Activepieces cloud harness previously passed engine-level child-flow fan-out/result-barrier tests using synthetic payloads, including three repeated successful joins, duplicate completion idempotency, stale testId isolation, partial failure, and timeout/late completion behavior. This evidence does not establish that Gemini and Claude themselves were called concurrently.
+- The production flow `AI 3AI 협업` remains sequential: OpenAI draft → Gemini review → Claude review → OpenAI integration → response/Slack.
+- Provider free quota and remaining credits have not been verified. Therefore no live provider invocation is allowed.
+- The available browser connector cannot access a tab in this session unless it was opened with the connected browser extension. No billing/quota screen can be truthfully reported as inspected from this context.
+
+### Work allowed without further permission
+1. Read-only inspect public documentation, repository source, flow definitions and validation output.
+2. Build/update synthetic-only test contracts and cost-safety documentation.
+3. Preserve all production state; use no provider calls and do not enable/publish drafts.
+4. Record the result in GitHub and Slack and read it back when those connectors are available.
+5. Stop at the exact boundary where a missing authenticated quota screen or isolated runtime is necessary; ask for only that missing input rather than guessing.
+
+### Remaining completion gates
+- A trustworthy free-quota confirmation is needed before any model-provider call; until then, the real Gemini/Claude execution test is intentionally blocked.
+- A real production parallel rollout is not authorized by a synthetic test result. First prove a two-child join with distinct run/correlation IDs, correct result mapping, reverse completion order, failure/retry/timeout/cancellation, and no stuck parent; then prepare a no-cost design review. Keep production sequential until that evidence and cost safety are established.
+- Do not label the overall project complete while either the actual provider cost gate or required production-ready parallel-join acceptance gates remain unmet.
+
