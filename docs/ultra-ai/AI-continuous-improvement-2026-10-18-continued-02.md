@@ -16,7 +16,7 @@
 - Exhausted branch listing: five branches were found — `main`, `ultra-ai/progress-2026-10-17`, `auto/test-scheduled-policy-invariants-20261014`, `fix/nonstandard-json-constants-parity`, and `improve/shared-fixture-parity-tests`. No extra history-only branch was found.
 - Commit search returned recent indexed commits through 2026-10-15, while branch comparison shows 193 commits ahead. The search result therefore is not a reliable inventory of the working branch's full history; do not use the missing search hits to infer that reports or flow IDs never existed.
 - Read historical reports on the working branch. They document three incompatible snapshots: 29 total (3 enabled + 26 disabled), 7 total (3 enabled + 4 disabled), and current 10 total (3 enabled + 7 disabled). An older note also says 5 enabled, but does not identify the two additional IDs. The source records themselves do not prove whether the count differences came from project context, filtering/scope, or changes over time.
-- Historical IDs `hgPVOZQYdFTezhoZ6wj5j`, `yRqt1nbG4ZqiIkDX72vhN`, and `1MAbLTS7HS9LjDRqq9l4b` appear in older notes, but current flow inventory and default-branch code search do not establish their current or historical status. Zero production runs is not proof of deletion.
+- Historical IDs `hgPVOZQYdFTezhoZ6wj5j`, `yRqt1nbG4ZqiIkDX72vhN`, and `1MAbLTS7HS9LjDRqq9l4b` appear in older notes. Read-only `ap_flow_structure` calls for two known historical flow IDs from saved project URLs returned `Flow not found`, while a currently listed flow ID returned its structure. This narrows the discrepancy but still cannot distinguish flow deletion from a different connector project context. Zero production runs and default-branch search misses are not proof of deletion.
 
 ## Current read-only Activepieces inventory
 - Latest `ap_list_flows(limit=100)`: 10 flows, 3 ENABLED/published, 7 DISABLED (one published test child, six drafts).
@@ -27,7 +27,7 @@
 ## Free AI access and cost controls
 - Retried browser-tab access; it failed with: `Browser access requires the originating browser context`.
 - Gemini and Claude consumer-app responses obtained during this run: 0. They were not used for this run.
-- AI generation API calls: 0. Paid API calls: 0. Purchases/upgrades: 0. No credentials or secrets were read or changed.
+- AI generation API calls: 0. Paid API calls: 0. Purchases/upgrades: 0. No credential was intentionally sought or changed. A read-only structure response for a currently listed flow unexpectedly included sensitive webhook-auth configuration; its value was not copied into this report or Slack. Treat it as sensitive; no flow or auth setting was changed.
 - Existing hourly Asia/Seoul automation was not changed; its schedule and enabled state were not reconfigured.
 
 ## Outcome
@@ -41,3 +41,9 @@
 3. Continue investigating the historical IDs through source records or an authoritative state-change audit; do not treat search misses as proof of deletion.
 4. Use Gemini/Claude only if their free consumer web apps return real responses in an accessible session.
 5. Keep this report and the next meaningful result synchronized to GitHub and Slack, then read both back.
+
+
+## Additional read-only identity probe
+- Tested two historical flow IDs found in saved links for project URL `Fr9OAsxi4FbVSVLZkexYi`: `EoQdyZftEyejxh4P85K5S` and `Xyg0njk3QC8GBJltQpRnO`. Both returned `Flow not found` through the current Activepieces connector. A currently listed flow ID returned its structure successfully.
+- This result is consistent with either a changed connector project context or historical flows no longer present in the current context; it does not prove which. Do not change project settings or flow states to test the hypothesis.
+- Credential-handling note: the successful read-only structure response included a sensitive webhook-auth value. The value was not copied into durable records or Slack and is not repeated here. No credentials or flow settings were changed. If that value is a live credential and the user wants to rotate it, do so only through the authenticated UI with a safe plan for updating dependent webhook callers.
