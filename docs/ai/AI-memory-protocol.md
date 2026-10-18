@@ -5,7 +5,7 @@ Slogan: ALWAYS ON · ALWAYS EVOLVING · MAXIMUM AVAILABLE CAPABILITY
 ## Source of truth
 - Repository: https://github.com/watersun79-source/ai-token-optimization
 - Working branch: ai/continuation-readonly-audit-2026-10-18
-- Canonical custom instructions: docs/ultra-ai/AI-custom-instructions-ko-1500.md (1053 characters; verified 2026-10-17)
+- Canonical custom instructions: docs/ai/AI-custom-instructions-ko-1500.md (1053 characters; verified 2026-10-17)
 - Display copy: docs/ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 - Memory index: docs/ai/PROJECT_MEMORY_INDEX.md
 - Latest progress report: docs/ultra-ai/memory-optimization-progress-2026-10-17.md
@@ -25,7 +25,7 @@ Write a dated GitHub progress report and a concise Slack update. Include actual 
 
 ## ChatGPT deployment and limitations
 The current 1053-character prompt is stored at:
-https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/AI-custom-instructions-ko-1500.md
+https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/AI-custom-instructions-ko-1500.md
 On iOS, paste it into Settings > Customize ChatGPT > Custom Instructions with customization enabled. Saving the file does not change ChatGPT settings. Custom Instructions apply across chats when enabled, but GitHub and Slack history are not automatically injected into every conversation; retrieve them explicitly.
 
 ## Latest verification (2026-10-17)
