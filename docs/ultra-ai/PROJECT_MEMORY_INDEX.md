@@ -232,3 +232,11 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Browser tab access retry failed because an originating browser context is unavailable. Gemini/Claude consumer-app responses 0; AI-generation API calls 0; paid API calls 0; purchases/upgrades 0.
 - Existing hourly Asia/Seoul automation, connections, project concurrency settings, and `main` were not changed.
 - Next goal: use a genuinely connected authenticated Activepieces UI to verify project identity, then trace historical flow IDs through authoritative records. Do not use paid/uncertain APIs or change flow state.
+
+
+## Latest follow-up — historical flow ID probe
+
+- Extended report: [AI-continuous-improvement-2026-10-18-continued-02.md](https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/AI-continuous-improvement-2026-10-18-continued-02.md).
+- Read-only `ap_flow_structure` lookups for historical flow IDs `EoQdyZftEyejxh4P85K5S` and `Xyg0njk3QC8GBJltQpRnO` (from saved project links) returned `Flow not found`; a currently listed flow ID returned structure. This is consistent with either a changed connector project context or historical flows no longer present; cause is not proven.
+- One read-only flow-structure response unexpectedly included sensitive webhook-auth configuration. Its value was not copied into GitHub/Slack or repeated. No flow/auth setting changed. Treat the value as sensitive; any rotation should be planned through the authenticated UI to avoid breaking dependent callers.
+- Current inventory remains 10 total (3 ENABLED/published, 7 DISABLED). Gemini/Claude real consumer-web responses 0; generation API 0; paid API 0; purchases/upgrades 0. Hourly Asia/Seoul automation and `main` unchanged.
