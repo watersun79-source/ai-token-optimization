@@ -189,3 +189,13 @@
 - GitHub 이슈 #3에 이 관리 경로의 제약과 다음 단계 기록을 추가하고 read-back 확인함: https://github.com/watersun79-source/ai-token-optimization/issues/3#issuecomment-6247974106. Slack 후속 스레드에도 기록함: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792314005086499?thread_ts=1792313602.528959&cid=C0C9649RQAZ.
 - 다음 실행 가능한 조치: 이 MCP 연결/도구 manifest를 소유한 통합 런타임 관리자에게 `ap_set_project_context` 누락 및 tool-list refresh를 요청하거나, 동일한 공식 setter가 포함된 정상 MCP 연결을 제공받는다. 일반 Go/iOS 설정에 존재한다고 확인되지 않은 메뉴를 계속 안내하지 않는다.
 - 비용 및 보호 상태: 공급자 생성 API 0회, 유료 API 0회, 구매/업그레이드 0건, 프로젝트 범위 Activepieces 호출 0회, 운영 플로우/연결/정각 예약/`main` 변경 0건.
+
+
+## 추가 재시도 — 연결 안내 도구와 통합 검색 (2026-10-18)
+
+- 현재 세션의 Activepieces 도구 목록을 다시 열거함. 공식 문서에는 `ap_set_project_context`가 있으나 현재 노출 목록에는 없음. 다른 프로젝트 범위 도구를 호출하지 않아 컨텍스트 가드를 우회하지 않음.
+- `ap_setup_guide(topic="connection")`을 안전하게 조회함. 반환된 내용은 Activepieces 대시보드의 Settings → Connections에서 연결을 설정하는 일반 안내뿐이며, MCP tool manifest refresh/reconnect 기능은 제공하지 않음.
+- ChatGPT 플러그인 디렉터리에서 Activepieces/MCP 연결 관리 관련 검색을 다시 실행했으나, 이 누락 도구를 복구하거나 기존 Activepieces 연결의 도구 목록을 새로고침하는 적합한 플러그인을 확인하지 못함. 새 플러그인을 설치하거나 연결을 변경하지 않음.
+- 최신 공식 문서 확인: OpenAI custom MCP tool-list refresh는 관리 권한과 유효한 연결을 요구하며, MCP apps는 모바일에서 사용할 수 없다고 명시됨: https://help.openai.com/en/articles/12584461-creating-custom-mcp-apps-in-chatgpt. Activepieces tool catalog documents `ap_set_project_context`: https://www.activepieces.com/docs/mcp/tools.
+- 결론: 현재 세션에서 추가로 수행할 수 있는 안전한 복구 액션은 확인되지 않음. 다음 필수 단계는 연결/런타임 관리자가 공식 MCP 연결의 tool manifest를 갱신하고 `ap_set_project_context`를 실제 노출하는 것. 그 전에는 project ID 추측이나 project-scoped tool 호출 금지.
+- 안전 상태: 생성/유료 API 0회, Activepieces project-scoped call 0회, 구매/업그레이드 0건, 운영 플로우/연결/시간별 자동화/`main` 변경 0건.
