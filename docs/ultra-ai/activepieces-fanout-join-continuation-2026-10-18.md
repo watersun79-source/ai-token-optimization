@@ -304,3 +304,9 @@ Read-only re-audit after all test runs:
 ### Verification boundary
 This pass was read-only for Activepieces: no flow run, edits, publish/enable changes, provider API calls, or schedule changes. It confirms configuration validity and preserved state only; it does not prove a production parallel join.
 
+## Hourly automation prompt refresh — 2026-10-18 09:35 KST
+- Updated the existing enabled automation `AI` prompt only; did not create a duplicate or change its schedule. Tool read-back confirms the same hourly-on-the-hour recurrence and `Asia/Seoul` timezone, still enabled.
+- The prompt now explicitly prohibits paid model-provider APIs, treats uncertain quota/billing as a no-call, records the current Activepieces inventory as 10 flows (3 enabled/published + 7 disabled test/mock), distinguishes synthetic join evidence from real Gemini/Claude parallelism, and requires GitHub/Slack read-back.
+- Existing schedule remains unchanged. The automation update did not invoke any model provider API.
+- Persistent memory files were read and corrected: `docs/ultra-ai/ULTRA-AI-memory-protocol.md` commit `2c7568462b1cc5d6b947cd0f835e4beda5913e40`; `docs/ultra-ai/PROJECT_MEMORY_INDEX.md` commit `ba16589b7b41b0e72e6e8da0963b2015398b7d1a`. Canonical and display custom-instruction files were compared and are identical (blob SHA `8011eca50e723a123709f3868335bb968984998b)); ChatGPT app Settings itself was not changed.
+
