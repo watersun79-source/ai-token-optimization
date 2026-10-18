@@ -240,3 +240,11 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Read-only `ap_flow_structure` lookups for historical flow IDs `EoQdyZftEyejxh4P85K5S` and `Xyg0njk3QC8GBJltQpRnO` (from saved project links) returned `Flow not found`; a currently listed flow ID returned structure. This is consistent with either a changed connector project context or historical flows no longer present; cause is not proven.
 - One read-only flow-structure response unexpectedly included sensitive webhook-auth configuration. Its value was not copied into GitHub/Slack or repeated. No flow/auth setting changed. Treat the value as sensitive; any rotation should be planned through the authenticated UI to avoid breaking dependent callers.
 - Current inventory remains 10 total (3 ENABLED/published, 7 DISABLED). Gemini/Claude real consumer-web responses 0; generation API 0; paid API 0; purchases/upgrades 0. Hourly Asia/Seoul automation and `main` unchanged.
+
+
+## Memory protocol hardening — 2026-10-18
+
+- Canonical custom instructions and display copy updated together; both now match exactly and the instruction body is 1,230 characters, within the 1,500-character limit.
+- Added an explicit safeguard against copying secrets unexpectedly returned in tool output, and against rotating credentials before dependent callers are checked and approval is obtained.
+- GitHub commits: canonical `380e9f4a5a798b408927c424f386a315ab72bb5f`; display copy `900c60ae5b142d08098a4f7e4fd61397fd0c4709`. These are repository changes only; ChatGPT settings were not directly changed or inspected.
+- Detailed report: [AI-continuous-improvement-2026-10-18-continued-02.md](https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/AI-continuous-improvement-2026-10-18-continued-02.md).
