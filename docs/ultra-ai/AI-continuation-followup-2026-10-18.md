@@ -19,4 +19,4 @@
 - No model provider API calls, purchases, flow changes, connection changes, schedule changes, or `main` changes.
 
 ## Next goal
-Read back issue #3 and the Slack update. Then continue with the supported connector configuration path needed to restore project context; do not bypass the required context-setting guard.
+Restore access to the supported Activepieces project-context selection action through the connector/runtime configuration, or obtain an officially supported equivalent. After that, verify the project identity and inspect anomalous run origin read-only. Do not bypass the required context-setting guard.
