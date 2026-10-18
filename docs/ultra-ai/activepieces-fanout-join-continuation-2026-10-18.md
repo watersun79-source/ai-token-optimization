@@ -240,3 +240,14 @@ Official references:
 - Activepieces pricing and AI-credit rules: https://www.activepieces.com/pricing
 - Activepieces AI Providers setup: https://www.activepieces.com/docs/admin-guide/guides/setup-ai-providers
 - Anthropic Claude API billing: https://support.claude.com/en/articles/8977456-how-do-i-pay-for-my-claude-api-usage
+
+
+## Final safety and validation sweep after E2E (2026-10-18)
+Read-only re-audit after all test runs:
+- Current Activepieces project lists exactly 10 flows. The three pre-existing production flows remain ENABLED and published: `AI 3AI 협업` (`kt2N9yCVA3dLkFiNPSMsH`), `Slack` (`vtRwEYmcwDTunBZut265G`), and `Gemini + Claude 협업 비서 (비용 확인 필요)` (`drNhxMhmCo3A0rKV0OhIZ`).
+- The test-only worker `bMKzPS0kb73NtEDQbq9D5` remains DISABLED (published definition retained for inspection); both test parents `4a8OSFX1yERP6TZ9D0Hob` and `4BrtUZsKexpdxjIpWMtYR` remain DISABLED and unpublished. All mock/test-only flows remain disabled/unpublished.
+- Folder validation for `TEST ONLY · Concurrent Child Join E2E`: `ok=true`, 3 flows checked, tables checked, no issues or unchecked items. Each of the worker and two parent flows validates with 6/6 valid steps and 0 invalid/0 skipped.
+- Test results table `FJbMGkvPftigznkeEGBQW` contains 56 rows from synthetic test runs and stale/failure/timeout fixtures. These rows are retained as audit evidence; no records were deleted.
+- The pre-existing hourly `AI` automation was privately checked and remains enabled, hourly on the hour, Asia/Seoul. It was not edited, rescheduled, or duplicated.
+- No Gemini, Claude, or OpenAI API invocation occurred during this audit. Current project tooling does not expose Activepieces remaining AI credits or the Google account's actual quota/billing state, so production-provider parallelization remains gated on user-visible billing/quota confirmation.
+- No production flow was edited, executed, enabled/disabled, or republished in this sweep.
