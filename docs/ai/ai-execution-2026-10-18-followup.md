@@ -292,3 +292,16 @@
 - ChatGPT 플러그인 검색에서도 Activepieces 프로젝트 목록/컨텍스트 복구를 직접 수행할 수 있는 설치 가능한 연결은 확인되지 않음. 새 플러그인 설치나 인증 변경은 하지 않음.
 - 남은 복구 단계는 MCP 연결 소유자/관리자가 공식 웹 관리 경로에서 연결 유효성을 확인하고 도구 목록을 새로고침/재연결한 뒤 `ap_set_project_context` 를 실제로 노출시키는 것. 도구가 노출되면 프로젝트 ID 확인 → 실행 기록/parent trigger read-only 감사 → 결과를 재검증하는 순서로 진행.
 - 안전 상태: 공급자 생성 API 0회, 유료 API 0회, 구매/업그레이드 0건, Activepieces 프로젝트 범위 호출 0회, 운영 플로우/연결/테이블/기존 정각 자동화/`main` 변경 0건. 해결 완료로 표시하지 않음.
+
+
+## 정정 및 실제 Activepieces 읽기 전용 감사 — 2026-10-19
+
+- 이전 보고서의 `ap_set_project_context` 관련 설명은 잘못된 전제였다. 현재 공식 Activepieces MCP 도구 참조(https://www.activepieces.com/docs/mcp/tools)는 해당 도구를 Discovery 목록에 포함하지 않는다. 이를 “Activepieces에 있는 기능이지만 연결에서 누락됐다”고 단정하지 않는다.
+- 현재 실제로 노출된 Activepieces MCP 도구 목록에는 `ap_set_project_context`가 없지만 `ap_list_flows`, `ap_flow_structure`, `ap_list_runs`, `ap_list_connections`가 존재하며, 이 읽기 전용 호출은 현재 선택된 프로젝트에서 정상 응답했다. 따라서 프로젝트 선택 setter 복구를 계속 요구하는 대신 실제 제공 도구로 감사한다.
+- 현재 프로젝트 조회 결과: 총 10개 흐름, ENABLED/published 3개(`AI 3AI 협업`, `Slack`, `Gemini + Claude 협업 비서 (비용 확인 필요)`), 나머지 7개 DISABLED. 상태는 변경하지 않았다.
+- 현재 연결 조회 결과 5개(OpenAI, Google Gemini, Google Gemini api, Slack, Anthropic Claude)가 모두 ACTIVE로 표시된다. ACTIVE는 인증/연결 상태만 나타내며 무료 할당량 또는 과금 여부를 입증하지 않는다.
+- 세 운영 흐름의 구조를 읽기 전용으로 확인했다. `AI 3AI 협업`은 OpenAI → Gemini → Claude → OpenAI → webhook response → Slack의 순차 구조다. `Slack`은 webhook trigger → Slack 메시지 전송 구조다. `Gemini + Claude 협업 비서`는 OpenAI 초안 단계가 SKIPPED이고 Gemini → Claude → webhook response 순서다.
+- 최근 PRODUCTION 실행 조회(각 흐름 최대 5건): `AI 3AI 협업` 0건, `Slack` 0건, `Gemini + Claude 협업 비서`는 2026-10-15 UTC의 최근 5건이 모두 SUCCEEDED. 이 조회만으로 현재 시각의 정상 실행이나 무료 사용을 주장하지 않는다.
+- 구조 응답에 webhook 인증 값이 포함되어 있었으나 보고서/Slack에는 복사하지 않았다. 운영 흐름·연결·테이블·예약·main은 수정하지 않았다.
+- 다음 목표: 최근 실행이 없는 두 흐름은 실행을 유발하지 않고 trigger source, run history 및 upstream caller를 확인할 수 있는 읽기 전용 근거를 조사한다. 실제 테스트는 무료/비용 안전성이 확인되기 전까지 보류한다.
+- 비용/변경: 생성 API 0회, 유료 API 0회, 구매/업그레이드 0건, 운영 설정 변경 0건.
