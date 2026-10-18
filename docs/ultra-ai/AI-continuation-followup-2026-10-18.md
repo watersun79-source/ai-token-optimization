@@ -8,7 +8,9 @@
 ## Verification
 - The prior audit report was fetched from the dedicated branch and its SHA confirmed before continuing.
 - Search for an existing open issue about the missing Activepieces project context returned zero results; issue #3 was then created.
-- Issue creation response returned the canonical URL and open state. A separate issue read-back is still required.
+- Issue #3 was read back separately and confirmed OPEN with the expected title and acceptance criteria.
+- Slack message was read back from channel `C0C9649RQAZ`; the new follow-up message and report/issue links are present.
+- GitHub report was read back after the write; blob SHA at verification time: `f2d73e9a3c0efe9ed5d418ff835c3b597b9f92ac`.
 
 ## Blockers and unchanged state
 - The exposed Activepieces tool catalog still lacks `ap_set_project_context`; no project-scoped Activepieces tool was called.
