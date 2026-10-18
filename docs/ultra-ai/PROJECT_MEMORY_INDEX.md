@@ -248,3 +248,16 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Added an explicit safeguard against copying secrets unexpectedly returned in tool output, and against rotating credentials before dependent callers are checked and approval is obtained.
 - GitHub commits: canonical `380e9f4a5a798b408927c424f386a315ab72bb5f`; display copy `900c60ae5b142d08098a4f7e4fd61397fd0c4709`. These are repository changes only; ChatGPT settings were not directly changed or inspected.
 - Detailed report: [AI-continuous-improvement-2026-10-18-continued-02.md](https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/AI-continuous-improvement-2026-10-18-continued-02.md).
+
+## Latest authoritative state — 2026-10-18 09:34 KST
+- Project/user-facing name: **AI**. Legacy `ULTRA-AI` path names remain unchanged to preserve existing links.
+- Current Activepieces direct inventory: 10 flows; 3 enabled/published production flows, 7 disabled test/mock flows. No flow was edited, run, published, enabled, or disabled during this read-only pass.
+- Validation: production `AI 3AI 협업` = 7/7 valid; `Gemini + Claude 협업 비서 (비용 확인 필요)` = 4 valid, 1 intentionally skipped; test folder `TEST ONLY · Concurrent Child Join E2E` = 3 flows and table checked, 0 issues, 0 unchecked. These are configuration checks only.
+- The main production graph remains sequential: ChatGPT draft → Gemini review → Claude review → final integration. The Gemini+Claude-only flow also executes sequentially. Synthetic fan-out/join evidence must not be represented as proof of actual Gemini/Claude parallel calls.
+- The synthetic audit table retains 56 rows; preserve them as evidence.
+- Existing hourly automation `AI`: enabled, Asia/Seoul, hourly on the hour. No schedule modification or duplicate was made.
+- Cost guardrail: paid model API calls are prohibited. Do not invoke a model-provider route unless the actual call is confirmed free for this account with no billing risk. Provider connection status is not a quota/billing check. Current audit used zero model-generation calls.
+- GitHub progress report updated and read back: [Activepieces fan-out/join continuation](https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/activepieces-fanout-join-continuation-2026-10-18.md), latest audit commit `bc52fad393022051ec47cdc090350b503500cc8b`.
+- Slack update posted and read back: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792283641456619
+- Still incomplete: authenticated read-only inspection of account-specific free quota/billing; a production-safe true parallel join with provider-free testing; production rollout decision. Keep production sequential until those gates are met.
+
