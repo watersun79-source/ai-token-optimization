@@ -279,3 +279,8 @@ Read-only re-audit after all test runs:
 - A real production parallel rollout is not authorized by a synthetic test result. First prove a two-child join with distinct run/correlation IDs, correct result mapping, reverse completion order, failure/retry/timeout/cancellation, and no stuck parent; then prepare a no-cost design review. Keep production sequential until that evidence and cost safety are established.
 - Do not label the overall project complete while either the actual provider cost gate or required production-ready parallel-join acceptance gates remain unmet.
 
+### Audit trail for the no-paid-API directive (2026-10-18)
+- GitHub change committed as `0aafb85d56f2f24b13108b40de1eb36d76968ac3`; the updated file was fetched again and the guardrail text was confirmed present.
+- Slack status message posted to channel `C0C9649RQAZ`: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792282052266659
+- Slack channel read-back was attempted to verify the exact message. Do not infer successful read-back from the send receipt alone.
+
