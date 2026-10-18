@@ -311,3 +311,5 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Open PR #1 remains visible and untouched: https://github.com/watersun79-source/ai-token-optimization/pull/1.
 - Activepieces current list remains 10 flows (3 enabled, 7 disabled); no flow was triggered or changed. Model-provider API calls 0, purchases/upgrades 0, no schedule/connection/secret/main changes.
 - Billing/free quota, current project identity, and actual scheduler output remain unverified with currently exposed read-only paths. Next: keep looking for safe read-only UI/connector evidence; do not call provider APIs or change production flow state.
+
+- Debug-mode continuation (2026-10-18): rechecked scheduler evidence. `AI 3AI 협업` has 0 queryable production runs; the latest five runs of `Gemini + Claude 협업 비서` are historical on 2026-10-15 UTC, so hourly scheduler output remains unverified. Canonical custom-instructions file is 1,230 chars (under 1,500), but ChatGPT settings application is unverified. CI validates tests only, not Activepieces runtime billing prevention. Updated report commit: `199ffcc5b8293a89ed1265d01fc800d47eabf470`.
