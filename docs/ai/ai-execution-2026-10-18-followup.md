@@ -166,3 +166,15 @@
 - 공식 self-host 문서: https://www.activepieces.com/docs/install/options/docker-compose. 요구사항: Docker Compose v2, 최소 2 vCPU/4 GB RAM, Windows는 WSL2. 현재 이 실행 환경에는 Docker/Podman이 설치되어 있지 않아 로컬 엔진 실행은 아직 불가. 이 문서는 계획만 저장한 것이며 실제 engine-level test 성공으로 보고하지 않음.
 - 기존 Cloud 플로우 7개(활성 3, 초안 4)와 매시간 정각 예약은 변경하지 않음. Gemini/Claude 실제 응답 0, AI 생성 API 0, 유료 API 0, 구매/업그레이드 0.
 - 다음 목표: Docker Compose v2가 있는 별도 로컬 머신에서 계획서의 synthetic-only 테스트를 실행하고, 세 번의 run ID/child timestamps를 수집. 그와 별개로 Platform Admin → Usage/Billing 및 외부 provider quota가 확인되기 전 실제 AI 생성 호출은 금지.
+
+
+## 실행 기록 — 2026-10-18 Activepieces MCP 도구 복구 재시도
+- 시작 시 작업 브랜치의 `docs/ai/AI-memory-protocol.md`, `docs/ai/PROJECT_MEMORY_INDEX.md`, 최신 실행 보고서, Slack 채널 `C0C9649RQAZ`의 최신 기록을 실제로 다시 읽음.
+- 브랜치/경로 확인: `ai/continuation-readonly-audit-2026-10-18`. `docs/ai/AI-memory-protocol.md` blob SHA `6fe591ec8850c3877f2757f65a16843047a4bbaa`; 인덱스 blob SHA `3f11f0897344deb096eaf36587d8bf378b0d3cb3`; 직전 보고서 blob SHA `018947c50804a778d98a6a74d09dd6c6afa2ace0`.
+- 공식 Activepieces MCP 도구 참조를 확인함: `ap_set_project_context`는 전체 도구 카탈로그에 존재하며 프로젝트 범위 작업 전에 필요함. 그러나 현재 연결에서 노출된 Activepieces MCP 도구 목록에는 해당 도구가 없음. 이 세션에서 도구 카탈로그 refresh/reconnect 액션도 발견하지 못함.
+- 독립 읽기 전용 진단: 브라우저 탭 조회는 originating browser context 오류로 실패. Gemini/Claude 소비자 웹앱 응답을 확보하지 못함. GitHub 기본 브랜치에서 요청 파일 조회가 404였으나, 전용 작업 브랜치에서 세 파일을 정상적으로 읽음; 이는 기본 브랜치/작업 브랜치 차이와 일치함.
+- Slack 최신 검색은 `C0C9649RQAZ`의 최근 AI/Activepieces 기록을 확인했고, 이전 도구 목록 재열거 및 브라우저 컨텍스트 실패가 이미 기록되어 있음을 확인함.
+- 안전 경계: `ap_list_flows`, `ap_list_runs`, `ap_get_run`, 연결 조회 등 프로젝트 범위 도구는 호출하지 않음. 컨텍스트 가드 우회, 프로젝트 ID 추측, 플로우 테스트/실행/수정/게시, 예약 변경은 하지 않음.
+- 비용/변경: 공급자 생성 API 0회, 유료 API 0회, 구매/업그레이드 0건, 운영 변경 0건, 기존 매시간 정각 Asia/Seoul 자동화 변경 0건, `main` 변경 0건. 테스트 ID 없음(실행 테스트를 하지 않음).
+- 차단 및 사용자 조치: ChatGPT의 연결된 앱/MCP 관리 환경에서 Activepieces 연결의 도구 목록 갱신 또는 공식 재연결 기능을 찾아 실행한 뒤, `ap_set_project_context`가 실제 노출되는지 확인해야 함. 현재 세션은 그 설정 UI/연결 런타임을 제어할 수 없어 직접 갱신은 미완료.
+- 다음 목표: 도구가 노출되면 의도한 프로젝트 ID를 읽기 전용으로 확인하고, 그 후에만 과거 Flow ID와 parent/trigger 출처를 조사함. 계정별 무료 한도·결제 위험은 별도의 신뢰 가능한 읽기 전용 증거가 확보되기 전까지 미확인으로 유지.
