@@ -47,3 +47,8 @@
 - Tested two historical flow IDs found in saved links for project URL `Fr9OAsxi4FbVSVLZkexYi`: `EoQdyZftEyejxh4P85K5S` and `Xyg0njk3QC8GBJltQpRnO`. Both returned `Flow not found` through the current Activepieces connector. A currently listed flow ID returned its structure successfully.
 - This result is consistent with either a changed connector project context or historical flows no longer present in the current context; it does not prove which. Do not change project settings or flow states to test the hypothesis.
 - Credential-handling note: the successful read-only structure response included a sensitive webhook-auth value. The value was not copied into durable records or Slack and is not repeated here. No credentials or flow settings were changed. If that value is a live credential and the user wants to rotate it, do so only through the authenticated UI with a safe plan for updating dependent webhook callers.
+
+
+## Memory protocol hardening
+- Updated the canonical and display-copy ChatGPT custom-instruction files with a stronger credential-output rule: never quote or persist a secret unexpectedly returned by a tool, and only rotate credentials after checking dependent callers and obtaining approval.
+- Both files are byte-identical after update; instruction body is 1,230 JavaScript characters, below the 1,500-character limit. GitHub commits: `380e9f4a5a798b408927c424f386a315ab72bb5f` and `900c60ae5b142d08098a4f7e4fd61397fd0c4709`. This changes repository files only; ChatGPT settings were not directly changed or inspected.
