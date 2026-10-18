@@ -236,3 +236,10 @@
 - 따라서 지금 가능한 대체 실행은 (1) GitHub/Slack에서 지속 작업과 감사 로그를 계속 관리, (2) 실제로 연결된 Activepieces 도구 목록을 확인, (3) 프로젝트 컨텍스트가 확인될 때까지 프로젝트 데이터 호출을 보류하는 것. 운영 플로우나 연결 변경, API 호출은 하지 않음.
 - 현재 상태: Activepieces 프로젝트 데이터 읽기 0회, 공급자 API 호출 0회, 유료 호출 0회, 구매/업그레이드 0건, 운영 플로우/연결/테이블/`main`/기존 정각 자동화 변경 0건.
 - 다음 진행 기준: Activepieces 연결 관리자에서 공식 MCP 도구 목록 갱신/재연결을 수행하거나, Activepieces Platform MCP를 별도로 연결한 경우 실제 노출된 `List Projects` 도구를 통해 프로젝트를 확인한다. 연결되지 않은 도구를 사용했다고 주장하지 않는다.
+
+
+## 실행 기록 — 2026-10-19 연결 대안 검증
+- 공식 웹 검색으로 Activepieces Platform MCP 페이지를 재확인함. 공식 페이지는 이 통합이 `List Projects`, `Custom API Call` 등 4개 도구를 제공하며, Activepieces의 Settings → MCP Server에서 서버를 활성화하고 MCP 클라이언트에 연결하는 방식이라고 설명함: https://www.activepieces.com/mcp/activepieces 및 https://www.activepieces.com/docs/mcp/overview.
+- ChatGPT 플러그인/커넥터 카탈로그도 조회했으나, 이번 검색 결과에서 사용 가능한 Activepieces 전용 ChatGPT 앱/커넥터는 찾지 못함. 따라서 현재 대화에서 연결을 대신 생성하거나 Platform MCP의 List Projects를 직접 호출할 수 없음. 연결을 만들었다고 주장하지 않음.
+- 문서상 경로와 달리 사용자의 현재 연결에는 필요한 프로젝트 Discovery 도구가 없으므로, 이 세션 안에서 다른 Activepieces 프로젝트 도구를 호출해 우회하지 않음. 실제로 필요한 다음 조치는 사용자가 Activepieces Platform MCP를 별도 MCP 클라이언트/연결 설정에서 연결하는 것. 연결 완료 후 실제 도구가 노출되면 읽기 전용 프로젝트 목록 확인부터 재개할 수 있음.
+- 현재 실행에서 수행한 것: 공식 문서 재검증, ChatGPT 연결 카탈로그 검색, GitHub 보고서 갱신 및 재조회, Slack 기록 게시 및 재조회. API 호출/프로젝트 데이터 접근/운영 변경/유료 호출은 0건.
