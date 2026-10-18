@@ -284,3 +284,23 @@ Read-only re-audit after all test runs:
 - Slack status message posted to channel `C0C9649RQAZ`: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792282052266659
 - Slack channel read-back was attempted to verify the exact message. Do not infer successful read-back from the send receipt alone.
 
+## Continuation audit — 2026-10-18, latest read-only pass
+
+### Current state rechecked directly
+- Activepieces reports 10 flows in the project: 3 enabled/published production flows and 7 disabled test/mock flows. No status changes were made.
+- Production flow `AI 3AI 협업`: structural validation valid, 7/7 steps, zero invalid/zero skipped. Its graph still places Gemini review after ChatGPT draft and Claude review after Gemini, so reviewer execution is sequential.
+- Production flow `Gemini + Claude 협업 비서 (비용 확인 필요)`: validation valid, 4 valid steps and one intentionally skipped OpenAI draft. Its Gemini and Claude steps also remain sequential.
+- Test-only folder `TEST ONLY · Concurrent Child Join E2E`: validation `ok=true`, three flows and the table checked, zero issues, zero unchecked items.
+- Durable synthetic test evidence table still has 56 rows. Audit records were not deleted.
+- Activepieces connections list shows configured OpenAI, Gemini, Claude and Slack connections, but connection status is not proof of free quota. No provider/model was called in this audit.
+- Existing hourly automation `AI` was privately inspected and remains enabled with `FREQ=HOURLY;BYMINUTE=0;BYSECOND=0` in `Asia/Seoul`. It was not modified or duplicated.
+
+### Persistent-memory protocol
+- User's non-negotiable instruction: do not use paid model APIs. Do not make provider calls unless the exact call is confirmed to be within a free allowance and no billing risk exists; if uncertain, do not call.
+- For continuity, use GitHub as the durable project log and Slack channel `C0C9649RQAZ` as the cross-check record; read both back after meaningful changes.
+- Never report persistent memory as globally synchronized automatically. Each future run must explicitly retrieve the project protocol and latest report.
+- Continue from the unresolved gates, not from the last completed mock: real provider-free eligibility and production-safe Gemini/Claude parallel orchestration remain incomplete.
+
+### Verification boundary
+This pass was read-only for Activepieces: no flow run, edits, publish/enable changes, provider API calls, or schedule changes. It confirms configuration validity and preserved state only; it does not prove a production parallel join.
+
