@@ -8,7 +8,7 @@ Slogan: ALWAYS ON · ALWAYS EVOLVING · MAXIMUM AVAILABLE CAPABILITY
 - Canonical custom instructions: docs/ai/AI-custom-instructions-ko-1500.md (1053 characters; verified 2026-10-17)
 - Display copy: docs/ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 - Memory index: docs/ai/PROJECT_MEMORY_INDEX.md
-- Latest progress report: docs/ultra-ai/memory-optimization-progress-2026-10-17.md
+- Latest progress report: docs/ai/memory-optimization-progress-2026-10-17.md
 - Slack progress channel: C0C9649RQAZ
 - Activepieces project: https://cloud.activepieces.com/projects/Fr9OAsxi4FbVSVLZkexYi/
 
