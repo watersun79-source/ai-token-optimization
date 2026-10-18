@@ -211,3 +211,13 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Slack summary posted and read back: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792282169232919.
 - Gemini/Claude consumer-web responses: 0; provider generation API calls: 0; paid API calls: 0; purchases/upgrades: 0. OpenAI Custom Instructions and Activepieces List/Get Flow official docs checked.
 - Next goal: determine exact Activepieces project context through a supported read-only mechanism and trace historical inventory evidence. Preserve all production flows, the hourly Asia/Seoul schedule, connections, main, and project concurrency settings.
+
+
+## Latest execution — 2026-10-18 09:12 KST
+
+- Read-only investigation report: [AI-continuous-improvement-2026-10-18-0912.md](https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/AI-continuous-improvement-2026-10-18-0912.md), commit `e6980f696d9be206a13d0463689277ad1f62de8e`.
+- Current Activepieces list remains 10 flows (3 ENABLED/published, 7 DISABLED); no flow was modified or run. Historical snapshots (7, 29, and older 5-enabled count) remain unexplained.
+- GitHub code search for two historical flow IDs and 29/5 inventory phrases returned no results, but search is default-branch scoped and does not prove the IDs never existed.
+- Activepieces MCP tool catalogue lacks a project-context/project-list reader. Official List Projects and List Flows REST docs require an API key and projectId; no API call was made because billing/credential safety is unverified and the user prohibits paid/uncertain API use.
+- Browser connector requires originating browser context. Gemini and Claude consumer-app real responses: 0. AI generation API calls 0; paid API calls 0; purchases/upgrades 0.
+- Slack summary attempt was blocked by safety check; no new Slack post is claimed. Next goal: use a verified free authenticated UI/read-only identity source, then continue historical inventory trace. Preserve all flows, connections, main, concurrency settings and hourly Asia/Seoul schedule.
