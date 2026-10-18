@@ -227,3 +227,12 @@
 - 비용/변경: 공급자 API 호출 0회, 유료 API 호출 0회, 구매/업그레이드 0건. 운영 플로우·연결·테이블·main·기존 매시간 예약 변경 0건.
 - 미완료: Activepieces 도구 목록에서 프로젝트 컨텍스트 선택 도구를 확인할 수 없어 프로젝트 범위 점검은 보류. 브라우저 컨텍스트가 없어 Gemini/Claude 무료 웹앱 사용은 미확인.
 - 다음 목표: MCP 연결/런타임 관리 화면에서 도구 manifest를 갱신할 수 있는 관리자 경로를 확인하고, 실제 도구 노출이 달라지기 전에는 프로젝트 범위 호출을 하지 않는다.
+
+
+## 실행 기록 — 2026-10-19 대체 경로 조사
+- 사용자가 확인한 바와 같이, 현재 연결에서 `ap_set_project_context`를 호출할 수 없음. 다만 Activepieces 공식 MCP 도구 참조는 이 도구를 명시적으로 정의하고, 프로젝트 ID를 선택하거나 생략 시 프로젝트 목록을 반환한다고 설명함: https://www.activepieces.com/docs/mcp/tools. 공식 개요는 프로젝트 범위라고 명시하며 Discovery 도구는 항상 사용 가능하다고 설명함: https://www.activepieces.com/docs/mcp/overview.
+- 런타임 인벤토리를 재검사했으나 Activepieces 도구 목록에 `ap_set_project_context` 또는 `ap_list_projects`는 없음. 그러므로 공식 문서와 실제 연결의 tool manifest 사이 불일치로 분류함. 문서가 현재 배포된 커넥터 버전과 동일하다고 단정하거나 서버 측 원인을 추측하지 않음.
+- 대체 경로 검토: 공식 Activepieces Platform MCP는 별도 통합으로 `List Projects` 및 `Custom API Call` 도구를 제공한다고 소개됨: https://www.activepieces.com/mcp/activepieces. 하지만 현재 ChatGPT 세션의 연결 도구 목록에는 이 Platform MCP 도구가 없으며, 새 인증이나 임의 API 키를 사용하지 않고서는 여기서 호출할 수 없음. 공식 API는 projectId를 요구하므로 프로젝트 ID를 추측한 API 호출은 안전한 대안이 아님.
+- 따라서 지금 가능한 대체 실행은 (1) GitHub/Slack에서 지속 작업과 감사 로그를 계속 관리, (2) 실제로 연결된 Activepieces 도구 목록을 확인, (3) 프로젝트 컨텍스트가 확인될 때까지 프로젝트 데이터 호출을 보류하는 것. 운영 플로우나 연결 변경, API 호출은 하지 않음.
+- 현재 상태: Activepieces 프로젝트 데이터 읽기 0회, 공급자 API 호출 0회, 유료 호출 0회, 구매/업그레이드 0건, 운영 플로우/연결/테이블/`main`/기존 정각 자동화 변경 0건.
+- 다음 진행 기준: Activepieces 연결 관리자에서 공식 MCP 도구 목록 갱신/재연결을 수행하거나, Activepieces Platform MCP를 별도로 연결한 경우 실제 노출된 `List Projects` 도구를 통해 프로젝트를 확인한다. 연결되지 않은 도구를 사용했다고 주장하지 않는다.
