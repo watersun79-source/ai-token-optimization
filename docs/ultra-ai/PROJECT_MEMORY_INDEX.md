@@ -261,3 +261,5 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Slack update posted and read back: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792283641456619
 - Still incomplete: authenticated read-only inspection of account-specific free quota/billing; a production-safe true parallel join with provider-free testing; production rollout decision. Keep production sequential until those gates are met.
 
+### Custom-instruction copy verification — 2026-10-18
+- Canonical and display files are identical at Git blob SHA `8011eca50e723a123709f3868335bb968984998b`. The file's declared count is 1,230; normalized body count is 1,229 JavaScript UTF-16 code units after removing the count header. The content remains within 1,500 characters. ChatGPT Settings itself was not changed by these GitHub operations.
