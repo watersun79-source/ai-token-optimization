@@ -281,3 +281,14 @@
 - 이 회차는 문서 조사 및 예약 상태 확인만 수행. 로컬 설치·컨테이너·네트워크 변경 0, 공급자 API 호출 0, 구매 0, 운영 플로우·연결·main·기존 예약 변경 0.
 - 공식 자료: https://www.activepieces.com/docs/install/options/docker ; https://www.activepieces.com/docs/install/options/docker-compose ; https://www.activepieces.com/solutions/open-source-developers
 - 다음 단계: 별도 테스트 환경을 준비하려면 실제 사용할 장비/OS와 Docker 설치 여부를 확인해야 함. 현재 세션에서는 장비 상태를 확인하거나 설치를 수행하지 않음.
+
+
+## 실행 기록 — 2026-10-19 해결 지속 점검 (현재 회차)
+
+- 시작 시 `docs/ai/AI-memory-protocol.md`, `docs/ai/PROJECT_MEMORY_INDEX.md`, 최신 후속 보고서, Slack 채널 `C0C9649RQAZ` 의 최근 메시지를 다시 읽음.
+- 공식 Activepieces 도구 참조를 웹에서 재확인함: https://www.activepieces.com/docs/mcp/tools 에는 `ap_set_project_context` 가 프로젝트 컨텍스트 선택용 Discovery 도구로 명시되어 있음. 그러나 현재 세션의 Activepieces 도구 인벤토리에는 이 도구가 없음. 프로젝트 범위 도구를 호출해 가드를 우회하지 않음.
+- OpenAI 공식 안내도 재확인함: https://help.openai.com/en/articles/12584461-connecting-custom-mcp-servers-in-chatgpt. 도구 목록 새로고침은 해당 연결을 관리할 권한과 유효한 연결이 있는 Business/Enterprise/Edu 웹 작업공간의 관리 경로에 한정됨. 현재 사용자는 Go/iOS 환경이며, 이 세션에서 연결 관리 권한이나 tool-manifest 새로고침 도구를 사용할 수 없음.
+- 연결 브라우저를 읽기 위해 `list_tabs` 를 호출했지만 “originating browser context” 오류로 실패. 따라서 Gemini/Claude 소비자 웹앱 실제 응답은 이번 회차에도 확보하지 못함.
+- ChatGPT 플러그인 검색에서도 Activepieces 프로젝트 목록/컨텍스트 복구를 직접 수행할 수 있는 설치 가능한 연결은 확인되지 않음. 새 플러그인 설치나 인증 변경은 하지 않음.
+- 남은 복구 단계는 MCP 연결 소유자/관리자가 공식 웹 관리 경로에서 연결 유효성을 확인하고 도구 목록을 새로고침/재연결한 뒤 `ap_set_project_context` 를 실제로 노출시키는 것. 도구가 노출되면 프로젝트 ID 확인 → 실행 기록/parent trigger read-only 감사 → 결과를 재검증하는 순서로 진행.
+- 안전 상태: 공급자 생성 API 0회, 유료 API 0회, 구매/업그레이드 0건, Activepieces 프로젝트 범위 호출 0회, 운영 플로우/연결/테이블/기존 정각 자동화/`main` 변경 0건. 해결 완료로 표시하지 않음.
