@@ -37,3 +37,10 @@ Continue looking for an authenticated, read-only UI/connector path to inspect pr
 - Five project connections are marked ACTIVE (OpenAI, Google Gemini, Google Gemini api, Slack, Anthropic Claude); this is connection health metadata only, not evidence of free quota or billing status. No credentials or connection IDs are included in this report.
 - Provider calls remain 0 for this audit; no purchases, schedule changes, flow mutations, connection changes, or `main` writes.
 - Next: read-only inspect those 10 run records' flow metadata/trigger origin and compare timestamps against the existing hourly ChatGPT automation; do not alter production while the discrepancy is unresolved.
+
+
+## Follow-up run-origin investigation — 2026-10-18
+- Read-only detail inspection of the newest anomalous run `CjomQ66DbymQqqXBIkbkX` shows a callable-flow trigger with synthetic test ID `E2E-20261018-0834-18`, branch B, a simulated 1-second delay, and table records for child START/DONE. The inspected steps are test-harness work, not an hourly AI provider workflow.
+- The associated `TEST ONLY · Polling Join Parent` flow has zero queryable PRODUCTION runs; the child worker also has zero queryable TESTING runs. This narrows the issue to run environment/origin labeling or retained run metadata, but does not establish the exact platform cause.
+- No evidence connects these child-worker runs to the hourly ChatGPT automation. Do not treat them as proof the hourly schedule ran or failed.
+- No changes were made; no provider calls were made. Next: preserve the anomaly as unresolved and seek an Activepieces UI/metadata view that exposes parent run IDs/callable-flow origin and project identity. Do not alter flow status.
