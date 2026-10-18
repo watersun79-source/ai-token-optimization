@@ -324,3 +324,11 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Activepieces read-only inventory still shows 3 enabled/published and 7 disabled flows. Recent PRODUCTION-labeled run records remain attached to disabled TEST ONLY · Join Child Worker; origin/environment discrepancy unresolved.
 - No flow, connection, schedule, or main-branch changes; provider API calls 0; purchases/upgrades 0. Gemini/Claude consumer-app review not performed because browser context is unavailable.
 - Next: inspect read-only task output and parent/trigger metadata; verify billing/free quota without provider calls.
+
+
+## Current continuation checkpoint — 2026-10-18 (latest verified)
+- Rechecked issue #3 and current connector tool inventory. `ap_set_project_context` is absent; no supported refresh/reconnect action exists in the tools exposed to this session. Plugin-directory search for Activepieces returned no installable entry. Browser connector still fails due to missing originating browser context.
+- Latest report: [ai-execution-2026-10-18-followup.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-18-followup.md). GitHub issue #3 tracks the blocker and acceptance criteria: https://github.com/watersun79-source/ai-token-optimization/issues/3.
+- Required safe next action: connector/runtime owner must refresh the MCP tool manifest or expose the official `ap_set_project_context` action. Only after it appears, set and verify the intended project ID, then inspect anomalous run details and parent/trigger origin read-only.
+- Do not bypass the missing setter by invoking project-scoped Activepieces tools. Do not guess project IDs. Do not call Gemini/Claude/OpenAI generation APIs until account-specific free quota and billing risk are verified through genuine read-only evidence.
+- Latest continuation costs/changes: provider generation API 0; paid API 0; purchases/upgrades 0; project-scoped Activepieces calls 0; production flow/connection/hourly schedule/`main` changes 0. Gemini/Claude consumer-web responses were not obtained.
