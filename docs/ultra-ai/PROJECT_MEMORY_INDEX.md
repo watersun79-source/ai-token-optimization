@@ -272,3 +272,13 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Activepieces current inventory: 10 flows, 3 ENABLED/published, 7 DISABLED. Recent PRODUCTION run query: `AI 3AI 협업` 0 results; `Slack` 0 results; `Gemini + Claude 협업 비서` latest 5 returned SUCCEEDED, most recent 2026-10-15T11:07:27Z. This is not proof of a successful run today or of parallel execution.
 - No flows were run or changed. Paid/model API calls 0, purchases/upgrades 0. `main`, connections, and hourly schedule unchanged.
 - Next goal: find a read-only path to reservation execution logs and authenticated Activepieces project identity; then test join semantics only in non-production/test-only environment without model-provider API calls.
+
+
+## GitHub AI automation verification — 2026-10-18
+
+- Report: [AI-github-automation-verification-2026-10-18.md](https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/AI-github-automation-verification-2026-10-18.md), commit `8c8f59202965da46f8da18d0d8b75c8a019026e6`.
+- Existing AI policy automation was already applied to `main` by merged PR #2 `Enforce free-only AI provider calls in automation policy`, merge commit `4ca63d421d8e5f43cabac492caa9ee74c5bdd492`. This turn did not write to `main` or merge a PR.
+- GitHub Actions run [39083678022](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39083678022) completed successfully on `main`; Python regression tests and JavaScript shared-fixture validator both passed. PR run 39083650721 also passed.
+- Applied policy blocks paid provider API calls and blocks provider calls if account-specific free quota/no-billing route is unknown. CI tests policy drift; it does not technically intercept runtime calls or prove free quota.
+- This turn: provider API calls 0, purchases/upgrades 0; Activepieces flows/connections/hourly Asia/Seoul automation unchanged. No duplicate workflow/schedule added.
+- Next: read-only verification of hourly automation execution output and project identity; isolated non-production parallel join proof only.
