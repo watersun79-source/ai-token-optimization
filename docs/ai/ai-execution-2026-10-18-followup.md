@@ -272,3 +272,12 @@
 - 다음으로 필요한 신뢰 가능한 확인은 Google AI Studio / Anthropic Console / OpenAI Platform의 계정별 usage·billing 화면에서 잔액·무료 할당량·결제/자동충전 설정을 직접 확인하는 것. 이 세션에는 해당 계정 화면을 읽는 도구가 없으므로, 확인된 것처럼 보고하지 않음.
 - 변경/비용 보호: 공급자 생성 API 0회, 유료 API 0회, 구매·업그레이드 0건, 운영 플로우 실행·테스트·수정·게시·비활성화 0건, 연결·테이블·기존 정각 자동화·`main` 변경 0건. 비밀값은 읽거나 기록하지 않음.
 - 상태: 읽기 전용 비용 경로 조사 완료 / 실제 무료 할당량·청구 상태 미확인 / 운영 호출은 계속 보류.
+
+
+## 예약 실행 기록 — 2026-10-19
+- 기존 AI 예약 상태는 활성화됨, 매시간 정각 Asia/Seoul로 확인됨. 새 예약 생성이나 일정 변경은 하지 않음.
+- 공식 문서에서 개인용 단일 머신 Docker 설치와 Docker Compose 설치 조건을 확인함. 단일 컨테이너 방식은 Docker만 필요하지만 단일 인스턴스 한계가 있고, Compose 방식은 Compose v2 및 최소 2 vCPU/4 GB RAM과 PostgreSQL·Redis 구성이 필요함.
+- Activepieces Community Edition 자체의 무료 사용과 외부 Gemini/Claude/OpenAI API 비용은 별개임. 현재 계정별 무료 한도·청구 확인 도구가 없어 공급자 API 호출 및 AI 흐름 테스트는 계속 보류.
+- 이 회차는 문서 조사 및 예약 상태 확인만 수행. 로컬 설치·컨테이너·네트워크 변경 0, 공급자 API 호출 0, 구매 0, 운영 플로우·연결·main·기존 예약 변경 0.
+- 공식 자료: https://www.activepieces.com/docs/install/options/docker ; https://www.activepieces.com/docs/install/options/docker-compose ; https://www.activepieces.com/solutions/open-source-developers
+- 다음 단계: 별도 테스트 환경을 준비하려면 실제 사용할 장비/OS와 Docker 설치 여부를 확인해야 함. 현재 세션에서는 장비 상태를 확인하거나 설치를 수행하지 않음.
