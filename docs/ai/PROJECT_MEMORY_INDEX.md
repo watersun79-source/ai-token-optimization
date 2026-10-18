@@ -5,12 +5,12 @@ Repository: https://github.com/watersun79-source/ai-token-optimization
 Working branch: ai/continuation-readonly-audit-2026-10-18
 Activepieces project: https://cloud.activepieces.com/projects/Fr9OAsxi4FbVSVLZkexYi/
 Memory protocol: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/AI-memory-protocol.md
-Coordinator log: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/scheduled-sequential-coordinator-tests-2026-10-17.md
-Volume test log: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/find-records-volume-test-501-2026-10-17.md
-Provider connection audit: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/provider-connection-audit-2026-10-17.md
-Official capability review: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/official-capabilities-review-2026-10-17.md
-Memory optimization progress: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/memory-optimization-progress-2026-10-17.md
-Activepieces concurrency/BARRIER audit: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/activepieces-concurrency-barrier-audit-2026-10-17.md
+Coordinator log: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/scheduled-sequential-coordinator-tests-2026-10-17.md
+Volume test log: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/find-records-volume-test-501-2026-10-17.md
+Provider connection audit: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/provider-connection-audit-2026-10-17.md
+Official capability review: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/official-capabilities-review-2026-10-17.md
+Memory optimization progress: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/memory-optimization-progress-2026-10-17.md
+Activepieces concurrency/BARRIER audit: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/activepieces-concurrency-barrier-audit-2026-10-17.md
 Canonical custom instructions (1053 characters): https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/AI-custom-instructions-ko-1500.md
 Duplicate display copy (1053-character prompt): https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
 
@@ -104,7 +104,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 
 ## Latest verified execution
-- Run: ULTRA-2026-10-17-1502-KST — https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/hourly-run-2026-10-17-1502.md
+- Run: ULTRA-2026-10-17-1502-KST — https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/hourly-run-2026-10-17-1502.md
 - Custom instruction canonical and display copy read back and compared: both 1010 JavaScript characters; exact body match; both begin `AI — ALWAYS ON`.
 - Slack summary was posted and read back in channel C0C9649RQAZ: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792217008539979
 - No paid API calls, purchases, upgrades, Activepieces changes, or schedule changes.
@@ -127,12 +127,12 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Existing hourly automation prompt updated to carry forward the exact unresolved inventory discrepancy and next steps; schedule and enabled state unchanged.
 - Gemini/Claude still not invoked in this run: connected browser requires originating browser context; no generation or paid API calls.
 
-- Latest execution report (2026-10-17 15:22 KST): https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/hourly-run-2026-10-17-1522.md
+- Latest execution report (2026-10-17 15:22 KST): https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/hourly-run-2026-10-17-1522.md
 - Latest Slack verification: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792218123952119
 
 
 ## Latest completion follow-up — 2026-10-17
-- Report: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/memory-completion-followup-2026-10-17.md
+- Report: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/memory-completion-followup-2026-10-17.md
 - Canonical/display prompt bodies verified identical at 1053 JavaScript characters.
 - Current Activepieces inventory: 29 total; 3 ENABLED/published and 26 DISABLED. Historical claim of 5 enabled flows remains unresolved; preserve statuses.
 - Gemini/Claude consumer-app responses remain blocked by missing originating browser context. Generation calls 0; paid API calls 0; purchases/upgrades 0.
@@ -141,12 +141,12 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 ## User confirmation — 2026-10-17
 - User confirms the canonical 1053-character ChatGPT Custom Instructions have been saved in settings. This is user-reported, not screen-inspected; official OpenAI help says saved instructions apply across chats when enabled: https://help.openai.com/en/articles/8096356-chatgpt-custom-instructions
-- Latest status report: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/memory-completion-followup-2026-10-17.md
+- Latest status report: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/memory-completion-followup-2026-10-17.md
 - Remaining blockers: browser connector lacks originating browser context for Gemini/Claude consumer apps; historical Activepieces 5-vs-3 enabled-flow discrepancy unresolved. Current inventory rechecked: 3 ENABLED/published, 26 DISABLED; no status changes.
 
 
 ## Latest execution — AI-2026-10-18-0606-KST-memory-recovery
-- Report: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/ai-execution-2026-10-18-0606.md
+- Report: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-18-0606.md
 - Verified at 2026-10-18 06:06 KST. GitHub protocol/index/progress/previous report and Slack channel C0C9649RQAZ were read at start.
 - Canonical/display custom-instruction bodies match exactly at 1,053 characters.
 - Activepieces read-only inventory: 29 total; 3 ENABLED/published, 26 DISABLED. Historical IDs hgPVOZQYdFTezhoZ6wj5j and yRqt1nbG4ZqiIkDX72vhN remain absent from current inventory and GitHub code search; cause unresolved.
@@ -156,7 +156,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 
 ## Latest execution — 2026-10-18 follow-up
-- Report: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/ai-execution-2026-10-18-followup.md
+- Report: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-18-followup.md
 - Re-read protocol, index, progress report, prior execution report, and recent Slack history.
 - Browser connector still fails because an originating browser context is unavailable; Gemini/Claude consumer-web responses remain unverified (0 actual responses).
 - Activepieces project-context tool `ap_set_project_context` is absent from the current tool registry; additional project-level inspection deferred rather than attempting unsafe changes.
@@ -165,7 +165,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 
 ## Latest execution — 2026-10-18 06:24 KST
-- Report: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/ai-execution-2026-10-18-0624.md
+- Report: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-18-0624.md
 - Read-back checks: protocol, index, latest progress report, previous report, and Slack channel C0C9649RQAZ read at task start.
 - Current Activepieces connector reports 7 flows (3 enabled/published, 4 disabled/unpublished); historical index says 29 total (3 enabled, 26 disabled). Scope mismatch remains unresolved; no flow status changes. Historical IDs hgPVOZQYdFTezhoZ6wj5j and yRqt1nbG4ZqiIkDX72vhN have 0 production runs in current connector view, which does not prove their deletion/state.
 - AI 3AI flow structure: 7/7 valid/configured; production runs 0. Gemini+Claude flow: 4 configured steps, 1 skipped; historical successful production run on 2026-10-15 exists, but cost/free status is unknown. No AI generation called in this run.
@@ -177,7 +177,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 ## Current verified state — 2026-10-18 07:16 KST
 
-- Latest detailed execution log: [ai-execution-2026-10-18-followup.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/ai-execution-2026-10-18-followup.md). The report was updated and read-back verified through commit `b35f4513790806d4b76338005c54b27a3729e81e`; the preceding concurrency correction is in commit `7175a657c433f12120249b4cced0128fda8871d1`.
+- Latest detailed execution log: [ai-execution-2026-10-18-followup.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-18-followup.md). The report was updated and read-back verified through commit `b35f4513790806d4b76338005c54b27a3729e81e`; the preceding concurrency correction is in commit `7175a657c433f12120249b4cced0128fda8871d1`.
 - Activepieces current flow inventory: 7 total; 3 enabled/published and 4 disabled/draft. Preserve these statuses and the existing hourly automation.
 - Important source correction: Activepieces engine `router-executor.ts` processes matching Router branches sequentially, awaiting `flowExecutor.execute(...)` inside a `for` loop. AI Router's “every route that applies” must not be described as concurrent execution.
 - Synthetic Promise.all mock tests prove JavaScript concurrency inside one CODE step only; they do not prove engine-level independent AI-action concurrency or actual Gemini/Claude calls.
@@ -197,16 +197,16 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 ## Latest test-design update — 2026-10-18
 
-- Isolated synthetic-only engine fan-out/join test plan: [isolated-fanout-join-test-plan-2026-10-18.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/isolated-fanout-join-test-plan-2026-10-18.md). It uses Subflows → Stream CSV to Subflows with two mock rows and a local published Callable Flow, and verifies overlapping child run timestamps plus parent fan-in across three runs. No AI provider calls are included.
+- Isolated synthetic-only engine fan-out/join test plan: [isolated-fanout-join-test-plan-2026-10-18.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/isolated-fanout-join-test-plan-2026-10-18.md). It uses Subflows → Stream CSV to Subflows with two mock rows and a local published Callable Flow, and verifies overlapping child run timestamps plus parent fan-in across three runs. No AI provider calls are included.
 - Current schema confirms `streamCsvToSubflows` dispatches batches with bounded concurrency and requires a published Callable Flow. This is not usable in the current Cloud project without violating the disabled/unpublished test-flow policy, so use a separate local self-hosted instance.
 - Actual local execution is blocked because Docker/Podman is absent in the current execution environment. Official self-host requirements: Docker Compose v2, at least 2 vCPU/4 GB RAM; Windows requires WSL2. Plan document created and read-back verified (blob `ed0c882febde5fdd84e26c0e3f4d9751a3d8f6f2`); execution not yet done.
-- Latest detailed report: [ai-execution-2026-10-18-followup.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/ai-execution-2026-10-18-followup.md), commit `82abd33839f2452f236d1591fb653372e1dadeb2`, blob `0ba4c284ce6a346f8a2a2ac34fd77087038e28dd`.
+- Latest detailed report: [ai-execution-2026-10-18-followup.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-18-followup.md), commit `82abd33839f2452f236d1591fb653372e1dadeb2`, blob `0ba4c284ce6a346f8a2a2ac34fd77087038e28dd`.
 - Current project inventory and hourly automation unchanged; AI-generation API calls 0, paid API calls 0, purchases/upgrades 0. Next step is to execute the synthetic test on a machine with Docker Compose v2; separately verify Activepieces credits and provider billing/quota before any real AI call.
 
 
 ## Latest execution — 2026-10-18 09:08 KST
 
-- Run report: [AI-continuous-improvement-2026-10-18-0908.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/AI-continuous-improvement-2026-10-18-0908.md), commit `bac85eddcce02d5bfcdd681c14e722ac52596aa3`; report was read back successfully.
+- Run report: [AI-continuous-improvement-2026-10-18-0908.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/AI-continuous-improvement-2026-10-18-0908.md), commit `bac85eddcce02d5bfcdd681c14e722ac52596aa3`; report was read back successfully.
 - Direct read-only Activepieces inventory returned 10 flows: 3 ENABLED/published and 7 DISABLED (one disabled-but-published test child plus six drafts). Historical snapshots of 7 and 29 flows, and an older count of 5 enabled, remain inconsistent; cause is not proven. No flow was modified, enabled, disabled, published, or run.
 - Slack summary posted and read back: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792282169232919.
 - Gemini/Claude consumer-web responses: 0; provider generation API calls: 0; paid API calls: 0; purchases/upgrades: 0. OpenAI Custom Instructions and Activepieces List/Get Flow official docs checked.
@@ -215,7 +215,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 ## Latest execution — 2026-10-18 09:12 KST
 
-- Read-only investigation report: [AI-continuous-improvement-2026-10-18-0912.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/AI-continuous-improvement-2026-10-18-0912.md), commit `e6980f696d9be206a13d0463689277ad1f62de8e`.
+- Read-only investigation report: [AI-continuous-improvement-2026-10-18-0912.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/AI-continuous-improvement-2026-10-18-0912.md), commit `e6980f696d9be206a13d0463689277ad1f62de8e`.
 - Current Activepieces list remains 10 flows (3 ENABLED/published, 7 DISABLED); no flow was modified or run. Historical snapshots (7, 29, and older 5-enabled count) remain unexplained.
 - GitHub code search for two historical flow IDs and 29/5 inventory phrases returned no results, but search is default-branch scoped and does not prove the IDs never existed.
 - Activepieces MCP tool catalogue lacks a project-context/project-list reader. Official List Projects and List Flows REST docs require an API key and projectId; no API call was made because billing/credential safety is unverified and the user prohibits paid/uncertain API use.
@@ -225,7 +225,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 ## Latest execution — 2026-10-18 continued
 
-- Report: [AI-continuous-improvement-2026-10-18-continued-02.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/AI-continuous-improvement-2026-10-18-continued-02.md), commit `2162a0ba63fbc7c852489dda7b809a174b4efe52`.
+- Report: [AI-continuous-improvement-2026-10-18-continued-02.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/AI-continuous-improvement-2026-10-18-continued-02.md), commit `2162a0ba63fbc7c852489dda7b809a174b4efe52`.
 - GitHub compare shows working branch `ai/continuation-readonly-audit-2026-10-18` is 193 commits ahead of `main`, 0 behind; no merge or main write performed. Exhaustive branch listing returned five branches and no additional history-only branch.
 - Historical branch reports document three inventories: 29 total (3 enabled, 26 disabled), 7 total (3 enabled, 4 disabled), and current 10 total (3 enabled, 7 disabled). The older 5-enabled note lacks IDs for the two additional flows. Root cause remains unproven.
 - Current Activepieces list rechecked: 10 flows, 3 ENABLED/published and 7 DISABLED. The current tool registry cannot read the exact project ID, so the project context behind this inventory remains unverified. No flow was run or modified.
@@ -236,7 +236,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 ## Latest follow-up — historical flow ID probe
 
-- Extended report: [AI-continuous-improvement-2026-10-18-continued-02.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/AI-continuous-improvement-2026-10-18-continued-02.md).
+- Extended report: [AI-continuous-improvement-2026-10-18-continued-02.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/AI-continuous-improvement-2026-10-18-continued-02.md).
 - Read-only `ap_flow_structure` lookups for historical flow IDs `EoQdyZftEyejxh4P85K5S` and `Xyg0njk3QC8GBJltQpRnO` (from saved project links) returned `Flow not found`; a currently listed flow ID returned structure. This is consistent with either a changed connector project context or historical flows no longer present; cause is not proven.
 - One read-only flow-structure response unexpectedly included sensitive webhook-auth configuration. Its value was not copied into GitHub/Slack or repeated. No flow/auth setting changed. Treat the value as sensitive; any rotation should be planned through the authenticated UI to avoid breaking dependent callers.
 - Current inventory remains 10 total (3 ENABLED/published, 7 DISABLED). Gemini/Claude real consumer-web responses 0; generation API 0; paid API 0; purchases/upgrades 0. Hourly Asia/Seoul automation and `main` unchanged.
@@ -247,7 +247,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Canonical custom instructions and display copy updated together; both now match exactly and the instruction body is 1,230 characters, within the 1,500-character limit.
 - Added an explicit safeguard against copying secrets unexpectedly returned in tool output, and against rotating credentials before dependent callers are checked and approval is obtained.
 - GitHub commits: canonical `380e9f4a5a798b408927c424f386a315ab72bb5f`; display copy `900c60ae5b142d08098a4f7e4fd61397fd0c4709`. These are repository changes only; ChatGPT settings were not directly changed or inspected.
-- Detailed report: [AI-continuous-improvement-2026-10-18-continued-02.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/AI-continuous-improvement-2026-10-18-continued-02.md).
+- Detailed report: [AI-continuous-improvement-2026-10-18-continued-02.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/AI-continuous-improvement-2026-10-18-continued-02.md).
 
 ## Latest authoritative state — 2026-10-18 09:34 KST
 - Project/user-facing name: **AI**. Legacy `AI` path names remain unchanged to preserve existing links.
@@ -257,7 +257,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - The synthetic audit table retains 56 rows; preserve them as evidence.
 - Existing hourly automation `AI`: enabled, Asia/Seoul, hourly on the hour. No schedule modification or duplicate was made.
 - Cost guardrail: paid model API calls are prohibited. Do not invoke a model-provider route unless the actual call is confirmed free for this account with no billing risk. Provider connection status is not a quota/billing check. Current audit used zero model-generation calls.
-- GitHub progress report updated and read back: [Activepieces fan-out/join continuation](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/activepieces-fanout-join-continuation-2026-10-18.md), latest audit commit `bc52fad393022051ec47cdc090350b503500cc8b`.
+- GitHub progress report updated and read back: [Activepieces fan-out/join continuation](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/activepieces-fanout-join-continuation-2026-10-18.md), latest audit commit `bc52fad393022051ec47cdc090350b503500cc8b`.
 - Slack update posted and read back: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792283641456619
 - Still incomplete: authenticated read-only inspection of account-specific free quota/billing; a production-safe true parallel join with provider-free testing; production rollout decision. Keep production sequential until those gates are met.
 
@@ -267,7 +267,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 ## Scheduled task check — 2026-10-18
 
-- Read-only report: [AI-scheduled-task-check-2026-10-18.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/AI-scheduled-task-check-2026-10-18.md), commit `4584b889624520f92b3e18c10825f475269ad7d1`.
+- Read-only report: [AI-scheduled-task-check-2026-10-18.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/AI-scheduled-task-check-2026-10-18.md), commit `4584b889624520f92b3e18c10825f475269ad7d1`.
 - Existing automation `AI` (`6acb017062a08191a4136238b78b313a`) remains enabled, hourly at minute 0 in Asia/Seoul. Last-run timestamp reported by automation system: `2026-10-18T00:03:04.511990Z`; output/success for that run remains unverified. Schedule and enabled state unchanged; no duplicate automation created.
 - Activepieces current inventory: 10 flows, 3 ENABLED/published, 7 DISABLED. Recent PRODUCTION run query: `AI 3AI 협업` 0 results; `Slack` 0 results; `Gemini + Claude 협업 비서` latest 5 returned SUCCEEDED, most recent 2026-10-15T11:07:27Z. This is not proof of a successful run today or of parallel execution.
 - No flows were run or changed. Paid/model API calls 0, purchases/upgrades 0. `main`, connections, and hourly schedule unchanged.
@@ -276,7 +276,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 ## GitHub AI automation verification — 2026-10-18
 
-- Report: [AI-github-automation-verification-2026-10-18.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/AI-github-automation-verification-2026-10-18.md), commit `8c8f59202965da46f8da18d0d8b75c8a019026e6`.
+- Report: [AI-github-automation-verification-2026-10-18.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/AI-github-automation-verification-2026-10-18.md), commit `8c8f59202965da46f8da18d0d8b75c8a019026e6`.
 - Existing AI policy automation was already applied to `main` by merged PR #2 `Enforce free-only AI provider calls in automation policy`, merge commit `4ca63d421d8e5f43cabac492caa9ee74c5bdd492`. This turn did not write to `main` or merge a PR.
 - GitHub Actions run [39083678022](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39083678022) completed successfully on `main`; Python regression tests and JavaScript shared-fixture validator both passed. PR run 39083650721 also passed.
 - Applied policy blocks paid provider API calls and blocks provider calls if account-specific free quota/no-billing route is unknown. CI tests policy drift; it does not technically intercept runtime calls or prove free quota.
@@ -286,7 +286,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 ## Scheduled run and parallel-join audit — 2026-10-18
 
-- Report: [AI-scheduled-run-and-parallel-join-audit-2026-10-18.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/AI-scheduled-run-and-parallel-join-audit-2026-10-18.md), commit `037508884413f062abd768f259508d9f77feed71`.
+- Report: [AI-scheduled-run-and-parallel-join-audit-2026-10-18.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/AI-scheduled-run-and-parallel-join-audit-2026-10-18.md), commit `037508884413f062abd768f259508d9f77feed71`.
 - Existing ChatGPT automation `AI` remains enabled with hourly-on-the-hour schedule in Asia/Seoul; no schedule change or duplicate created. Last-run timestamp does not prove a specific run output.
 - Current Activepieces connector lists 10 flows (3 enabled/published, 7 disabled). Production runs for `AI 3AI 협업` returned zero; latest five production runs for `Gemini + Claude 협업 비서` were from 2026-10-15 UTC, so recent production success is not verified.
 - Non-production evidence read back: Concurrent Join Parent test run `KYDtzNjTMeO530TzxVwgk` succeeded and final step matched 4 events; Polling Join Parent test run `yLtbcaYHamVYSxTHUeKk4` succeeded and final readiness flags were true with 2 child events; MOCK Promise.all run `w3beLx8xbT77tMR4amo1h` succeeded. Both join flows pass static validation (6/6 and 2/2 steps). These do not prove live AI-provider parallelism.
@@ -296,7 +296,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 ## AI automation cost-guard follow-up — 2026-10-18
 
-- Report: [AI-automation-cost-guard-followup-2026-10-18.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/AI-automation-cost-guard-followup-2026-10-18.md), commit `a36454255b9236e025f4befc88c2e0296bfd3027`.
+- Report: [AI-automation-cost-guard-followup-2026-10-18.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/AI-automation-cost-guard-followup-2026-10-18.md), commit `a36454255b9236e025f4befc88c2e0296bfd3027`.
 - GitHub Actions run `39083678022` is completed/success on `main`; validates Python and JS tests only, not runtime provider-call blocking.
 - Current policy `config/policy.json` disallows paid provider API calls and blocks unknown quota; regression test exists in `tests/test_config.py`.
 - Read-only flow inspection shows enabled `AI 3AI 협업` has sequential ChatGPT/Gemini/Claude configured steps and no queryable production runs; enabled `Gemini + Claude 협업 비서` has Gemini/Claude configured sequentially and a skipped OpenAI step. Active connection is not quota proof; no provider actions were run.
@@ -306,7 +306,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 ## AI automation read-only recheck — 2026-10-18
 
-- Report: [AI-automation-readonly-recheck-2026-10-18.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ultra-ai/AI-automation-readonly-recheck-2026-10-18.md), commit `983502759c2d5a339e6e8013f8d854d0aedda21e`.
+- Report: [AI-automation-readonly-recheck-2026-10-18.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/AI-automation-readonly-recheck-2026-10-18.md), commit `983502759c2d5a339e6e8013f8d854d0aedda21e`.
 - GitHub Actions run `39083678022` rechecked at job/step level: job completed/success; Python regression tests and JavaScript shared-fixture validator succeeded.
 - Open PR #1 remains visible and untouched: https://github.com/watersun79-source/ai-token-optimization/pull/1.
 - Activepieces current list remains 10 flows (3 enabled, 7 disabled); no flow was triggered or changed. Model-provider API calls 0, purchases/upgrades 0, no schedule/connection/secret/main changes.
