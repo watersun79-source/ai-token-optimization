@@ -317,3 +317,17 @@
 - 가장 적합한 다음 경로: (1) ChatGPT에서 기존 Activepieces 연결의 연결 변경/재인증 화면을 통한 재연결 여부를 사용자 UI에서 확인하되, 이미 연결된 계정 오류가 나면 중복 승인하지 않음; (2) 재연결 후에도 Discovery 도구가 없으면 해당 MCP 연결의 tool-list 동기화/서버 측 등록 문제로 OpenAI/Activepieces 지원에 문의하고, 위 공식 도구 참조와 현재 런타임 목록 비교를 첨부함; (3) 별도 Activepieces Platform MCP가 실제로 연결 가능할 때만 읽기 전용 List Projects로 프로젝트 ID를 확인함. 프로젝트 ID 추측이나 프로젝트 범위 도구 호출로 우회하지 않음.
 - Gemini/Claude 웹앱 응답은 브라우저 컨텍스트 오류 때문에 이번 회차에도 미확인. 공급자 생성 API 0회, 유료 API 0회, 구매/업그레이드 0건. 운영 플로우/연결/테이블, 기존 정각 자동화, GitHub main 변경 0건.
 - 다음 목표: MCP tool-list refresh/reconnect 지원 경로를 연결 관리자/지원에서 확인하고, Discovery 도구가 실제 노출된 뒤에만 프로젝트 ID 및 parent/trigger 감사로 진행. 비용 확인 경로가 없는 한 공급자 API 호출 금지 유지.
+
+
+## 대체 경로 점검 — 2026-10-19 KST
+
+- 사용자 요청에 따라 Activepieces 연결을 중복 승인하거나 운영 플로우를 수정하지 않고, 현재 런타임에 노출된 읽기 전용 도구로 재점검함.
+- 현재 런타임의 `ap_list_flows` 성공: 10개 플로우 확인(ENABLED/published 3개, DISABLED 7개). 기존 기록의 7개와 달리 이번 조회에서는 총 10개가 반환됨. 현재 런타임에서 실제 응답을 기준으로 기록함.
+- `ap_list_connections` 성공: OpenAI, Google Gemini 2개, Slack, Anthropic Claude 총 5개가 ACTIVE로 표시됨. 이는 연결 상태 표시에 불과하며 무료 할당량, 청구 위험 없음, 실제 모델 응답을 입증하지 않음.
+- `ap_list_tables` 성공: 테이블 조회 가능. 테스트 테이블 중 `TEST ONLY · Concurrent Join Events` 56행, `AI Memory Index (SEARCH INDEX ONLY)` 0행, `ULTRA AI Run Registry (MOCK ONLY)` 0행, `ULTRA AI Coordinator Results (MOCK ONLY)` 0행, `ULTRA AI Parallel Results (MOCK ONLY)` 14행 확인. 데이터 변경/삭제는 하지 않음.
+- `ap_list_runs` 최신 10건은 테스트용 Join Child Worker(flow ID `bMKzPS0kb73NtEDQbq9D5`)에 대한 PRODUCTION 환경 기록이며 모두 SUCCEEDED, 최신은 2026-10-17 23:56 UTC. 이는 테스트용 이름의 플로우가 PRODUCTION 환경에 기록을 남긴 상태이므로, 별도 확인 전 실제 사용자 대상 운영 플로우 성공 증거로 취급하지 않음.
+- 개별 `AI 3AI 협업` 및 `Slack` 플로우의 PRODUCTION 실행 조회는 각각 0건. 이번 확인에서도 두 플로우가 최근 실행됐다는 증거는 없음.
+- 공식 문서 https://www.activepieces.com/docs/mcp/tools 는 `ap_set_project_context`와 `ap_list_folders`를 Discovery 도구로 나열하지만, 현재 노출된 런타임 목록에는 이 도구들이 없음. `ap_move_flow_to_folder` 역시 현재 런타임 목록에서 확인되지 않음. 문서와 실제 도구 목록 사이의 차이는 아직 해소되지 않음.
+- Browser 연결 탭 조회는 “originating browser context” 오류로 실패. Gemini/Claude 소비자 웹앱의 실제 응답은 확보하지 못함.
+- 비용/보호: 생성 API 0회, 유료 API 0회, 구매/업그레이드 0건. 플로우 실행/테스트/게시/상태 변경 0건. 연결, 테이블, 기존 시간별 예약, `main`, 비밀값 변경 0건.
+- 다음 조치: 기존 연결의 중복 승인을 피하고, 사용자가 실제로 접근 가능한 ChatGPT 웹의 앱/연결 설정에서 도구 목록 새로고침이 지원되는지 확인하거나 Activepieces 지원팀에 문서-런타임 도구 목록 불일치를 전달한다. 이 세션에서는 계정 설정 UI를 직접 제어할 수 없어 새로고침을 수행했다고 주장하지 않는다.
