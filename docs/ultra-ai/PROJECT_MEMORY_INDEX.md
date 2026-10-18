@@ -263,3 +263,12 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 ### Custom-instruction copy verification — 2026-10-18
 - Canonical and display files are identical at Git blob SHA `8011eca50e723a123709f3868335bb968984998b`. The file's declared count is 1,230; normalized body count is 1,229 JavaScript UTF-16 code units after removing the count header. The content remains within 1,500 characters. ChatGPT Settings itself was not changed by these GitHub operations.
+
+
+## Scheduled task check — 2026-10-18
+
+- Read-only report: [AI-scheduled-task-check-2026-10-18.md](https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/AI-scheduled-task-check-2026-10-18.md), commit `4584b889624520f92b3e18c10825f475269ad7d1`.
+- Existing automation `AI` (`6acb017062a08191a4136238b78b313a`) remains enabled, hourly at minute 0 in Asia/Seoul. Last-run timestamp reported by automation system: `2026-10-18T00:03:04.511990Z`; output/success for that run remains unverified. Schedule and enabled state unchanged; no duplicate automation created.
+- Activepieces current inventory: 10 flows, 3 ENABLED/published, 7 DISABLED. Recent PRODUCTION run query: `AI 3AI 협업` 0 results; `Slack` 0 results; `Gemini + Claude 협업 비서` latest 5 returned SUCCEEDED, most recent 2026-10-15T11:07:27Z. This is not proof of a successful run today or of parallel execution.
+- No flows were run or changed. Paid/model API calls 0, purchases/upgrades 0. `main`, connections, and hourly schedule unchanged.
+- Next goal: find a read-only path to reservation execution logs and authenticated Activepieces project identity; then test join semantics only in non-production/test-only environment without model-provider API calls.
