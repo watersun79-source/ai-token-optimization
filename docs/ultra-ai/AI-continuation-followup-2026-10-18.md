@@ -32,3 +32,10 @@ Restore access to the supported Activepieces project-context selection action th
 - Plugin directory search for “Activepieces” returned no installable plugin entry. This does not prove there is no external/manual connector configuration, only that this plugin search did not surface one.
 - GitHub repo search for the setter returned no repo-local implementation/configuration instructions. The official upstream source confirms the contract but does not repair the currently exposed runtime catalog.
 - Current result: blocker remains runtime/connector exposure. Required remediation is to refresh/reconnect/update the existing Activepieces MCP connector so its supported setter is exposed, or have the connector administrator provide an officially supported equivalent. No production changes were made.
+
+
+## Connector recovery probe — 2026-10-18
+- Re-enumerated the live Activepieces tool catalog: read-only inventory/run tools are present, but `ap_set_project_context` is still absent. Therefore project-scoped inventory/run tools remain intentionally unused.
+- Called the generic `ap_setup_guide(topic="connection")` read-only helper. It only returned general UI steps (Dashboard → Settings → Connections → New Connection); it does not expose project selection, identify the current connector endpoint, or refresh the ChatGPT MCP tool catalog. No connection was created or edited.
+- Retried the connected browser tab listing; it failed with “Browser access requires the originating browser context.” This confirms the browser-backed connector repair path is unavailable in this session.
+- No supported connector refresh/reconnect action is exposed by the current tool catalog. Required user-side/platform-side action: open ChatGPT in a browser with its connected extension, and/or refresh/reconnect the Activepieces MCP integration in the environment that owns its tool manifest so `ap_set_project_context` appears. Then resume with project ID verification before any project-scoped reads.
