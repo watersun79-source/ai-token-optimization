@@ -282,3 +282,13 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Applied policy blocks paid provider API calls and blocks provider calls if account-specific free quota/no-billing route is unknown. CI tests policy drift; it does not technically intercept runtime calls or prove free quota.
 - This turn: provider API calls 0, purchases/upgrades 0; Activepieces flows/connections/hourly Asia/Seoul automation unchanged. No duplicate workflow/schedule added.
 - Next: read-only verification of hourly automation execution output and project identity; isolated non-production parallel join proof only.
+
+
+## Scheduled run and parallel-join audit — 2026-10-18
+
+- Report: [AI-scheduled-run-and-parallel-join-audit-2026-10-18.md](https://github.com/watersun79-source/ai-token-optimization/blob/ultra-ai/progress-2026-10-17/docs/ultra-ai/AI-scheduled-run-and-parallel-join-audit-2026-10-18.md), commit `037508884413f062abd768f259508d9f77feed71`.
+- Existing ChatGPT automation `AI` remains enabled with hourly-on-the-hour schedule in Asia/Seoul; no schedule change or duplicate created. Last-run timestamp does not prove a specific run output.
+- Current Activepieces connector lists 10 flows (3 enabled/published, 7 disabled). Production runs for `AI 3AI 협업` returned zero; latest five production runs for `Gemini + Claude 협업 비서` were from 2026-10-15 UTC, so recent production success is not verified.
+- Non-production evidence read back: Concurrent Join Parent test run `KYDtzNjTMeO530TzxVwgk` succeeded and final step matched 4 events; Polling Join Parent test run `yLtbcaYHamVYSxTHUeKk4` succeeded and final readiness flags were true with 2 child events; MOCK Promise.all run `w3beLx8xbT77tMR4amo1h` succeeded. Both join flows pass static validation (6/6 and 2/2 steps). These do not prove live AI-provider parallelism.
+- Project ID cannot be independently confirmed with currently exposed read-only tools. ACTIVE provider connections do not establish free quota. Model-provider API calls 0; purchases/upgrades 0; flows/connections/schedule/main unchanged.
+- Next: find a read-only project identity route and actual scheduler output; do not call provider APIs until free quota and no-billing path are verified.
