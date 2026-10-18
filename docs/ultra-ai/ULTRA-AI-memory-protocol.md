@@ -93,3 +93,14 @@ On iOS, paste it into Settings > Customize ChatGPT > Custom Instructions with cu
 - Existing automation prompt was updated to carry forward the current blocker and safeguards; enabled state and hourly-on-the-hour Asia/Seoul schedule unchanged.
 - Activepieces inventory remains 3 ENABLED/published and 26 DISABLED. Historical count of 5 enabled flows is unresolved; no statuses were changed.
 - Slack update posted and verified by reading recent channel history: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792218123952119
+
+## Authoritative continuation correction — 2026-10-18 09:34 KST
+- Project name in current user-facing text is **AI**; the legacy directory/file names containing `ULTRA-AI` remain for backward-compatible links and are not a reason to rename or move files automatically.
+- Current canonical custom-instruction file was read back at 1,230 characters including its count/header line; the body is stated as 1,230 characters and fits the 1,500-character limit. Do not claim the ChatGPT iOS Settings were changed: only GitHub files were changed; user must manually save custom instructions in Settings if desired.
+- Current Activepieces connector inventory now returns 10 flows: 3 enabled/published production flows and 7 disabled test/mock flows. The older 7-flow and 29-flow inventory entries are historical snapshots from different connector scope/time; the current direct read is authoritative for this session. No flow status was changed.
+- Current structural checks: `AI 3AI 협업` 7/7 valid; `Gemini + Claude 협업 비서 (비용 확인 필요)` 4 valid + 1 intentionally skipped; `TEST ONLY · Concurrent Child Join E2E` 3 flows/table checked, zero issues. These checks do not prove real provider parallelism.
+- Hourly automation `AI` remains enabled, Asia/Seoul, every hour on the hour. Do not duplicate or change it.
+- Hard cost gate: no paid model APIs. Never make a model-provider call unless the exact route is verified to be within a free allowance with no billing risk. Connection status and public free-tier pricing are not proof of the user's remaining quota. No provider calls were made in this audit.
+- Persistent continuity loop: read this protocol, `PROJECT_MEMORY_INDEX.md`, latest execution report, and Slack channel `C0C9649RQAZ`; after meaningful changes, update GitHub and Slack, then read both back. If a connector is unavailable, record that limitation rather than claiming it worked.
+- Remaining blockers: account-specific free quota/billing cannot be inspected through the current connected tools; browser connector has no originating browser context; production Gemini/Claude execution remains sequential and must not be switched to unproven parallel orchestration.
+
