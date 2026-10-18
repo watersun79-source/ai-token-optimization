@@ -208,3 +208,11 @@
 - 현재 세션에 노출된 Activepieces 도구 45개를 다시 열거했으며 `ap_set_project_context`는 없음. 따라서 단순히 프로젝트별 Flow Management/Testing 카테고리가 꺼진 문제라기보다, 항상 사용 가능해야 하는 Discovery 도구가 연결/도구 목록에 누락된 상태라는 진단이 더 정확함. 단, 실제 서버 설정/런타임 로그는 접근 불가하므로 원인을 확정하지 않음.
 - 실행 가능한 복구 경로는 Activepieces MCP 연결 소유자가 ChatGPT 앱 관리 화면에서 도구 목록을 새로고침하거나, 연결이 정상적인지 확인한 뒤 다시 연결하고, `ap_set_project_context`가 노출되는지 검증하는 것. OpenAI 공식 안내상 custom MCP tool-list refresh에는 관리 권한과 유효한 연결이 필요하며, 해당 MCP 앱 관리는 웹 환경 대상임: https://help.openai.com/en/articles/12584461-creating-custom-mcp-apps-in-chatgpt.
 - 프로젝트 ID를 추측하거나 다른 프로젝트 도구로 우회하지 않음. 안전 상태 유지: 프로젝트 범위 Activepieces 호출 0회, 공급자 생성/유료 API 0회, 구매/업그레이드 0건, 운영 플로우/연결/정각 자동화/`main` 변경 0건.
+
+
+## 관리자 전달용 복구 요청 — 바로 복사 가능 (2026-10-18)
+
+> Activepieces MCP 연결에서 공식 Discovery 도구 `ap_set_project_context`가 ChatGPT에 노출된 도구 목록에서 누락되어 프로젝트 선택과 read-only 실행 이력 감사를 진행할 수 없습니다. Activepieces 공식 문서상 Discovery 도구는 항상 사용 가능해야 합니다 (https://www.activepieces.com/docs/mcp/overview, https://www.activepieces.com/docs/mcp/tools). 연결/통합 관리자가 공식 웹 앱 관리 경로에서 기존 MCP 연결의 유효성을 확인하고 tool list를 refresh/reconnect한 뒤, `ap_set_project_context`가 노출되는지 확인해 주세요. 새 연결 생성이나 운영 플로우 변경은 우선 하지 말고, refresh 이후에도 누락되면 MCP 서버/커넥터 버전과 도구 manifest를 확인해 주세요. 변경 결과와 실제 노출된 도구 목록만 알려주시면 프로젝트 컨텍스트 선택 후 read-only 감사를 재개하겠습니다. API 키, OAuth 토큰, 비밀값은 공유하지 마세요.
+
+- 이 요청은 계정 소유자/연결 관리자 권한이 필요한 외부 조치임. 이 세션에서 해당 관리 권한이나 서버 로그는 사용할 수 없음.
+- 완료 확인 기준: (1) setter가 도구 목록에 실제 노출됨, (2) setter로 프로젝트 목록을 확인, (3) 의도한 프로젝트 선택 후 프로젝트 ID 재확인, (4) 실행 이력/부모 트리거 read-only 검사, (5) 결과를 GitHub/Slack에 기록하고 read-back 검증.
