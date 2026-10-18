@@ -199,3 +199,12 @@
 - 최신 공식 문서 확인: OpenAI custom MCP tool-list refresh는 관리 권한과 유효한 연결을 요구하며, MCP apps는 모바일에서 사용할 수 없다고 명시됨: https://help.openai.com/en/articles/12584461-creating-custom-mcp-apps-in-chatgpt. Activepieces tool catalog documents `ap_set_project_context`: https://www.activepieces.com/docs/mcp/tools.
 - 결론: 현재 세션에서 추가로 수행할 수 있는 안전한 복구 액션은 확인되지 않음. 다음 필수 단계는 연결/런타임 관리자가 공식 MCP 연결의 tool manifest를 갱신하고 `ap_set_project_context`를 실제 노출하는 것. 그 전에는 project ID 추측이나 project-scoped tool 호출 금지.
 - 안전 상태: 생성/유료 API 0회, Activepieces project-scoped call 0회, 구매/업그레이드 0건, 운영 플로우/연결/시간별 자동화/`main` 변경 0건.
+
+
+## 핵심 원인 범위 좁힘 — Discovery 도구 누락 (2026-10-18)
+
+- Activepieces 공식 MCP 개요를 추가 확인함: Discovery 도구는 항상 사용 가능하고, 나머지 도구 카테고리는 프로젝트별 MCP Server 설정에서 켜고 끌 수 있음. 공식 문서: https://www.activepieces.com/docs/mcp/overview.
+- 공식 도구 참조에서 `ap_set_project_context`는 프로젝트 ID를 선택하거나 생략해 프로젝트 목록을 반환하는 Discovery 도구로 정의됨: https://www.activepieces.com/docs/mcp/tools.
+- 현재 세션에 노출된 Activepieces 도구 45개를 다시 열거했으며 `ap_set_project_context`는 없음. 따라서 단순히 프로젝트별 Flow Management/Testing 카테고리가 꺼진 문제라기보다, 항상 사용 가능해야 하는 Discovery 도구가 연결/도구 목록에 누락된 상태라는 진단이 더 정확함. 단, 실제 서버 설정/런타임 로그는 접근 불가하므로 원인을 확정하지 않음.
+- 실행 가능한 복구 경로는 Activepieces MCP 연결 소유자가 ChatGPT 앱 관리 화면에서 도구 목록을 새로고침하거나, 연결이 정상적인지 확인한 뒤 다시 연결하고, `ap_set_project_context`가 노출되는지 검증하는 것. OpenAI 공식 안내상 custom MCP tool-list refresh에는 관리 권한과 유효한 연결이 필요하며, 해당 MCP 앱 관리는 웹 환경 대상임: https://help.openai.com/en/articles/12584461-creating-custom-mcp-apps-in-chatgpt.
+- 프로젝트 ID를 추측하거나 다른 프로젝트 도구로 우회하지 않음. 안전 상태 유지: 프로젝트 범위 Activepieces 호출 0회, 공급자 생성/유료 API 0회, 구매/업그레이드 0건, 운영 플로우/연결/정각 자동화/`main` 변경 0건.
