@@ -258,3 +258,17 @@
 - 현재 선택 프로젝트의 연결 목록에서 OpenAI, Google Gemini, Google Gemini api, Slack, Anthropic Claude 총 5개가 모두 ACTIVE로 표시됨.
 - ACTIVE는 연결 상태만 뜻하며 무료 한도, 청구 상태, API 크레딧 잔액을 증명하지 않음. 따라서 Gemini/Claude/OpenAI를 호출하거나 흐름을 테스트하지 않았고 비용 관련 미확인 상태를 유지함.
 - 연결/인증 설정 변경은 0건. 연결 ID 외에 비밀값은 보고서에 기록하지 않음.
+
+
+## 실행 기록 — 2026-10-19 무료 사용·비용 확인 경로 조사
+
+- Activepieces에서 비용 위험을 만들지 않는 읽기 전용 메타데이터 확인을 이어감. `ap_list_ai_models` 결과에는 `activepieces` 제공자 아래 21개 모델이 표시됨(Gemini, Claude, OpenAI 계열 포함). 이는 모델 목록/설정 메타데이터일 뿐, 계정의 남은 크레딧·무료 사용량·청구 상태·각 모델의 실제 호출 비용을 확인한 결과가 아님.
+- 연결 설정 안내를 조회함. Gemini 연결은 Google AI Studio API 키 경로를, Claude 연결은 Anthropic Console API 키 경로를 안내함. 안내 내용은 연결 설정 방법만 제공하며, 계정별 결제 상태나 무료 할당량을 조회하지 않음. 실제 공급자 호출이나 테스트는 하지 않음.
+- 도구 인벤토리에서 Activepieces의 billing/credit/quota 조회 도구를 찾지 못함. 따라서 현재 연결의 ACTIVE 상태나 모델 목록만으로 무료 사용을 확인할 수 없음. 유료 호출을 막기 위해 AI 플로우 실행/테스트는 보류함.
+- 공식 설치 문서 조사: Activepieces Community Edition은 self-hosted 환경에서 무료로 시작할 수 있고, 개인용 단일 컨테이너 설치에는 Docker가 필요함. 공식 문서의 Docker Compose 설치는 Docker Compose v2 및 최소 2 vCPU/4 GB RAM을 요구함. 이 사실은 외부 AI 제공자 API 자체가 무료라는 뜻은 아니며, 사용자의 장비 적합성도 이 실행에서 확인하지 않음. 설치·배포·시스템 변경은 수행하지 않음.
+  - https://www.activepieces.com/docs/install/options/docker
+  - https://www.activepieces.com/docs/install/options/docker-compose
+  - https://www.activepieces.com/solutions/open-source-developers
+- 다음으로 필요한 신뢰 가능한 확인은 Google AI Studio / Anthropic Console / OpenAI Platform의 계정별 usage·billing 화면에서 잔액·무료 할당량·결제/자동충전 설정을 직접 확인하는 것. 이 세션에는 해당 계정 화면을 읽는 도구가 없으므로, 확인된 것처럼 보고하지 않음.
+- 변경/비용 보호: 공급자 생성 API 0회, 유료 API 0회, 구매·업그레이드 0건, 운영 플로우 실행·테스트·수정·게시·비활성화 0건, 연결·테이블·기존 정각 자동화·`main` 변경 0건. 비밀값은 읽거나 기록하지 않음.
+- 상태: 읽기 전용 비용 경로 조사 완료 / 실제 무료 할당량·청구 상태 미확인 / 운영 호출은 계속 보류.
