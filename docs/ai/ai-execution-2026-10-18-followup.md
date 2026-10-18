@@ -178,3 +178,14 @@
 - 비용/변경: 공급자 생성 API 0회, 유료 API 0회, 구매/업그레이드 0건, 운영 변경 0건, 기존 매시간 정각 Asia/Seoul 자동화 변경 0건, `main` 변경 0건. 테스트 ID 없음(실행 테스트를 하지 않음).
 - 차단 및 사용자 조치: ChatGPT의 연결된 앱/MCP 관리 환경에서 Activepieces 연결의 도구 목록 갱신 또는 공식 재연결 기능을 찾아 실행한 뒤, `ap_set_project_context`가 실제 노출되는지 확인해야 함. 현재 세션은 그 설정 UI/연결 런타임을 제어할 수 없어 직접 갱신은 미완료.
 - 다음 목표: 도구가 노출되면 의도한 프로젝트 ID를 읽기 전용으로 확인하고, 그 후에만 과거 Flow ID와 parent/trigger 출처를 조사함. 계정별 무료 한도·결제 위험은 별도의 신뢰 가능한 읽기 전용 증거가 확보되기 전까지 미확인으로 유지.
+
+
+## 실행 기록 — 2026-10-18 공식 MCP 관리 경로 재검토
+
+- 최신 공식 OpenAI 도움말을 다시 확인함: https://help.openai.com/en/articles/12584461-creating-custom-mcp-apps-in-chatgpt 및 https://help.openai.com/en/articles/12584461. 문서에 따르면 사용자 지정 MCP 앱의 도구 목록 Refresh는 Business/Enterprise/Edu 작업공간의 관리자/소유자 권한과 유효한 연결을 전제로 하며, MCP 앱 관리 기능은 ChatGPT 웹에서 제공됨. 현재 사용자 환경이 Go 플랜의 iOS 앱이므로 일반 앱 설정만으로 해당 관리 기능을 직접 사용할 수 있다고 가정하지 않음.
+- Activepieces 공식 도구 참조를 다시 확인함: https://www.activepieces.com/docs/mcp/tools. `ap_set_project_context`는 프로젝트 선택에 필요한 도구이며 모든 프로젝트 범위 도구는 프로젝트 컨텍스트를 요구함.
+- ChatGPT 플러그인 디렉터리에서 Activepieces 검색 결과가 비어 있었음. 따라서 현재 연결의 도구 manifest를 이 세션에서 재생성/갱신할 수 있는 공식 관리 도구가 발견되지 않음.
+- 브라우저 connector는 여전히 originating browser context 오류로 실패. Gemini/Claude 소비자 웹앱 응답은 확보하지 못함.
+- GitHub 이슈 #3에 이 관리 경로의 제약과 다음 단계 기록을 추가하고 read-back 확인함: https://github.com/watersun79-source/ai-token-optimization/issues/3#issuecomment-6247974106. Slack 후속 스레드에도 기록함: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792314005086499?thread_ts=1792313602.528959&cid=C0C9649RQAZ.
+- 다음 실행 가능한 조치: 이 MCP 연결/도구 manifest를 소유한 통합 런타임 관리자에게 `ap_set_project_context` 누락 및 tool-list refresh를 요청하거나, 동일한 공식 setter가 포함된 정상 MCP 연결을 제공받는다. 일반 Go/iOS 설정에 존재한다고 확인되지 않은 메뉴를 계속 안내하지 않는다.
+- 비용 및 보호 상태: 공급자 생성 API 0회, 유료 API 0회, 구매/업그레이드 0건, 프로젝트 범위 Activepieces 호출 0회, 운영 플로우/연결/정각 예약/`main` 변경 0건.
