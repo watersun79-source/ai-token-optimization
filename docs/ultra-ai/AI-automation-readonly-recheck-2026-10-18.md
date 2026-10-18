@@ -29,3 +29,11 @@ Continue looking for an authenticated, read-only UI/connector path to inspect pr
 - Workflow file on `main` uses read-only repository permissions and runs Python regression tests plus the JavaScript shared-fixture validator. This is CI validation, not a runtime billing guard for Activepieces provider actions.
 - No model-provider API calls, purchases, Activepieces changes, or schedule changes.
 - Next: identify a read-only authenticated path for scheduler output and provider billing/free quota. Preserve all enabled production flows until that evidence is available.
+
+
+## Latest debug pass — 2026-10-18
+- Current Activepieces production-wide run listing returned 10 recent SUCCEEDED runs at 2026-10-17 23:52–23:56 UTC, all associated with flow ID `bMKzPS0kb73NtEDQbq9D5`, whose current flow-list name is `TEST ONLY · Join Child Worker` and status is DISABLED.
+- This is an ID/status/environment discrepancy that needs read-only investigation. Do not infer that the flow was enabled or changed, and do not trigger, enable, disable, or edit it. The current run list may include retained historical production-environment records even while a flow is currently disabled.
+- Five project connections are marked ACTIVE (OpenAI, Google Gemini, Google Gemini api, Slack, Anthropic Claude); this is connection health metadata only, not evidence of free quota or billing status. No credentials or connection IDs are included in this report.
+- Provider calls remain 0 for this audit; no purchases, schedule changes, flow mutations, connection changes, or `main` writes.
+- Next: read-only inspect those 10 run records' flow metadata/trigger origin and compare timestamps against the existing hourly ChatGPT automation; do not alter production while the discrepancy is unresolved.
