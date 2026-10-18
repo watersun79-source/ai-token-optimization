@@ -44,3 +44,12 @@ Continue looking for an authenticated, read-only UI/connector path to inspect pr
 - The associated `TEST ONLY · Polling Join Parent` flow has zero queryable PRODUCTION runs; the child worker also has zero queryable TESTING runs. This narrows the issue to run environment/origin labeling or retained run metadata, but does not establish the exact platform cause.
 - No evidence connects these child-worker runs to the hourly ChatGPT automation. Do not treat them as proof the hourly schedule ran or failed.
 - No changes were made; no provider calls were made. Next: preserve the anomaly as unresolved and seek an Activepieces UI/metadata view that exposes parent run IDs/callable-flow origin and project identity. Do not alter flow status.
+
+
+## Continuation check — 2026-10-18 (Asia/Seoul)
+- Re-read the memory protocol, project index, latest read-only report, and Slack channel before this pass.
+- Fresh read-only automation inspection confirms the existing ChatGPT task “AI” remains enabled with an hourly on-the-hour Asia/Seoul schedule. Its metadata reports last_run_time `2026-10-18T00:03:04.511990Z`; this timestamp is consistent with a scheduled invocation around 09:03 KST, but no task-specific output/success payload was available in the automation listing. Do not treat last_run_time alone as proof of completed work.
+- Activepieces still returns 10 flows: 3 enabled/published and 7 disabled; the 10 recent PRODUCTION-labeled runs still belong to disabled `TEST ONLY · Join Child Worker`. No changes were made to flows, connections, or schedules.
+- Five connections remain marked ACTIVE; this is not proof of free quota or zero billing. Provider API/generation calls: 0; purchases/upgrades: 0.
+- Gemini/Claude free consumer-app review remains blocked by unavailable originating browser context; no model review is claimed.
+- Next goal: find a read-only route to task-specific automation output and Activepieces parent/trigger metadata, then verify billing/free quota without provider calls. Preserve production and the existing schedule.
