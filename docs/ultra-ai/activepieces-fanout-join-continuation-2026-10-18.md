@@ -190,7 +190,7 @@ Do not change the production flow to “fire-and-forget” children unless a dur
 ## Activepieces Cloud engine-level fan-out/join harness — execution evidence (2026-10-18)
 
 ### Isolated test setup
-- Created folder `TEST ONLY · Concurrent Child Join E2E` (folder ID `0NK2sJLz8xnDlou2LKAkw`) and table `TEST ONLY · Concurrent Join Events` (table ID `FJbMGkvPftigznkeEGBQW`).
+- Created folder `TEST ONLY · Concurrent Child Join E2E` (folder ID not surfaced in the returned tool output) and table `TEST ONLY · Concurrent Join Events` (table ID `FJbMGkvPftigznkeEGBQW`).
 - Test worker flow: `TEST ONLY · Join Child Worker` (flow ID `bMKzPS0kb73NtEDQbq9D5`, external ID `6OwqZHF62pCUOGPWRwonM`). It accepts a correlation `testId`, branch name and synthetic delay; creates one result row, then updates that same row on completion. The completion update is intentionally repeated against the same record ID to exercise idempotent retries. Delay errors are caught and persisted as `FAILED`.
 - Polling parent draft: `TEST ONLY · Polling Join Parent` (flow ID `4a8OSFX1yERP6TZ9D0Hob`). It dispatches A and B with `waitForResponse=false` before polling a durable table. Polling is bounded to seven iterations; each waits two seconds only while either branch has not reached a terminal status. The final verifier returns `JOIN_OK`, `JOIN_PARTIAL_FAILURE`, or `JOIN_TIMEOUT_OR_PARTIAL`.
 - A fixed-delay prototype (`TEST ONLY · Concurrent Join Parent`, flow ID `4BrtUZsKexpdxjIpWMtYR`) exposed the early-read bug: an 8-second wait could read A's start and B's completion before A completed. It was retained as a disabled diagnostic draft; the polling parent fixes that behavior.
