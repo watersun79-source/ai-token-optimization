@@ -20,3 +20,12 @@
 
 ## Next goal
 Continue looking for an authenticated, read-only UI/connector path to inspect project identity, provider billing/free quota, and scheduler output. If unavailable, report the precise access limitation instead of calling provider APIs or modifying production state.
+
+
+## Debug-mode continuation — 2026-10-18
+- Re-read the protocol, memory index, latest report, and Slack channel before acting.
+- Activepieces production run query: `AI 3AI 협업` returned zero production runs. `Gemini + Claude 협업 비서` returned five latest production runs, all from 2026-10-15 UTC (6.2–7.7 seconds); these are historical and do not prove the current hourly scheduler output.
+- Canonical custom-instructions file contains 1,230 characters, below the documented 1,500-character limit. This verifies repository copy only; ChatGPT account settings were not changed or verified.
+- Workflow file on `main` uses read-only repository permissions and runs Python regression tests plus the JavaScript shared-fixture validator. This is CI validation, not a runtime billing guard for Activepieces provider actions.
+- No model-provider API calls, purchases, Activepieces changes, or schedule changes.
+- Next: identify a read-only authenticated path for scheduler output and provider billing/free quota. Preserve all enabled production flows until that evidence is available.
