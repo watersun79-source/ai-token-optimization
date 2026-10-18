@@ -27,6 +27,13 @@
     "never_commit_secrets": true,
     "avoid_duplicate_model_calls": true
   },
+  "cost_guard": {
+    "paid_model_api_calls_allowed": false,
+    "provider_call_requires_verified_free_quota": true,
+    "unknown_quota_action": "block",
+    "provider_connection_is_not_quota_evidence": true,
+    "record_actual_provider_calls_and_costs": true
+  },
   "scheduled_automation": {
     "enabled": true,
     "repository": "watersun79-source/ai-token-optimization",
@@ -36,7 +43,9 @@
       "Check enabled status and recent execution result when tools permit",
       "Use one AI call for routine checks and a second only for material issues",
       "Do not change, disable, delete, or reschedule existing automations without explicit approval",
-      "Report configured, attempted, and verified-success states separately"
+      "Report configured, attempted, and verified-success states separately",
+      "Never call a paid model API; block provider calls unless this account's free quota and no-billing path are verified",
+      "Treat an active provider connection as authentication evidence only, not proof of free quota"
     ],
     "github_actions": {
       "workflow": ".github/workflows/validate.yml",
