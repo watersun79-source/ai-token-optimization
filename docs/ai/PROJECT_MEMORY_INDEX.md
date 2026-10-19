@@ -2,9 +2,10 @@
 
 최종 지침 적용 확인: 2026-10-20 병렬 협동 본문 1,477 단위 ChatGPT·Codex 저장 후 새로고침·재열기 일치. 최초1133·후속1290 기록 보존. main·CI·운영 상태는 00:14 독립 재조회.
 작업 브랜치: `ai/continuation-readonly-audit-2026-10-18`
-판정: 이번 Gemini·Claude 무료 웹 독립2개·교차2개 실제 응답과 양쪽 생성 중 표시로 병렬 검토 확인, ChatGPT/Codex 현재1477지침 저장 재조회 일치. main·PR #1/#4 병합·기존127/127·CI성공 보존, 두 AI DISABLED·Slack ENABLED를00:14 다시 읽음. 과거1133의복원6/6·승인후기록복구2/2는 당시 검증. 사용자요청의새기록과정규무인자동저장은구분하며, 후자는여전히미검증.
+판정: 이번 Gemini·Claude 무료 웹 독립2개·교차2개 실제 응답과 양쪽 생성 중 표시로 병렬 검토 확인, ChatGPT/Codex 현재1477지침 저장 재조회 일치. main·PR #1/#4 병합·기존127/127·CI성공 보존, 두 AI DISABLED·Slack ENABLED를00:14 다시 읽음. 과거1133의복원6/6·승인후기록복구2/2는 당시 검증. 00시 이후 실제 정규 예약 새 결과를01:23에 확인했고, GitHub·Slack 자동 저장은 안전 검사 차단0/2·색인미시도다. 후속체크ai-23만PAUSED, 원래매시간예약활성유지. 모니터보존은정규저장성과가아님.
 
 ## 먼저 읽을 기록
+- [2026-10-20 정규 예약 새 결과 — 외부 자동 저장 차단·모니터 종료](ai-scheduled-result-monitor-2026-10-20.md)
 - [2026-10-20 실제 무료 웹 병렬 협동·새1477지침 적용](ai-parallel-review-2026-10-20.md)
 - [2026-10-20 00:20 정규 예약 무인 자동 저장 — 증거 대조 및 미검증 범위](ai-scheduled-unattended-write-check-2026-10-20-0020.md)
 - [2026-10-20 00:13 재분석 — 예약·저장·문서 불일치·비용 감사](ai-execution-2026-10-20-0013-readonly-reanalysis.md)
@@ -20,6 +21,14 @@
 - 프로젝트: https://cloud.activepieces.com/projects/Fr9OAsxi4FbVSVLZkexYi/automations
 - [이 압축 전 전체 색인](https://github.com/watersun79-source/ai-token-optimization/blob/789551c62f6e4f2419de5d79e241f5e3c2ea704e/docs/ai/PROJECT_MEMORY_INDEX.md)
 
+
+## 2026-10-20 정규 예약 결과 — 01:23 관찰 종료
+
+- 실제 예약 화면에서01:03·01:13실행중→01:23새결과를 확인. 예약의 ‘채팅 열기’는 새 대화 `6ad63e54-7a64-83ec-9db8-fdc5c7e47d06`에 연결, 독립 재조회에서 사용자메시지0·agent1개·추가페이지없음. agent/turn `04ac6d82-82a7-42a8-bca7-95d48f0cc0de`.
+- 메시지메타데이터00:58:54.848·대화생성00:59:17.947KST와 UI전환시각을 구분. 정확한01시시작/종료라고 단정하지 않고 ‘00시이후 실제정규예약 새결과’로 판정.
+- 기억·Slack읽기완료 보고, GitHub보고서쓰기·Slack전송은 안전검사차단, 색인미시도. 오류 `This tool call was blocked by OpenAI's safety checks. Please double check what you are sending.` 구체기준미제공. 거절파일명·원시쓰기본문은 미제공이며 추측·재시도·대신작성하지 않음.
+- root·독립감사 모두 보존전 기억브랜치가커밋e4902f56f63e3f55afc7c4ac5f91cbe7d51e657d와identical·추가커밋/파일0, Slack00:50이후답글0을 확인. 정규자동저장0/2이며 이후모니터관찰보고서/Slack보존은제외.
+- ai-23만PAUSED 재조회확인. 기존매시간AI예약활성·Asia/Seoul보존. 기존127검사·복원6/6·모델병렬검토 재실행0, main/운영/기존예약수정0. 최신1477지침전체복원과모든새채팅자동주입은별도미검증. [자세한 관찰 보고서](ai-scheduled-result-monitor-2026-10-20.md).
 
 ## 2026-10-20 00:13 KST 재검증 — 별도 AI 대화의 당시 관찰
 - 현재 기존 ChatGPT `AI` 예약: `automations.peek`로 **활성**, 매시간 정각/Asia-Seoul 확인. 마지막 제공 실행 메타데이터는 10월19일 **23:57:47 KST**이며, **00시 정규 예약 원격 자동 저장 결과를 증명하지 않음**.
