@@ -462,3 +462,11 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Provider/model calls and spend 0; no production flow/schedule changes. Activepieces/ChatGPT UI status remains unverified due saved site-access restrictions.
 - Detailed report: [ai-execution-2026-10-19-automation-and-refresh-status.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
 - Next: await PR review; resume read-only app checks after saved browser access is updated.
+
+
+## Shared fixture correction and CI — 2026-10-19
+- Corrected `integral_float_error_count_parity` from JSON integer `0` to `0.0`, so the fixture now exercises an integral-valued floating-point number. PR #1 head: `b68c66c1930a89fd3d836ca0a0aaf81e4d7c0255`; still open/unmerged and mergeable.
+- Python validator direct check accepted the payload; Node confirmed parsed zero satisfies `Number.isInteger`. Fresh Actions run 39240936846 (run 57) passed the full job, Python regression, and JS shared-fixture comparison. Reviews 0.
+- No production flow/schedule/main change; provider/API calls and spend 0. Activepieces/ChatGPT current UI remains unverified due saved site access restriction.
+- Detailed report: [2026-10-19 execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
+- Next: await PR review; resume UI checks after browser site permissions change.
