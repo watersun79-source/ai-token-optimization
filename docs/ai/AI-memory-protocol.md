@@ -106,3 +106,8 @@ On iOS, paste it into Settings > Customize ChatGPT > Custom Instructions with cu
 
 ### Character-count correction — 2026-10-18
 - Read-back comparison confirms canonical and display custom-instruction files are byte-for-byte identical (same Git blob SHA `8011eca50e723a123709f3868335bb968984998b`). The file declares `문자 수: 1230`; counting the normalized body after removing that header yields 1,229 JavaScript UTF-16 code units. Both are under the 1,500-character limit. Do not claim ChatGPT Settings were changed automatically.
+
+
+## Authoritative tool-availability rule — 2026-10-19
+- The user's actual connected Activepieces MCP tool list is authoritative for this session. The project-context setter is not exposed there; never claim it is available, search for it again, or make it a prerequisite.
+- Continue only with tools actually present in the current tool list. If a needed project-scoped operation cannot run without the missing setter, stop that branch and use a genuinely available alternative; do not repeatedly ask the user to prove the absence.
