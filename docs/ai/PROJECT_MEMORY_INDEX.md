@@ -356,3 +356,11 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Slack record posted and read-back pending: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792404633990379.
 - Existing ChatGPT automation AI remains UI-active hourly; result partial and historical disabled-vs-active conflict unresolved. Activepieces catalog count is 45 currently; refresh effect unverified. No project-scoped calls or state changes.
 - Next: continue read-only inspection of catalog application and automation run history; use Gemini/Claude only after clearly free account route is evidenced.
+
+
+## Continuation checkpoint — 2026-10-19 (read-only history routes)
+- Updated report: [automation and read-only route investigation](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md), commit `005bf54dc0a63374bfe77824287323964083030d`.
+- Current manifest has 45 Activepieces definitions, including read-only `ap_list_runs`/`ap_get_run`; no separate connected API for ChatGPT scheduled-task run history. The old Activepieces browser tab was last opened 2026-10-13 and reattachment timed out; no project-scope call made because no current project selection could be confirmed.
+- Scheduled AI remains UI-listed as active/hourly; historical run narrative says disabled. Conflict unresolved; no task changes. Catalog refresh effect remains unverified due to no pre-refresh snapshot.
+- Slack update: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792404754457219 (read-back pending).
+- No flow/run queries, tests, model generation, paid calls, purchases, schedule/flow changes. Next: reopen intended project in active browser session, then use read-only run queries only; inspect schedule run history in ChatGPT task UI.
