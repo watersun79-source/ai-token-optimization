@@ -146,11 +146,19 @@ def validate(value: Any) -> list[str]:
             counted_errors += 1
 
     error_count = value["error_count"]
-    is_integer_count = (
-        isinstance(error_count, int) and not isinstance(error_count, bool)
-    ) or (
-        isinstance(error_count, float) and math.isfinite(error_count) and error_count.is_integer()
-    )
+    if isinstance(error_count, int) and not isinstance(error_count, bool):
+        try:
+            # JavaScript parses JSON numbers as IEEE-754 doubles; huge integer
+            # literals therefore become Infinity and fail Number.isInteger.
+            is_integer_count = math.isfinite(float(error_count))
+        except OverflowError:
+            is_integer_count = False
+    else:
+        is_integer_count = (
+            isinstance(error_count, float)
+            and math.isfinite(error_count)
+            and error_count.is_integer()
+        )
     if not is_integer_count or error_count < 0:
         errors.append("error_count_must_be_integer")
     elif error_count != counted_errors:
