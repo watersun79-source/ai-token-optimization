@@ -138,3 +138,12 @@
 - Verification evidence remains Python unittest 22/22, JavaScript fixtures 30/30, `git diff --check` clean, and Actions run 39240412707 successful on PR head `f765a1500972daa7d574961176f5ca766e39d4c9`. PR #1 is open/unmerged with 0 reviews.
 - Provider/model generation calls 0; paid calls/spend 0; production flow or schedule changes 0. Activepieces and ChatGPT UI state remains unverified under saved site-access restrictions.
 - Next: wait for PR review; resume UI read-only checks only after the saved browser access preference changes.
+
+
+## Shared fixture correction and fresh CI — 2026-10-19
+- A read-only PR diff review found that fixture `integral_float_error_count_parity` used JSON integer `0`, so it did not actually cover an integral-valued floating-point input. Corrected that one fixture value to `0.0` on PR branch `improve/shared-fixture-parity-tests`; no validator implementation changed.
+- PR feature-branch commit: `b68c66c1930a89fd3d836ca0a0aaf81e4d7c0255`. GitHub read-back confirms the fixture contains `0.0` and the PR remains open, mergeable, and unmerged.
+- Direct local validation confirmed the Python validator accepts the payload (`[]` errors) and Node parses `0.0` as numeric integer zero (`Number.isInteger` true). Fresh GitHub Actions run [39240936846](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39240936846), run 57, succeeded; job `test`, Python regression tests, and JS shared-fixture comparison all succeeded.
+- Review submissions: 0. This continuation changed only the shared JSON fixture on the PR branch and these documentation records; no merge/main/production-flow/schedule changes. Provider/model calls and spend 0.
+- Activepieces and ChatGPT UI state remains unverified because saved site-access permissions still block inspection; ambient browser URL does not establish a permission change.
+- Next: await PR review. Resume UI read-only checks only after the saved site-access preference is changed.
