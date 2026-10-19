@@ -101,11 +101,11 @@ class PolicyConfigTests(unittest.TestCase):
 
     def test_paid_external_ai_calls_are_not_implicitly_allowed(self):
         limits = self.policy["limits"]
-        self.assertTrue(
-            any("Never call paid external AI APIs unless explicitly approved" in rule
-                for rule in limits["token_optimization"])
-        )
         rules = limits["token_optimization"]
+        self.assertTrue(any(
+            "Never call paid external AI APIs unless explicitly approved" in rule
+            for rule in rules
+        ))
         self.assertTrue(any("zero external AI API calls" in rule for rule in rules))
         self.assertTrue(any("separate token-count API request" in rule for rule in rules))
         self.assertTrue(any("never create paid caches without explicit approval" in rule for rule in rules))
@@ -117,7 +117,6 @@ class PolicyConfigTests(unittest.TestCase):
         self.assertEqual(guard["unknown_quota_action"], "block")
         self.assertTrue(guard["provider_connection_is_not_quota_evidence"])
         self.assertTrue(guard["record_actual_provider_calls_and_costs"])
-
     def test_independent_review_is_restricted(self):
         review = self.policy["routing"]["independent_third_review"]
         self.assertFalse(review["enabled"])
@@ -129,3 +128,4 @@ class PolicyConfigTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
