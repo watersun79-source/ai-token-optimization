@@ -486,3 +486,10 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - PR #1 remains open/unmerged/mergeable at `9e2b6942e6e66fb5386e5f122f20729bbed42dd4`; CI 39241135993 succeeded; reviews 0. No source change in this check.
 - No provider/API spend or production changes; app UI status remains unverified under saved site-access restrictions.
 - Full details: [execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
+
+
+## Exponent threshold boundary check — 2026-10-19
+- Compared the exact current PR Python number formatter against Node.js `String(number)` for 5,387 finite doubles around decimal exponents -324..308, including adjacent representable values, 1e-6/1e21 transitions, signed zero, and subnormals. Mismatches: 0.
+- Together with the 100,000 seeded random-double check, both independent comparisons returned 0 mismatches. No PR/source file changed.
+- PR #1 remains open/unmerged/mergeable; latest CI 39241135993 succeeded; reviews 0. No provider/API cost or production changes. App UI remains unverified due saved site-access restriction.
+- Details: [execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-19/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
