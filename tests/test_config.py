@@ -110,6 +110,14 @@ class PolicyConfigTests(unittest.TestCase):
         self.assertTrue(any("separate token-count API request" in rule for rule in rules))
         self.assertTrue(any("never create paid caches without explicit approval" in rule for rule in rules))
 
+    def test_paid_or_unverified_provider_calls_are_blocked(self):
+        guard = self.policy["cost_guard"]
+        self.assertFalse(guard["paid_model_api_calls_allowed"])
+        self.assertTrue(guard["provider_call_requires_verified_free_quota"])
+        self.assertEqual(guard["unknown_quota_action"], "block")
+        self.assertTrue(guard["provider_connection_is_not_quota_evidence"])
+        self.assertTrue(guard["record_actual_provider_calls_and_costs"])
+
     def test_independent_review_is_restricted(self):
         review = self.policy["routing"]["independent_third_review"]
         self.assertFalse(review["enabled"])
