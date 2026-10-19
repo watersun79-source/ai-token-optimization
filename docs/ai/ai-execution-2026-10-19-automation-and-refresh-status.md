@@ -255,3 +255,12 @@
 - Current manifest has 47 Activepieces tools. `ap_list_runs` accepts optional flowId/environment/status but no project identifier; `ap_get_run` requires a concrete flowRunId.
 - Current authenticated project/run context remains unverified, so neither tool was called and no ID was guessed. No app state changed.
 - Issue #3 comment was posted and read back: https://github.com/watersun79-source/ai-token-optimization/issues/3#issuecomment-6266137030.
+
+## PR #1 exact-head regression rerun — 2026-10-19
+- Reused the local verification checkout at commit `5f5393967a862c716b10f5b349016400ea466725`, matching the current PR #1 head.
+- The system `python` command resolved to the Microsoft Store execution alias and returned only `Python ` with exit code 1; `py` was not installed. This was an environment/interpreter resolution issue, not a test failure.
+- Reran the repository workflow command with the bundled Codex Python interpreter: `python -m unittest discover -s tests -v` — 23/23 passed.
+- Reran the JavaScript shared-fixture command with Node 24.19.0: `node tools/json_output_validator.js` — 32/32 passed.
+- `git diff --check` passed. Checkout remained at the exact PR head; the only untracked paths were pre-existing `tests/__pycache__/` and `tools/__pycache__/`, left untouched.
+- No source files changed; no provider/API calls or cost; no production flow, connection, schedule, main, or PR merge changes.
+- Current GitHub recheck: PR #1 remains open and unmerged; Actions run 39244633487 succeeded; review submissions, inline review threads, and PR discussion comments are all 0.
