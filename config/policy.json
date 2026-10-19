@@ -56,7 +56,7 @@
       "Use one model/API call for routine work; use a second only for a meaningful independent review",
       "Use concise structured outputs and bounded output tokens",
       "Reuse stable prompt prefixes and cached results where supported and verified",
-      "Never call paid external AI APIs unless explicitly approved; do not infer free-tier availability without checking account terms",
+      "Never call paid external AI APIs; verify the route is free and account quota/billing risk before any provider call",
       "Measure tokens and cost only from actual API usage logs and official rates; otherwise report unavailable",
       "Use deterministic local code for JSON, schema, arithmetic, and format validation; make zero external AI API calls when code can decide correctly",
       "Prefer usage metadata returned by an existing API response; do not issue a separate token-count API request unless its result changes a decision",

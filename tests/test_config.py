@@ -99,11 +99,15 @@ class PolicyConfigTests(unittest.TestCase):
         self.assertIn("never exceed three", actions)
         self.assertNotIn("default to at most three searches", actions)
 
-    def test_paid_external_ai_calls_are_not_implicitly_allowed(self):
+    def test_paid_external_ai_calls_are_prohibited(self):
         limits = self.policy["limits"]
         rules = limits["token_optimization"]
         self.assertTrue(any(
-            "Never call paid external AI APIs unless explicitly approved" in rule
+            "Never call paid external AI APIs;" in rule
+            for rule in rules
+        ))
+        self.assertFalse(any(
+            "paid external AI APIs unless explicitly approved" in rule
             for rule in rules
         ))
         self.assertTrue(any("zero external AI API calls" in rule for rule in rules))
