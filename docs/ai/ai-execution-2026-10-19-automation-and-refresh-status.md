@@ -155,3 +155,11 @@
 - GitHub Actions run [39241135993](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39241135993), run 58, succeeded. Job `test`, Python regression tests, and JavaScript shared-fixture comparison all succeeded. Earlier corrected `integral_float_error_count_parity` remains set to `0.0` on this head.
 - No implementation or production changes, PR merge, schedule/flow changes, or provider/API calls/spend. Reviews remain 0. Activepieces/ChatGPT UI state remains unverified under saved site-access restriction.
 - Next: await PR review; resume app UI checks only after site access settings are changed.
+
+
+## Numeric formatter differential extension — 2026-10-19
+- Extended the deterministic Python-vs-Node numeric formatter check to 100,000 seeded finite IEEE-754 doubles (seed `20261019`); observed 0 mismatches.
+- Confirmed the local Python validator source blob matches the current PR branch exactly: `tools/json_output_validator.py` blob SHA `998b14bc6329ae4a845c412af2e0b4a22ed7f1ef`. The 100,000-case differential therefore exercised the exact current PR implementation.
+- Current PR #1 remains open/unmerged/mergeable at `9e2b6942e6e66fb5386e5f122f20729bbed42dd4`; Actions run 39241135993 succeeded, reviews 0. No source or PR files changed in this differential turn.
+- No provider/API calls or costs; no production flow, schedule, connection, or main changes. Activepieces/ChatGPT UI remains unverified because saved site-access permissions block inspection.
+- Next: await PR review; inspect app UI read-only only after site access becomes available.
