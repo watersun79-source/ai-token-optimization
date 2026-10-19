@@ -551,3 +551,9 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Issue #3 refreshed/read back: https://github.com/watersun79-source/ai-token-optimization/issues/3. Full detail: [execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
 
 - Current Activepieces run-tool schema and safe call boundary recorded in Issue #3 and [latest execution report](https://github.com/watersun79-source/ai-token-optimization/issues/3#issuecomment-6266137030). No project/run call without current authenticated context.
+
+
+## Fresh Activepieces tool-manifest audit — 2026-10-19
+- Directly enumerated the current assistant-visible Activepieces catalog: 47 tool definitions. Read/list names include `ap_list_flows`, `ap_list_runs`, `ap_get_run`, `ap_list_connections`, and `ap_list_ai_models`.
+- Neither `ap_list_projects` nor the user-prohibited `ap_set_project_context` is present. This inventory describes exposed tool names only; it does not prove site authorization, current project context, or live service state. No Activepieces tool was called because the saved browser denial forbids alternate access paths to the same site data.
+- No project-scoped call, flow/run action, connection/configuration change, provider/API call, or cost occurred. Live Activepieces project/run state remains unverified.
