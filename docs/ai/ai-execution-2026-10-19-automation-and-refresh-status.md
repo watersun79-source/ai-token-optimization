@@ -122,3 +122,12 @@
 - Compared the PR-head Python `_js_number_string` implementation against Node.js `String(number)` on 10,000 deterministic random finite IEEE-754 doubles (seed 20261019) plus 10 selected exponent/precision boundary values. Result: 0 mismatches.
 - This was an ad hoc local differential check; no test fixture or source code was added. Existing full suites remain Python 22/22 and JavaScript fixtures 29/29.
 - Temporary Python cache files remain in `work/pr1-ci-verification`; their deletion command was rejected by the command policy. No repository source files or remote project state were changed.
+
+## Shared fixture regression addition and fresh CI — 2026-10-19
+- Following approval, added one shared JSON fixture, `fixed_notation_high_precision_rounding_parity`, covering a high-precision number rendered in JavaScript fixed notation near the 1e21 format boundary. No validator implementation changed.
+- Before updating the PR, the exact remote baseline blob matched the local clone's HEAD blob. Local full verification: Python unittest 22/22; JavaScript shared fixtures 30/30; `git diff --check` clean.
+- Updated only the PR feature branch. Commit: `f765a1500972daa7d574961176f5ca766e39d4c9`. GitHub read-back confirms fixture is present on PR head. PR remains open/unmerged; GitHub reports mergeable=true; review submissions 0.
+- Fresh GitHub Actions run [39240412707](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39240412707), run 56, completed successfully. Job `test`, Python regression step, and JavaScript shared-fixture step all succeeded.
+- Prior deterministic Python-vs-Node numeric differential (10,000 random finite doubles + 10 boundary values) had 0 mismatches. No AI/provider API calls or costs; production flows, connections, schedule, and main unchanged.
+- Cleanup note: the temporary verification clone under `work/pr1-ci-verification` retains Python cache files; explicit cleanup commands were rejected by the command policy. No further deletion attempt was made.
+- Next: await PR review; app UI verification remains unverified until saved site access is adjusted.
