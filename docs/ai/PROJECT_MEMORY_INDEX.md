@@ -493,3 +493,11 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Together with the 100,000 seeded random-double check, both independent comparisons returned 0 mismatches. No PR/source file changed.
 - PR #1 remains open/unmerged/mergeable; latest CI 39241135993 succeeded; reviews 0. No provider/API cost or production changes. App UI remains unverified due saved site-access restriction.
 - Details: [execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-19/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
+
+
+## Validator parity fix — 2026-10-19
+- Differential across 20,000 structure-aware JSON payloads found 731 presentation-only error details where Python printed integral float `0.0` and JS printed `0`; no verdict/category/order semantic divergence.
+- Added shared mismatch fixture and fixed Python display normalization using existing `_js_number_string`. TDD red reproduced, green passed. PR #1 head `702228f3d0e218382c7405cea9ceb311e98b0265`; Actions run 39242807007 succeeded (Python + JS fixture steps); local suites 22/22 and 31/31, diff check clean.
+- PR remains open/unmerged; review submissions 0. Provider/model/API calls and spend 0; production flows and automation unchanged. App UI status remains unverified due saved browser access restriction.
+- Full evidence: [execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
+- Next: await PR review; no merge without explicit instruction; resume read-only app verification only after site access is restored.
