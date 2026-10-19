@@ -385,3 +385,12 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Report: [PR and automation continuation](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md), commit `78c5963cf968f2480b11777e20e5935367512399`.
 - Slack posted and read back: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792405054200369.
 - Next: read-only inspect the PR diff/merge blocker; keep integration and PR branch changes separate pending explicit direction.
+
+
+## Continuation checkpoint — 2026-10-19 (PR #1 merge preview)
+- Reproduced PR #1 conflict locally: only `tests/test_config.py` conflicts (main cost-guard test vs PR research/token optimization tests). A local preview combines both; merged policy keeps provider `cost_guard`, default search budget 2, global cap 3.
+- Local preview at `work/pr1-readonly-audit`, branch `audit/pr1-merge-preview`; no commit, push, or PR/main update.
+- Validation: Python 22/22 tests passed; JS fixture validator 29/29 passed; `git diff --check` clean. No new CI run.
+- Full report: [PR conflict preview](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md), commit `736c574788843e0d248160084d4af7228cf806cc`.
+- Slack update: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792405268881519 (read-back pending).
+- Next: if authorized to update the PR branch, publish the reviewed resolution and rerun CI; otherwise preserve local preview only. Do not merge without explicit direction.
