@@ -289,3 +289,9 @@
 ## Local automation metadata check — 2026-10-19
 - Checked the configured CODEX_HOME path `C:\\Users\\편득주\\.codex`; its `automations` directory is absent. No local automation ID or automation.toml was available to pass to the read-only automation view tool.
 - The user again authorized continuation, but the saved browser-site denial has not been shown to have changed. No Activepieces retry or alternate path was used. The existing ChatGPT automation's current status/history remains unverified; no automation state was changed.
+
+
+## Fresh Activepieces tool-manifest audit — 2026-10-19
+- Directly enumerated the current assistant-visible Activepieces catalog: 47 tool definitions. Read/list names include `ap_list_flows`, `ap_list_runs`, `ap_get_run`, `ap_list_connections`, and `ap_list_ai_models`.
+- Neither `ap_list_projects` nor the user-prohibited `ap_set_project_context` is present. This inventory describes exposed tool names only; it does not prove site authorization, current project context, or live service state. No Activepieces tool was called because the saved browser denial forbids alternate access paths to the same site data.
+- No project-scoped call, flow/run action, connection/configuration change, provider/API call, or cost occurred. Live Activepieces project/run state remains unverified.
