@@ -35,3 +35,5 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Compare JavaScript validator against shared fixtures
         run: node tools/json_output_validator.js
+      - name: Validate provider-free review metadata guard
+        run: node --test tools/free-web-guard/guard.test.mjs
