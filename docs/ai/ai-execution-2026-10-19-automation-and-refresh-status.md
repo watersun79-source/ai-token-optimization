@@ -191,3 +191,8 @@
 - GitHub Actions run [39243215666](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39243215666), run 60, completed successfully; Python regression and JS shared-fixture steps both succeeded.
 - AI-provider/model API calls 0; paid provider spend and purchases 0 (provider billing not accessed). GitHub/Slack connector reads and writes were used for audit and records. No Activepieces flow, connection, schedule, or main changes; current site access restriction means Activepieces/ChatGPT state remains unverified.
 - Next: keep PR open pending review; continue repository-only audit without merging. Resume app checks only after saved browser access is restored.
+
+
+## Verification checkout synchronization — 2026-10-19
+- Fetched PR feature branch after CI and aligned the temporary verification checkout to exact head `46089313b80b8c00c8b5e13a412df6449a443b57`; local HEAD and staged tree both match the GitHub commit/tree. Tracked working tree is clean.
+- Python test execution left untracked `tests/__pycache__/` and `tools/__pycache__/` directories in the temporary checkout; they are non-source artifacts and were left in place. No project source changes remain unstaged or staged locally.
