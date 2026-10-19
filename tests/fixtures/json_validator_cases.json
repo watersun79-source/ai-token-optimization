@@ -306,6 +306,26 @@
       "expected_errors": []
     },
     {
+      "id": "integral_float_error_count_mismatch_parity",
+      "input": {
+        "checks": [
+          {
+            "label": "count mismatch",
+            "expected": "one",
+            "actual": "different",
+            "correct": false
+          }
+        ],
+        "error_count": 0.0,
+        "answer": "검증",
+        "confidence": "high",
+        "search_used": false
+      },
+      "expected_errors": [
+        "error_count_mismatch:reported=0,computed=1"
+      ]
+    },
+    {
       "id": "fractional_error_count_rejected",
       "input": {
         "checks": [

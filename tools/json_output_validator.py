@@ -154,7 +154,9 @@ def validate(value: Any) -> list[str]:
     if not is_integer_count or error_count < 0:
         errors.append("error_count_must_be_integer")
     elif error_count != counted_errors:
-        errors.append(f"error_count_mismatch:reported={error_count},computed={counted_errors}")
+        errors.append(
+            f"error_count_mismatch:reported={_js_number_string(error_count)},computed={counted_errors}"
+        )
 
     if not isinstance(value["answer"], str) or not value["answer"].strip():
         errors.append("answer_must_be_nonempty_string")
