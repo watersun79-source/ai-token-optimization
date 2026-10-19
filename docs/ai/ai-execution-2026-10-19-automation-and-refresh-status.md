@@ -63,3 +63,11 @@
 - The head SHA `74879c0cb4e57a8e713d49271872b5c1ba764ac0` has one GitHub Actions check named `test`, completed successfully on 2026-10-15 16:03:23 UTC. This is historical CI evidence and does not verify a fresh run against current base.
 - The PR review endpoint returned no reviews. PR files were read; no code was modified. Tests were not run in this workspace.
 - Next: inspect the current diff/merge conflict without altering the PR branch; if a clean isolated fix is available, prepare it for review and run the requested verification before proposing integration. Do not merge without explicit user direction.
+
+
+## PR #1 merge-conflict reproduction and local preview — 2026-10-19
+- Confirmed PR #1's `mergeable=false` / `dirty` state by fetching the repository and reproducing a merge preview between `main` (4ca63d421d8e5f43cabac492caa9ee74c5bdd492) and `improve/shared-fixture-parity-tests` (74879c0cb4e57a8e713d49271872b5c1ba764ac0). Exactly one conflict: `tests/test_config.py`.
+- The conflict is overlapping additions: main adds `test_paid_or_unverified_provider_calls_are_blocked`; PR adds research-budget/source-priority/token-optimization/search-limit and paid-external-AI tests. A local merge preview kept both sets. Merged `config/policy.json` retains main's `cost_guard` and PR's bounded research policy with global max search uses 3; the default research budget remains 2.
+- Preview location: `work/pr1-readonly-audit`, local branch `audit/pr1-merge-preview`; it is a non-committed merge preview tracking the PR head. No remote branch was updated and no merge was created.
+- Verification on this local preview: `python -m unittest discover -s tests -v` passed 22/22; `node tools/json_output_validator.js` passed 29/29; `git diff --check` clean. These are local preview results, not a new GitHub Actions run.
+- Next: if the user wants the PR updated, publish the reviewed resolution on its feature branch and re-run CI; no PR push or merge was performed in this continuation.
