@@ -48,3 +48,11 @@
 - Tool calls in this continuation: manifest inspection only for Activepieces; no project-scoped calls, no run/flow calls, no provider calls, no external generation, no spend.
 - Result classification: automation history = blocked by absent callable task-history API; Activepieces run history = blocked pending a current project selection; catalog refresh effect = unverified (45 current definitions, no before snapshot or diff).
 - Next action: if project-level evidence is needed, reopen the intended Activepieces project in the active browser session and then use only its read-only run listing; inspect scheduled-task history through the ChatGPT task UI when its history controls become available. Never alter or trigger a flow for this check.
+
+
+## Browser recheck — 2026-10-19 (project and scheduled-task UI)
+- Opened the intended Activepieces project route in a fresh in-app browser tab using the project identifier already present in project memory; the site redirected to `/sign-in`. No credentials were entered. Project identity/access therefore could not be confirmed in the fresh active browser session, and no Activepieces project tool was called.
+- Opened ChatGPT in a fresh in-app browser tab; the signed-in account loaded and the sidebar exposes a `예약` (scheduled) entry. The available CUA surface for this turn provides tab discovery/navigation but no documented UI click/inspection method for the scheduled-task details, so execution history could not be opened through this path.
+- No task or flow controls changed. No project/run/flow calls, provider API calls, model generation, purchases, or spend.
+- Status: Activepieces run history blocked by sign-in; ChatGPT automation run history still unverified (entry point exists, details not opened); AI automation UI status remains from prior verification (active/hourly vs contradictory old run narrative); catalog refresh effect remains unverified.
+- Next: user opens/signs in to Activepieces in the active browser session if read-only project run inspection is desired; for ChatGPT schedule, use the scheduled-task entry in the signed-in UI and inspect details/history without editing.
