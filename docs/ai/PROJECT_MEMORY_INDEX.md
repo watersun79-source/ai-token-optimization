@@ -501,3 +501,12 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - PR remains open/unmerged; review submissions 0. Provider/model/API calls and spend 0; production flows and automation unchanged. App UI status remains unverified due saved browser access restriction.
 - Full evidence: [execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
 - Next: await PR review; no merge without explicit instruction; resume read-only app verification only after site access is restored.
+
+
+## JavaScript number overflow parity fix — 2026-10-19
+- A 400-digit JSON integer exposed a Python/JS validator difference: Python arbitrary-precision int vs JS Infinity after JSON.parse. Shared fixture reproduced Python mismatch detail vs JS `error_count_must_be_integer`.
+- Fixed Python finite-number check for integer error_count values; TDD red failed both Python fixture tests, JS passed 32/32; green local suites: Python 22/22, JS 32/32, diff check clean.
+- PR #1 head `46089313b80b8c00c8b5e13a412df6449a443b57`; Actions run 39243215666 succeeded for both Python and JS steps. PR open/unmerged, mergeable, reviews 0.
+- Provider/model API calls 0; paid spend/purchases 0. No production flow, schedule, connection, main or merge changes. App UI status remains unverified due saved site access restrictions.
+- Details: [execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
+- Next: await review and continue repository-only audit; no merge without explicit instruction. Restore saved browser access before read-only Activepieces/ChatGPT inspection.
