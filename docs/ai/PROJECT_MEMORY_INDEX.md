@@ -412,3 +412,10 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Current browser connector failed with missing originating browser context. Activepieces manifest currently exposes 45 tools; project context is not safely verified, so no Activepieces project/flow/run/connection tool was called.
 - Provider/API calls 0; paid API calls 0; purchases/upgrades 0; flow tests/runs/status changes 0; PR merge and main changes 0. Existing hourly Asia/Seoul automation unchanged.
 - Next: investigate a supported existing-connection refresh route only through actual accessible UI or official docs; compare before/after manifest only if a baseline is available. Do not repeat absent-tool searches or call project-scoped Activepieces tools without verified project context. Do not merge PR #1 without explicit instruction.
+
+
+## PR #1 CI final verification — 2026-10-19
+- Latest PR head: `917b56e2a9f2e5db4f5f51e9ff4037d52ec4f7e3`; PR stays open, GitHub mergeable=true / unstable, no merge to main.
+- GitHub Actions run [39237518052](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39237518052) completed successfully on this head. Python regression and JavaScript shared-fixture steps both succeeded. Local evidence is separately recorded in the execution report.
+- Details: [execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
+- Next: verify current review/merge requirements before integration; continue read-only automation and Activepieces access investigation. Model/API calls 0; no paid spend or production flow changes.
