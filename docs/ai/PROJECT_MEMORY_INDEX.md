@@ -535,3 +535,10 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Issue #3 comment with evidence and read-back: [main guard verification](https://github.com/watersun79-source/ai-token-optimization/issues/3#issuecomment-6265998316). Details in the [execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
 
 - Refreshed Issue #3's stale latest-evidence block while retaining all acceptance criteria and safety constraints; read-back confirms current PR #1/#2 state, app blocker, and no-merge rule.
+
+
+## Paid API exception removed — 2026-10-19
+- Removed conflicting policy wording that allowed paid external AI APIs with approval; the token-optimization rule is now an absolute prohibition, and the regression test rejects the old exception.
+- TDD red reproduced on prior policy; green: Python 22/22, JS 32/32, diff check clean. PR #1 head `944401312e929a7db5e24ceacfdcfb3da71b0cff`; Actions run 39244193216 succeeded.
+- Direct current-main comparison confirms all five `cost_guard` values unchanged and identical to PR branch. PR remains open/unmerged; no production changes or provider calls.
+- Issue #3 was refreshed and read back: https://github.com/watersun79-source/ai-token-optimization/issues/3. Details: [execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
