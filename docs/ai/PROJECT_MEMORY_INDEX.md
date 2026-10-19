@@ -542,3 +542,10 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - TDD red reproduced on prior policy; green: Python 22/22, JS 32/32, diff check clean. PR #1 head `944401312e929a7db5e24ceacfdcfb3da71b0cff`; Actions run 39244193216 succeeded.
 - Direct current-main comparison confirms all five `cost_guard` values unchanged and identical to PR branch. PR remains open/unmerged; no production changes or provider calls.
 - Issue #3 was refreshed and read back: https://github.com/watersun79-source/ai-token-optimization/issues/3. Details: [execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
+
+
+## All paid-use approval exceptions removed — 2026-10-19
+- Removed approval exceptions for paid search/API/model calls and paid caches; research config now sets `paid_search_or_api_calls_allowed=false`, and scheduled rules prohibit paid calls. Tests reject the former exception language.
+- TDD red reproduced; green: Python 23/23, JS 32/32, diff check clean. PR #1 head `5f5393967a862c716b10f5b349016400ea466725`; Actions run 39244633487 succeeded.
+- Parsed `cost_guard` comparison with main confirms all five guard values identical. PR remains open/unmerged.
+- Issue #3 refreshed/read back: https://github.com/watersun79-source/ai-token-optimization/issues/3. Full detail: [execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
