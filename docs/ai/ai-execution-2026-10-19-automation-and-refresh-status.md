@@ -171,3 +171,13 @@
 - No PR/source change from this check. PR #1 remains open/unmerged/mergeable; latest verified CI run 39241135993 succeeded, review submissions 0.
 - Provider/API calls and spend 0; production flow, schedule, connection, and main unchanged. Activepieces/ChatGPT UI remains unverified while site access is blocked.
 - Next: await PR review; inspect app status only after site access is restored.
+
+
+## Validator parity differential and formatting fix — 2026-10-19
+- Structure-aware deterministic differential: 20,000 JSON payloads compared Python and JavaScript validators. 731 outcome-text differences were solely integral-float rendering in valid error_count mismatch details (Python `0.0`, JS `0`); verdict/category/order semantics had no divergence.
+- TDD RED: added shared fixture `integral_float_error_count_mismatch_parity` with JSON `error_count: 0.0`; Python failed as expected because output used `reported=0.0`, while JavaScript fixture suite passed 31/31.
+- GREEN: Python validator now formats the reported count with existing `_js_number_string`. Commit `702228f3d0e218382c7405cea9ceb311e98b0265` on PR #1 feature branch. Exact tree was checked against local Git tree before fast-forward ref update.
+- Local verification on exact head: Python 22/22; JavaScript fixtures 31/31; `git diff --check` clean. GitHub Actions run [39242807007](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39242807007), run 59: job `test`, Python regression and JavaScript shared-fixture steps all succeeded.
+- Read-back: PR #1 is open and unmerged at the above head; review submissions 0. No main merge.
+- Gemini/Claude responses 0; provider/API calls 0; paid spend/purchases 0. No Activepieces flow, connection, or ChatGPT automation changes. Current site access restriction persists; automation/project state remains unverified in this continuation.
+- Next: retain PR open pending review; continue repository-only validation and update site access preference before any UI inspection. Do not merge without explicit instruction.
