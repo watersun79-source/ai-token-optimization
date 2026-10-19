@@ -5,6 +5,7 @@
 판정: 기억 지침 ChatGPT·Codex·기존 예약에 저장 후 재조회 일치, 단일 시작점 정리와 격리 문맥 복원 6/6 완료. 23시 정규 실행은 최신 기억·PR 병합 상태를 복원했으나 예약 자체의 GitHub·Slack 자동 쓰기는 안전 검사 차단을 보고. 사용자가 별도로 승인한 후속 AI 대화의 23시 기록 복구는 GitHub·Slack 재조회 2/2 완료. 다음 정규 실행의 무인 자동 저장은 검증 대기이며 기존 후속 체크로 관찰 예정. PR #1·#4 main 통합·127/127·CI 성공 보존.
 
 ## 먼저 읽을 기록
+- [2026-10-20 00:13 재분석 — 예약·저장·문서 불일치·비용 감사](ai-execution-2026-10-20-0013-readonly-reanalysis.md)
 - [23시 예약 결과 — 사용자 승인 원격 기록 복구](ai-23h-remote-record-recovery-2026-10-19.md)
 - [최신 기억 유지 적용·복원 검증](memory-maintenance-2026-10-19.md)
 - [최신 main 통합·최종 검증](ai-integration-2026-10-19.md)
@@ -16,6 +17,14 @@
 - Slack 진행 채널: `C0C9649RQAZ`
 - 프로젝트: https://cloud.activepieces.com/projects/Fr9OAsxi4FbVSVLZkexYi/automations
 - [이 압축 전 전체 색인](https://github.com/watersun79-source/ai-token-optimization/blob/789551c62f6e4f2419de5d79e241f5e3c2ea704e/docs/ai/PROJECT_MEMORY_INDEX.md)
+
+
+## 2026-10-20 00:13 KST 재검증 — 이 날짜의 최신 직접 관찰
+- 현재 기존 ChatGPT `AI` 예약: `automations.peek`로 **활성**, 매시간 정각/Asia-Seoul 확인. 마지막 제공 실행 메타데이터는 10월19일 **23:57:47 KST**이며, **00시 정규 예약 원격 자동 저장 결과를 증명하지 않음**.
+- GitHub REST의 main SHA `297d1d2d52e213e0b3c93c93d74e322fb11e744b`, PR #1·#4 `merged=true` 재확인. 이미 성공한 127/127과 분리복원6/6은 재시험하지 않음.
+- 이번 브라우저 연결은 originating browser context 부재로 실패; Activepieces 프로젝트 호출 0회, 현재 실행은 47개 도구 카탈로그 확인만. 과거 정상 접근/두 AI DISABLED 확인을 이번 세션의 재검증으로 오인하지 않음.
+- [Issue #3](https://github.com/watersun79-source/ai-token-optimization/issues/3)의 옛 PR 미병합 문구와 main README의 옛 프로젝트명·호출 경로 설명이 최신 상태와 불일치. **Issue와 main README는 보호 범위로 미수정**. main 정책파일의 정적 `cost_guard`는 paid_api=false·미검증 무료 quota 차단을 확인했지만 운영 적용 증거는 아님.
+- 상세 근거·테스트 ID·비용·차단·다음 목표는 [이번 재분석 보고서](ai-execution-2026-10-20-0013-readonly-reanalysis.md). 정규 예약 **무인 자동 GitHub/Slack 저장은 여전히 미검증**.
 
 ## 기억 유지 적용 — 2026-10-19
 - 시작점은 이 색인 하나. 정규 [프로토콜](AI-memory-protocol.md)을 최신 절차로 다시 정리했다. 대문자 색인은 호환 안내이며, 대문자 프로토콜은 Windows 경로 충돌에 대비해 정규 프로토콜과 전체 동일한 본문으로 유지한다. 옛 프로토콜은 immutable commit 링크로 보존. Windows 읽기 일관성을 위해 대소문자만 다른 두 프로토콜은 전체 동일 본문 미러로 유지하며, 양쪽 blob d88a4b7b2ecb413aa5a79a0bb48cce7ec6128c49 일치를 root와 별도 에이전트가 각각 확인.
