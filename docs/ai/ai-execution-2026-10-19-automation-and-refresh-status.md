@@ -93,3 +93,10 @@
 - Current manifest exposes 45 Activepieces tools, including read-only `ap_list_runs` and `ap_get_run`; neither was called because project scope could not be confirmed in the current session. A browser request to inspect the existing Activepieces tab and a separate ChatGPT page request were both blocked by the browser security policy with a user-denied-permission response. Per that response, no alternate browser surface or indirect UI route was attempted. The previous record of the ChatGPT task as active/hourly remains historical; this session did not independently reverify its current schedule or execution history.
 - No flow/task state changes; no project-scoped Activepieces calls; provider/API/model generation 0; paid spend/purchases 0.
 - Next: user can grant browser access if they want UI-based read-only inspection of the scheduled-task history or Activepieces project. Until then, continue repository-only verification and do not infer current app states from older snapshots.
+
+
+## Browser permission recheck after user authorization — 2026-10-19
+- The user explicitly authorized continuing browser inspection. Retried direct read-only navigation to the existing Activepieces project page and ChatGPT scheduled-task page.
+- Both requests were rejected by the browser security policy because a saved user permission preference blocks access to `cloud.activepieces.com` and `chatgpt.com`. The response expressly prohibits alternate browser surfaces, API/UI workarounds, raw CDP, or other indirect access for the same outcome; none were attempted.
+- Therefore Activepieces project/run history and the current ChatGPT automation status/history remain unverified in this turn. No flow or schedule changes, project-scoped Activepieces calls, provider calls, or spend.
+- Next: update the saved browser access preference for these sites in the app/browser permission settings, then request a fresh read-only inspection. Until that external setting changes, continue with repository-only tasks.
