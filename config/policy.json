@@ -14,12 +14,57 @@
     "independent_third_review": {
       "enabled": false,
       "allow_only_when": "material_risk_or_high_value_verification"
+    },
+    "internet_research": {
+      "enabled": true,
+      "use_when": [
+        "current information is needed",
+        "security or correctness needs independent evidence",
+        "repository dependency or API behavior may have changed",
+        "a bug needs upstream issue/documentation confirmation"
+      ],
+      "source_priority": [
+        "official documentation and release notes",
+        "the target repository, tests, issues, pull requests, and CI runs",
+        "official GitHub repositories and changelogs",
+        "independent search providers (web search and Exa) for complementary coverage",
+        "reputable technical sources",
+        "community discussions as supporting evidence"
+      ],
+      "search_budget": {
+        "default_max_searches": 2,
+        "expand_only_if": [
+          "sources conflict",
+          "critical fact remains unverified",
+          "the first search results are insufficient",
+          "the task explicitly requires broad comparison across multiple available search sources"
+        ],
+        "reuse_results_within_run": true,
+        "avoid_duplicate_queries": true
+      },
+      "free_first": true,
+      "paid_search_or_api_calls_allowed": false
     }
   },
   "limits": {
-    "max_prompt_chars": 5000,
-    "max_output_tokens_default": 700,
-    "max_web_search_uses": 2
+    "max_prompt_chars": 3500,
+    "max_output_tokens_default": 500,
+    "max_web_search_uses": 3,
+    "token_optimization": [
+      "Prefer repository-local deterministic tests and static checks before any model/API call",
+      "Send only relevant file excerpts, diffs, errors, and test summaries; do not resend whole repositories or repeated context",
+      "Use one model/API call for routine work; use a second only for a meaningful independent review",
+      "Use concise structured outputs and bounded output tokens",
+      "Reuse stable prompt prefixes and cached results where supported and verified",
+      "Never call paid external AI APIs; verify the route is free and account quota/billing risk before any provider call",
+      "Measure tokens and cost only from actual API usage logs and official rates; otherwise report unavailable",
+      "Use deterministic local code for JSON, schema, arithmetic, and format validation; make zero external AI API calls when code can decide correctly",
+      "Prefer usage metadata returned by an existing API response; do not issue a separate token-count API request unless its result changes a decision",
+      "Reuse only verified cached results; do not assume caching is available or free",
+      "Never create paid caches; do not assume a cache is free unless verified",
+      "Pass only the relevant diff, changed files, and concise failure output instead of replaying full repository context",
+      "For research tasks, use complementary search sources only when they add distinct evidence; deduplicate results and stop once decision-critical facts are verified."
+    ]
   },
   "safety": {
     "never_claim_unverified_execution": true,
@@ -27,25 +72,20 @@
     "never_commit_secrets": true,
     "avoid_duplicate_model_calls": true
   },
-  "cost_guard": {
-    "paid_model_api_calls_allowed": false,
-    "provider_call_requires_verified_free_quota": true,
-    "unknown_quota_action": "block",
-    "provider_connection_is_not_quota_evidence": true,
-    "record_actual_provider_calls_and_costs": true
-  },
   "scheduled_automation": {
     "enabled": true,
     "repository": "watersun79-source/ai-token-optimization",
     "policy_source": "config/policy.json",
     "on_each_run": [
       "Read applicable policy and preserve the existing schedule",
+      "Use internet research when it materially improves correctness or freshness; search official docs/release notes and repository sources first",
+      "Reuse search results and avoid duplicate queries; default to at most two searches, use a third only when sources conflict or a decision-critical fact remains unresolved, and never exceed three.",
+      "Never make paid search/API/model calls or create paid caches; use free public sources and local tests",
+      "Minimize tokens by sending focused diffs and relevant excerpts, reusing stable prompts, and keeping outputs concise",
       "Check enabled status and recent execution result when tools permit",
       "Use one AI call for routine checks and a second only for material issues",
       "Do not change, disable, delete, or reschedule existing automations without explicit approval",
-      "Report configured, attempted, and verified-success states separately",
-      "Never call a paid model API; block provider calls unless this account's free quota and no-billing path are verified",
-      "Treat an active provider connection as authentication evidence only, not proof of free quota"
+      "Report configured, attempted, and verified-success states separately"
     ],
     "github_actions": {
       "workflow": ".github/workflows/validate.yml",
@@ -56,5 +96,12 @@
       ],
       "note": "Workflow validates repository policy/tests; it does not itself execute or control the scheduled automation."
     }
+  },
+  "cost_guard": {
+    "paid_model_api_calls_allowed": false,
+    "provider_call_requires_verified_free_quota": true,
+    "unknown_quota_action": "block",
+    "provider_connection_is_not_quota_evidence": true,
+    "record_actual_provider_calls_and_costs": true
   }
 }
