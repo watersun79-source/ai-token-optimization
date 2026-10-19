@@ -1,6 +1,6 @@
 # AI 이어서 실행 — API 차단 검토본과 게시 버전 대조
 
-확인: 2026-10-19 22:24 KST. API 차단 검토본 구현·검증은 완료. 기존 운영 자동화 전체 완료는 아니다.
+최신 확인: 2026-10-19 22:28 KST. API 차단 검토본 구현·검증과 사용자가 승인한 기존 AI 두 플로우 비활성화를 완료했다. 실제 공급자 API 협업의 무료 운영을 입증한 것은 아니다.
 
 ## 실제 변경
 
@@ -17,7 +17,7 @@
 | GitHub CI | [39259453101](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39259453101) completed/success. 기존 Python·JavaScript fixture·새 guard 단계 모두 성공 |
 | Activepieces 정적 검증 | 2/2 valid, invalid 0 |
 | Activepieces 샘플 검증 | TESTING 실행 4개 모두 예상 결과와 일치 |
-| 기존 운영 상태 | 활성·게시 3개 유지. 기존 운영 플로우와 PR #1·main·예약 설정 변경 없음 |
+| 승인 후 운영 상태 | AI3·Gemini+Claude 두 플로우 DISABLED, Slack만 ENABLED. PR #1·main·예약 설정 변경 없음 |
 
 | TESTING 샘플 | 결과 | 실행 ID |
 |---|---|---|
@@ -35,13 +35,25 @@
 - AI3 이력 메뉴에서 #2의 View를 선택하고 `Viewing version #2`를 확인했다. 해당 읽기 전용 게시본 Claude 설정도 `Max Web Search Uses=5`, `Retry on Failure=true`였다. 검색 상한 5는 저장소 정책 상한 3과 다르다.
 - 기존 플로우의 필드 수정·테스트·Publish·Use as Draft·Discard changes는 실행하지 않았다. 현재 새 초안이 기존 운영 플로우의 API를 차단한다고 주장하지 않는다.
 
+## 사용자 승인에 따른 운영 API 차단 — 22:28 KST
+
+사용자는 운영 처리 범위에 대한 질문에 **“두 AI 플로우 비활성화까지 진행”**이라고 선택했다. 이 명시적 승인을 받고 두 상태를 변경한 뒤 별도의 조회로 재검증했다.
+
+| 플로우 | 최종 상태 |
+|---|---|
+| AI 3AI 협업 · `kt2N9yCVA3dLkFiNPSMsH` | DISABLED · 기존 게시 구성 보존 |
+| Gemini + Claude 협업 비서 · `drNhxMhmCo3A0rKV0OhIZ` | DISABLED · 기존 게시 구성 보존 |
+| Slack · `vtRwEYmcwDTunBZut265G` | ENABLED · published 유지 |
+
+두 AI 플로우 각각의 PRODUCTION RUNNING·QUEUED 조회는 모두 0건이었다. 현재 두 플로우의 새 트리거 실행을 막았으며, 기존 게시 설정을 삭제하거나 새 검토 코드를 운영에 게시한 것은 아니다. 다른 시스템의 API 사용까지 차단했다고 해석하지 않는다. 사용자의 명시적 요청 없이 이 두 플로우를 다시 활성화하지 않는다.
+
 ## 실행 경계와 남은 작업
 
 새 코드는 `mock`과 `manual_web`의 제한된 메타데이터만 허용한다. 추가 키·API 모드·권한 우회 플래그는 거부하며, 모든 허용 출력도 `provider_execution_allowed=false`, `network_execution_allowed=false`다. 수동 메타데이터는 사실·출처 검증 성공으로 승격하지 않는다.
 
 3,500 제한은 정제한 요청을 JSON.stringify한 UTF-16 코드 단위 수다. HTTP 원문 바이트나 최종 출력 전체 길이 제한이 아니다. 외부 URL을 열거나 네트워크·파일·환경·SDK를 사용하지 않는다.
 
-이 초안에는 인증 없는 테스트 트리거가 있으므로 비활성·미게시 상태를 유지한다. 운영 적용, 공급자 API 무료 잔량·청구 검증, 기존 운영의 API 차단, PR 병합은 완료로 표시하지 않는다. 공급자 실행 금지 조건 때문에 실제 API 연쇄 실행 시험은 하지 않았다.
+이 초안에는 인증 없는 테스트 트리거가 있으므로 비활성·미게시 상태를 유지한다. 검토 코드의 운영 게시, 공급자 API 무료 잔량·청구 검증, PR 병합은 완료로 표시하지 않는다. 기존 두 AI 경로의 새 실행은 사용자 승인에 따라 플로우 상태를 비활성화해 차단했다. 실제 API 연쇄 실행 시험은 하지 않았다.
 
 ## 비용 근거와 보존
 
