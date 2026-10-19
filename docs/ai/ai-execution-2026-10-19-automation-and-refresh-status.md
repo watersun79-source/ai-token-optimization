@@ -224,3 +224,8 @@
 - Inspected PR #2 state: merged; head `12bfcf61c501b481c62f90ebef30ad7ad7fe4e9b`; main merge commit `4ca63d421d8e5f43cabac492caa9ee74c5bdd492`. Its GitHub Actions run [39083650721](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39083650721) passed Python regression and JavaScript fixture steps.
 - Fetched current `main` and PR #1 feature branch into the verification clone, then compared parsed `config/policy.json` objects. All five `cost_guard` values are identical on main and PR #1 head. This confirms the free-only guard remains on main and in the unmerged PR branch.
 - No ref or file was changed by this comparison. Added a dated comment to issue #3; GitHub read-back verified it: https://github.com/watersun79-source/ai-token-optimization/issues/3#issuecomment-6265998316.
+
+
+## Issue #3 body refreshed — 2026-10-19
+- Replaced stale “latest evidence” in issue #3 with current PR #1 head/run/test evidence, PR #2 merge + CI, direct main/PR `cost_guard` comparison, and current site-access blocker.
+- Preserved all remaining acceptance criteria and safety constraints; added explicit no-merge-without-authorization rule. Issue remains open. Read-back confirms current SHA/run and that criteria are retained.
