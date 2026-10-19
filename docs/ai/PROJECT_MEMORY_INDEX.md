@@ -364,3 +364,11 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Scheduled AI remains UI-listed as active/hourly; historical run narrative says disabled. Conflict unresolved; no task changes. Catalog refresh effect remains unverified due to no pre-refresh snapshot.
 - Slack update: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792404754457219 (read-back pending).
 - No flow/run queries, tests, model generation, paid calls, purchases, schedule/flow changes. Next: reopen intended project in active browser session, then use read-only run queries only; inspect schedule run history in ChatGPT task UI.
+
+
+## Continuation checkpoint — 2026-10-19 (browser access recheck)
+- Report updated: [automation and browser access status](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md), commit `55cdc97dde79e9c22e190b825e7375ffb8e27618`.
+- Fresh in-app Activepieces route redirected to sign-in; no credentials entered and no project/run calls made. ChatGPT opened authenticated with a scheduled-task sidebar entry, but current UI control surface could not open task details; execution history remains unverified.
+- No flow/automation changes, provider calls, generation, purchases, or spend.
+- Slack update: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792404855797739 (read-back pending).
+- Next: inspect project runs only from an authenticated active Activepieces session; inspect ChatGPT scheduled task details/history without editing.
