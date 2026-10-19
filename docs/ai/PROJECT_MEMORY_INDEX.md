@@ -518,3 +518,8 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Current assistant-visible Activepieces manifest count: 47 tools, including read-only flow/run and connection/model listings.
 - No project-scoped Activepieces call was made because current project scope remains unconfirmed with saved site access restricted. Manifest availability does not establish live account/project state. No production changes or provider calls.
 - Details in the [latest execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
+
+
+## Post-fix Python/JS differential — 2026-10-19
+- Exact PR head `46089313b80b8c00c8b5e13a412df6449a443b57`: 20,000 deterministic structure-aware JSON payloads compared across Python and JavaScript validators, 0 ordered-error-array differences. Includes 400-digit integer counts.
+- Python 22/22, JS 32/32, Actions run 39243215666 success. Temporary harness removed; detail in [execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
