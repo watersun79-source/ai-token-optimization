@@ -549,3 +549,5 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - TDD red reproduced; green: Python 23/23, JS 32/32, diff check clean. PR #1 head `5f5393967a862c716b10f5b349016400ea466725`; Actions run 39244633487 succeeded.
 - Parsed `cost_guard` comparison with main confirms all five guard values identical. PR remains open/unmerged.
 - Issue #3 refreshed/read back: https://github.com/watersun79-source/ai-token-optimization/issues/3. Full detail: [execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
+
+- Current Activepieces run-tool schema and safe call boundary recorded in Issue #3 and [latest execution report](https://github.com/watersun79-source/ai-token-optimization/issues/3#issuecomment-6266137030). No project/run call without current authenticated context.
