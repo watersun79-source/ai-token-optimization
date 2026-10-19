@@ -270,3 +270,10 @@
 - The rejection explicitly forbids workarounds via alternate browser surfaces, raw CDP, browser commands, or indirect execution. No Activepieces API/tool call was made to obtain the same site state.
 - This response supersedes prior assumptions that ordinary UI observation might become available through a different browser surface. Activepieces project/run state remains unverified until the saved permission is changed by the user or a materially safer authorized evidence source is provided.
 - No ChatGPT automation state was queried. No flow, connection, schedule, or provider state changed; no AI provider/API calls or costs.
+
+## Browser permission recheck after explicit user authorization — 2026-10-19
+- The user explicitly authorized all permissions and requested a full reanalysis. Retried the same read-only in-app browser binding for the already-open Activepieces tab; browser policy again rejected it because the saved user permission setting still blocks `cloud.activepieces.com`.
+- No alternate browser surface, raw CDP, indirect execution, or Activepieces API/tool call was used. The saved browser permission is not changed by chat authorization alone.
+- Re-read the protocol, project memory index, current execution report, coordinator/volume test logs, latest Slack record, PR #1 metadata/reviews, and Actions run 39244633487. PR remains open/unmerged at head `5f5393967a862c716b10f5b349016400ea466725`; Python and JavaScript CI steps succeed; no reviews submitted.
+- Local exact-head rerun remains verified: Python 23/23 with bundled interpreter, JavaScript 32/32, `git diff --check` clean. No source changes or new tests added.
+- Activepieces and current ChatGPT automation states remain unverified; no flow, connection, schedule, or provider state changed. Provider/API calls and spend remain 0.
