@@ -298,7 +298,7 @@
             "correct": true
           }
         ],
-        "error_count": 0,
+        "error_count": 0.0,
         "answer": "검증",
         "confidence": "high",
         "search_used": false
