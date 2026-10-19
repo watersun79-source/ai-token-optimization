@@ -284,3 +284,8 @@
 - Re-ran the exact-head checkout locally: Python 23/23 passed, JavaScript shared fixtures 32/32 passed under Node 24.19.0, and `git diff --check` passed. Checkout is detached at the PR head; pre-existing untracked `__pycache__` directories were left untouched.
 - Issue #3 read-back confirms the remaining acceptance criteria are current authenticated Activepieces project/run-origin verification and ChatGPT scheduled-task/history inspection. Saved browser access still blocks the Activepieces site after explicit user authorization; no alternate route, project call, production change, model/API call, or spend was made.
 - PR #1 not merged; provider/API calls 0; purchases 0; operational changes 0.
+
+
+## Local automation metadata check — 2026-10-19
+- Checked the configured CODEX_HOME path `C:\\Users\\편득주\\.codex`; its `automations` directory is absent. No local automation ID or automation.toml was available to pass to the read-only automation view tool.
+- The user again authorized continuation, but the saved browser-site denial has not been shown to have changed. No Activepieces retry or alternate path was used. The existing ChatGPT automation's current status/history remains unverified; no automation state was changed.
