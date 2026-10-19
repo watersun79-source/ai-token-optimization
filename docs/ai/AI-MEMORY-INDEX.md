@@ -1,28 +1,7 @@
-# AI Memory — Canonical Index
+# AI 기억 색인 — 호환 안내
 
-Updated: 2026-10-17 (Asia/Seoul)
+현재 시작점은 [PROJECT_MEMORY_INDEX.md](PROJECT_MEMORY_INDEX.md)다. 작업 브랜치는 `ai/continuation-readonly-audit-2026-10-18`이며 [AI-memory-protocol.md](AI-memory-protocol.md)를 함께 읽는다.
 
-## Purpose
-This directory is the canonical, human-readable record for durable AI project memory. GitHub is the source of truth; Activepieces Tables is a searchable operational index/cache only, and Slack is an alert/activity mirror, not the canonical record.
+최신 보고서는 현재 색인의 첫 링크를 따른다. 이 파일이 과거 안내하던 `ultra-ai/progress-2026-10-17`, `AI-MEMORY-PROGRESS.md`, `ACTIVEPIECES-MEMORY-FLOW.md`를 현재 시작점으로 사용하지 않는다.
 
-## Operating rules
-- Before meaningful work, read this index, the protocol, the latest progress report, and relevant Slack messages.
-- After meaningful work, append a dated entry to the progress log and post a concise Slack status; read back both.
-- Store durable decisions, current configuration, verified evidence, blockers, next action, and test/cost status.
-- Label each claim VERIFIED, UNKNOWN, or FAILED. Never invent successful runs, model usage, or test results.
-- Free-first: no paid API calls, purchases, upgrades, or uncertain billing. Gemini/Claude use requires a real response from an accessible free route.
-- Never store API keys, access tokens, webhook secrets, passwords, or other credentials.
-- Preserve enabled production flows and the existing hourly Asia/Seoul automation. New flows remain disabled/unpublished until security, cost, and tests are verified.
-- Do not claim GitHub/Slack records are automatically injected into every ChatGPT chat. Retrieve them explicitly when needed.
-
-## Canonical files
-- Protocol: `docs/ai/AI-MEMORY-PROTOCOL.md`
-- Progress log: `docs/ai/AI-MEMORY-PROGRESS.md`
-- Activepieces implementation status: `docs/ai/ACTIVEPIECES-MEMORY-FLOW.md`
-
-## Current known state
-- GitHub repo: `watersun79-source/ai-token-optimization`
-- Working branch: `ultra-ai/progress-2026-10-17` (legacy branch name retained to avoid breaking references)
-- Activepieces project: `https://cloud.activepieces.com/projects/Fr9OAsxi4FbVSVLZkexYi/`
-- Existing memory protocol and historical records remain in `docs/ultra-ai/`; those paths are legacy references and are not deleted or renamed as part of this work.
-- No paid API calls or model-generation calls are permitted without a verified free/cost-safe route.
+[정리 전 파일](https://github.com/watersun79-source/ai-token-optimization/blob/f3486f3cd035a2030072c0cd07c2a57fe37d27c2/docs/ai/AI-MEMORY-INDEX.md)은 이력으로 보존한다. 현재 상태·완료 여부는 정규 색인과 최신 보고서에서 확인한다.
