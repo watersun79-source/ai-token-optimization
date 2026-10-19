@@ -1,7 +1,58 @@
-# AI 기억 프로토콜 — 호환 안내
+# AI 기억 유지 프로토콜
 
-현재 프로토콜은 [AI-memory-protocol.md](AI-memory-protocol.md)이며 시작점은 [PROJECT_MEMORY_INDEX.md](PROJECT_MEMORY_INDEX.md)다. 작업 브랜치는 `ai/continuation-readonly-audit-2026-10-18`이다.
+갱신: 2026-10-19 KST. 이 문서는 현재 절차다. 당시 운영 상태를 담은 예전 기록은 최신 상태로 사용하지 않는다.
 
-GitHub 기록 읽기 → 최신 결정 복원 → 작업 → GitHub·Slack 기록 → 재조회 검증 절차를 따른다. 예전 Tables SAVE/SEARCH/RESTORE 설계가 운영 배포됐다고 가정하지 않는다. Tables의 원자적 중복 방지는 여전히 미검증이다.
+## 단일 시작점
 
-[정리 전 파일](https://github.com/watersun79-source/ai-token-optimization/blob/f3486f3cd035a2030072c0cd07c2a57fe37d27c2/docs/ai/AI-MEMORY-PROTOCOL.md)은 이력으로 보존한다. 새 운영 게시·유료 호출·플로우 활성화를 승인하는 문서가 아니다.
+- 저장소: `watersun79-source/ai-token-optimization`
+- 기억 작업 브랜치: `ai/continuation-readonly-audit-2026-10-18`
+- [현재 기억 색인](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/PROJECT_MEMORY_INDEX.md)
+- 정규 프로토콜: `docs/ai/AI-memory-protocol.md`
+- 정규 맞춤 지침: `docs/ai/AI-custom-instructions-ko-1500.md`; 동일 표시본: `docs/ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md`
+- 최신 실행 보고서는 색인의 첫 링크를 따른다. 날짜가 고정된 옛 보고서를 항상 최신이라고 가정하지 않는다.
+- Slack: `C0C9649RQAZ`. 채널의 관련 기록과 연결된 스레드 답글을 읽는다. 통합 기록 스레드: `1792416391.631669`.
+
+GitHub가 프로젝트 결정·상태의 기준이고 Slack은 진행 기록이다. 연결된 앱이나 Tables의 캐시만으로 완료를 판정하지 않는다. 대문자 `AI-MEMORY-INDEX.md`는 이 단일 시작점으로 연결하는 호환 안내다. `AI-MEMORY-PROTOCOL.md`는 정규 `AI-memory-protocol.md`와 본문이 완전히 같은 호환 미러다. Windows의 대소문자 구분 없는 경로에서 자기 자신을 가리키는 안내문이 선택되지 않도록 두 프로토콜의 Git blob을 동일하게 유지한다. 프로토콜을 고칠 때 두 경로를 함께 갱신하고 재조회해 문자열·blob 일치를 확인한다. 이 조치는 로컬 읽기 내용의 일관성 보장이고, 대소문자 충돌 경로를 가진 저장소 전체의 Windows 체크아웃 검증은 아니다.
+
+## 시작 → 실행 → 복원
+
+1. 의미 있는 AI 프로젝트·기억 유지 작업을 시작할 때 색인 → 프로토콜 → 색인의 최신 보고서 → 관련 Slack 기록을 실제로 읽는다. 이미 읽은 같은 문서를 한 작업 안에서 이유 없이 반복 조회하지 않는다.
+2. 사용자 최신 지시와 날짜가 명시된 최신 관찰을 우선한다. 과거 보고서의 “현재”는 그 보고서 작성 시점이다. 필요하면 원래 시스템을 읽기 전용으로 확인한다. 상태 복원에 불필요한 예전 테스트·모델 검토를 다시 실행하지 않는다.
+3. 완료·부분 완료·차단·미확인·실패를 구분하고, 영향이 큰 미완료 작업을 진행한다. 공급자 생성 API·구매·업그레이드는 금지한다. 무료 소비자 웹 검토도 실제 응답이 있을 때만 사용 실적으로 기록한다.
+4. 저장 실패·도구 부재·접근 실패가 있으면 해당 항목을 미완료로 남긴다. 예전 접근 장애를 재확인 없이 현재 장애로 반복하지 않는다. 실제 노출된 도구만 사용한다.
+
+## 의미 있는 작업 종료
+
+1. 기억 작업 브랜치에 날짜가 있는 보고서를 저장하고 색인을 갱신한다. 결정·변경 파일/커밋·실제 검증·실행 ID·실제 모델 사용·비용/공급자 호출·미확인·다음 작업을 적는다.
+2. 지정된 Slack 채널의 관련 스레드에 간결한 결과와 근거 링크를 기록한다.
+3. GitHub의 저장한 내용을 재조회해 기대 내용과 비교하고, Slack도 게시된 기록을 다시 읽는다. 전송 응답과 저장 검증을 구분한다.
+4. 색인은 짧게 유지하고 상세 자료는 보고서·과거 기록으로 연결한다. 과거 기록 전체를 다음 대화에 복사하지 않는다.
+
+개인·비밀 정보, API 키·인증값·헤더·웹훅 비밀·개인 위치를 기록하지 않는다. AI 프로젝트와 무관한 다른 작업의 내용을 공개 저장소·Slack으로 옮기지 않는다.
+
+## 현재 상태를 복원할 때 지킬 결정
+
+- 2026-10-19 22:28 사용자 승인으로 AI3 `kt2N9yCVA3dLkFiNPSMsH`와 협업 `drNhxMhmCo3A0rKV0OhIZ`를 DISABLED로 변경하고 재조회했다. 명시적인 재활성화 요청 없이 켜지 않는다. 앞선 “3개 활성” 기록은 이 승인으로 대체됐다.
+- Slack 플로우 `vtRwEYmcwDTunBZut265G`와 매시간 정각 Asia/Seoul ChatGPT 예약은 보존한다. 마지막 운영 직접 관찰은 22:28~22:29다. 이 프로토콜 갱신이 새로운 운영 실행의 증거는 아니다.
+- 별도 사용자 승인으로 PR #1 → #4를 main에 병합했다. 22:41 최종 main은 `297d1d2d52e213e0b3c93c93d74e322fb11e744b`; 실제 main 로컬 127/127과 push CI `39262028914`가 성공했다. 예전 “PR 미병합” 기록은 대체됐다.
+- API 차단 검토 플로우 `3kRMmWICEPt0vIarX7kLR`는 DISABLED·미게시다. 샘플 TESTING 성공을 공급자 API 운영 성공으로 해석하지 않는다.
+- 계정별 공급자 무료 잔량·청구, Tables 원자적 중복 방지·501건 초과 처리·custom BARRIER는 미검증이다. 이번 기억 유지 정리의 완료 조건과 구분한다.
+
+## 적용과 완료 기준
+
+2026-10-19 이번 적용 확인: ChatGPT 메모리 스위치는 이미 ON이었다. ChatGPT 맞춤 지침과 데스크톱·웹 동기화 Codex 맞춤 지침에 동일한 본문 1,133 UTF-16 단위를 저장하고, 각 화면을 새로고침한 뒤 저장된 값이 기대 본문과 일치함을 확인했다. 로컬 설정의 features.memories·generate_memories·use_memories도 true로 읽었다. 기억 설정 자체는 바꾸지 않았다. 이 설정 확인과 별도 문맥 복원 시험의 결과는 최신 실행 보고서에서 구분한다.
+
+기억 기능 활성화, 맞춤 지침 저장, 외부 기록 조회, 격리된 문맥에서의 복원 검증은 서로 다른 확인 항목이다. 설정 화면에서 저장된 값을 다시 읽기 전에는 설정 적용 완료라고 하지 않는다. 로컬 Codex 기억 생성은 백그라운드 작업이며 즉시 저장이나 모든 대화의 전체 복원을 보장하지 않는다.
+
+필수 지침은 맞춤 지침/AGENTS.md와 정규 문서로 연결하고, 프로젝트 사실은 최신 색인에서 읽는다. ChatGPT 웹의 기억과 로컬 Codex의 기억 저장소는 구분한다. 연결 도구가 없는 대화의 외부 기록 조회까지 완료됐다고 주장하지 않는다.
+
+복원 검증은 대화의 과거 내용을 제공하지 않은 별도 에이전트에게 시작 주소만 주고, 최신 보고서·결정·제약·다음 작업을 출처와 함께 복원하게 한다. 이것은 실제 외부 기록 복원 시험이며 모든 ChatGPT 새 채팅의 자동 실행을 보장하는 시험은 아니다.
+
+## 보존한 과거 기록과 공식 근거
+
+- [정리 전 프로토콜 전체 이력](https://github.com/watersun79-source/ai-token-optimization/blob/f3486f3cd035a2030072c0cd07c2a57fe37d27c2/docs/ai/AI-memory-protocol.md)
+- [정리 전 대문자 색인](https://github.com/watersun79-source/ai-token-optimization/blob/f3486f3cd035a2030072c0cd07c2a57fe37d27c2/docs/ai/AI-MEMORY-INDEX.md)
+- [공식 OpenAI 지침 구성](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
+- [공식 OpenAI 기억 동작과 설정](https://learn.chatgpt.com/docs/customization/memories)
+
+main·운영 플로우·기존 예약·연결은 보호한다. 기록 작업 브랜치의 갱신이나 지침 개선을 운영 게시 승인으로 확대하지 않는다.
