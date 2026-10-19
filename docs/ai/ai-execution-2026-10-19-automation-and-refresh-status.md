@@ -229,3 +229,13 @@
 ## Issue #3 body refreshed — 2026-10-19
 - Replaced stale “latest evidence” in issue #3 with current PR #1 head/run/test evidence, PR #2 merge + CI, direct main/PR `cost_guard` comparison, and current site-access blocker.
 - Preserved all remaining acceptance criteria and safety constraints; added explicit no-merge-without-authorization rule. Issue remains open. Read-back confirms current SHA/run and that criteria are retained.
+
+
+## Paid API policy exception removed — 2026-10-19
+- Fresh PR review found conflicting language: `cost_guard.paid_model_api_calls_allowed=false` prohibited paid model calls, while a token-optimization rule implied paid external AI APIs could be used with explicit approval.
+- TDD RED: strengthened the policy regression test to require an absolute prohibition and reject the approval-exception wording; the test failed on the prior policy as expected.
+- GREEN: changed the rule to `Never call paid external AI APIs; verify the route is free and account quota/billing risk before any provider call`. Updated the test name/assertions accordingly.
+- PR #1 head `944401312e929a7db5e24ceacfdcfb3da71b0cff`, commit `fix: prohibit paid external AI API exceptions`. Local verification on exact tree: Python 22/22, JS fixtures 32/32, `git diff --check` clean. GitHub Actions [39244193216](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39244193216), run 61, passed Python and JS steps.
+- Compared parsed `cost_guard` values between current main `4ca63d421d8e5f43cabac492caa9ee74c5bdd492` and new PR head: all five values remain identical; no main change.
+- Updated PR #1 description to latest head/results and refreshed issue #3 latest evidence; both read-backs confirm updates and preservation of open/unmerged state and issue acceptance criteria: https://github.com/watersun79-source/ai-token-optimization/issues/3.
+- AI provider/model calls and spend 0. Production flow/connection/schedule/main unchanged; PR #1 not merged. Activepieces/ChatGPT state remains unverified under saved site-access restrictions.
