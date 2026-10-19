@@ -85,3 +85,11 @@
 - GitHub Actions run [39237518052](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39237518052), run 54, completed successfully on PR head `917b56e2a9f2e5db4f5f51e9ff4037d52ec4f7e3` at 2026-10-19 10:26:59 UTC. Job `test` succeeded; both `Run Python regression tests` and `Compare JavaScript validator against shared fixtures` steps succeeded.
 - Actions API read-back confirms the run is associated with the current PR head. PR #1 remains open and GitHub reports mergeable=true / unstable. No merge to main.
 - Next: review any requested review or other merge requirements before integration; separately continue read-only investigation of unresolved automation/project access.
+
+
+## Read-only follow-up — 2026-10-19 continuation
+- Re-read the memory protocol, project index, latest execution report, Slack AI project messages, PR #1, review timeline, checks, and current Activepieces tool manifest.
+- PR #1 remains open and unmerged; head `917b56e2a9f2e5db4f5f51e9ff4037d52ec4f7e3`, GitHub `mergeable=true`. No review comments/reviews were returned. GitHub Actions run 39237518052 remains successful on this head, with Python and JS validation steps successful.
+- Current manifest exposes 45 Activepieces tools, including read-only `ap_list_runs` and `ap_get_run`; neither was called because project scope could not be confirmed in the current session. A browser request to inspect the existing Activepieces tab and a separate ChatGPT page request were both blocked by the browser security policy with a user-denied-permission response. Per that response, no alternate browser surface or indirect UI route was attempted. The previous record of the ChatGPT task as active/hourly remains historical; this session did not independently reverify its current schedule or execution history.
+- No flow/task state changes; no project-scoped Activepieces calls; provider/API/model generation 0; paid spend/purchases 0.
+- Next: user can grant browser access if they want UI-based read-only inspection of the scheduled-task history or Activepieces project. Until then, continue repository-only verification and do not infer current app states from older snapshots.
