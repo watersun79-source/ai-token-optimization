@@ -117,3 +117,8 @@
 - GitHub Actions run 39238473660 was independently read back and shows both validation steps successful; no review submissions are present. PR remains open/unmerged.
 - No production changes, model/provider API calls, purchases, or spend. Activepieces project/ChatGPT automation status remains unverified due saved browser site-access restriction; no workaround attempted.
 - Next: keep PR open pending review; resume read-only app verification only after saved site access is adjusted.
+
+## Supplemental numeric formatting differential — 2026-10-19
+- Compared the PR-head Python `_js_number_string` implementation against Node.js `String(number)` on 10,000 deterministic random finite IEEE-754 doubles (seed 20261019) plus 10 selected exponent/precision boundary values. Result: 0 mismatches.
+- This was an ad hoc local differential check; no test fixture or source code was added. Existing full suites remain Python 22/22 and JavaScript fixtures 29/29.
+- Temporary Python cache files remain in `work/pr1-ci-verification`; their deletion command was rejected by the command policy. No repository source files or remote project state were changed.
