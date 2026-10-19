@@ -264,3 +264,9 @@
 - `git diff --check` passed. Checkout remained at the exact PR head; the only untracked paths were pre-existing `tests/__pycache__/` and `tools/__pycache__/`, left untouched.
 - No source files changed; no provider/API calls or cost; no production flow, connection, schedule, main, or PR merge changes.
 - Current GitHub recheck: PR #1 remains open and unmerged; Actions run 39244633487 succeeded; review submissions, inline review threads, and PR discussion comments are all 0.
+
+## Saved browser permission boundary confirmed — 2026-10-19
+- Attempted to bind the existing Codex in-app browser tab for read-only visual verification of the Activepieces project. The browser security policy rejected the action because a saved user permission blocks `https://cloud.activepieces.com`.
+- The rejection explicitly forbids workarounds via alternate browser surfaces, raw CDP, browser commands, or indirect execution. No Activepieces API/tool call was made to obtain the same site state.
+- This response supersedes prior assumptions that ordinary UI observation might become available through a different browser surface. Activepieces project/run state remains unverified until the saved permission is changed by the user or a materially safer authorized evidence source is provided.
+- No ChatGPT automation state was queried. No flow, connection, schedule, or provider state changed; no AI provider/API calls or costs.
