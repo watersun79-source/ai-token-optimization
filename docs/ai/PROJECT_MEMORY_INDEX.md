@@ -1,6 +1,6 @@
 # AI — 현재 상태와 지속 기억
 
-최종 직접 확인: 2026-10-19 22:41 KST (저장소); 운영 상태는 22:28~22:29 관찰
+최종 지침 적용 확인: 2026-10-19 22:55 KST. 저장소 main 검증은 22:41, 운영 상태는 22:28~22:29 관찰
 작업 브랜치: `ai/continuation-readonly-audit-2026-10-18`
 판정: 사용자 승인으로 PR #1·#4 main 병합과 최종 main 로컬 127/127·push CI 성공 확인. 기존 두 AI 플로우 비활성화 유지. 무료 공급자 API 자동 협업의 운영 성공은 미입증.
 
@@ -15,6 +15,12 @@
 - 프로젝트: https://cloud.activepieces.com/projects/Fr9OAsxi4FbVSVLZkexYi/automations
 - [이 압축 전 전체 색인](https://github.com/watersun79-source/ai-token-optimization/blob/789551c62f6e4f2419de5d79e241f5e3c2ea704e/docs/ai/PROJECT_MEMORY_INDEX.md)
 
+## 기억 유지 적용 — 2026-10-19
+- 시작점은 이 색인 하나. 정규 [프로토콜](AI-memory-protocol.md)을 최신 절차로 다시 정리했고 대문자 두 문서는 여기로 연결하는 호환 안내로 통일했다. 옛 프로토콜은 immutable commit 링크로 보존.
+- ChatGPT 메모리는 설정 화면에서 ON 확인. ChatGPT 지침과 데스크톱·웹 동기화 Codex 지침을 본문 1,133 UTF-16 단위로 동일 저장하고 각 화면 새로고침 후 값 일치 확인. 정규 지침·표시본도 동일 blob으로 동기화.
+- 로컬 Codex 설정 features.memories·generate_memories·use_memories는 true. 메모리 설정은 변경하지 않았다. 외부 도구 대화의 자동 기억 생성 여부나 모든 새 채팅의 전체 자동 복원을 보장하지 않는다.
+- 외부 기록을 읽는 지침의 저장과 실제 복원 시험은 구분한다. 새 보고서에서 복원 시험 결과를 확인한다.
+
 ## 최신 통합 — 2026-10-19 22:41 KST
 - 사용자 “PR #1·#4를 main에 병합” 명시 선택. exact-head 조건으로 PR #1 → PR #4 순서 병합, 둘 다 closed·merged.
 - PR #1 병합 `840e7142779d4a66938b334c71ca41f5a92e49b2`; PR #4 병합·최종 main `297d1d2d52e213e0b3c93c93d74e322fb11e744b`.
@@ -27,7 +33,7 @@
 - 두 AI 플로우의 PRODUCTION RUNNING·QUEUED 각각 0건. 새 트리거 실행 차단 완료. 다른 시스템 전체 API 사용까지 차단했다고 주장하지 말 것.
 - Slack `vtRwEYmcwDTunBZut265G`만 ENABLED·published 유지. 기존 ChatGPT AI 예약도 22:29 UI에서 일시 중지 제어와 매시간 표시로 활성 재확인. 일정/상태 변경 없음.
 - 사용자 명시 요청 없이 두 AI 플로우를 다시 활성화하지 말 것. 앞선 “활성3개 보존”은 승인 전 관찰이며 현재 상태가 아님.
-- guard 검토 플로우 `3kRMmWICEPt0vIarX7kLR`는 DISABLED·미게시로 보존. PR #1·#4는 아래 별도 사용자 승인으로 22:41 main 병합 완료.
+- guard 검토 플로우 `3kRMmWICEPt0vIarX7kLR`는 DISABLED·미게시로 보존. PR #1·#4는 위 별도 사용자 승인으로 22:41 main 병합 완료.
 
 ## 이전 구현 확인 — 2026-10-19 22:24 KST
 - [초안 PR #4](https://github.com/watersun79-source/ai-token-optimization/pull/4), head `c35dff3c2087756540694767f99f5424258fed3f`, 당시 미병합(이후 22:41 승인 병합). 로컬 guard 72/72; [CI 39259453101](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39259453101) Python·JS·신규 guard 모두 성공. 독립 검토 결함 없음.
@@ -38,8 +44,8 @@
 
 ## 이전 확인을 이어받은 사실 — 2026-10-19 21:58 KST
 - Activepieces 인앱 브라우저 접근 성공, 로그인된 Personal Project 신원 확인. 과거 사이트 접근 차단을 현재 차단으로 반복 보고하지 말 것.
-- ENABLED·published 플로우 3개: AI3 `kt2N9yCVA3dLkFiNPSMsH`, Slack `vtRwEYmcwDTunBZut265G`, 협업 `drNhxMhmCo3A0rKV0OhIZ`. 일반 목록은 10개를 반환했으나 프로젝트 전체 총수로 확정하지 않음.
-- PR #1 head `5f5393967a862c716b10f5b349016400ea466725`, open·미병합·충돌 없음, 제출 리뷰 0. Actions [39244633487](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39244633487) 성공.
+- 21:58 당시의 ENABLED·published 플로우 3개(22:28 사용자 승인으로 두 AI 비활성화됨): AI3 `kt2N9yCVA3dLkFiNPSMsH`, Slack `vtRwEYmcwDTunBZut265G`, 협업 `drNhxMhmCo3A0rKV0OhIZ`. 일반 목록은 10개를 반환했으나 프로젝트 전체 총수로 확정하지 않음.
+- 21:58 당시 PR #1 head `5f5393967a862c716b10f5b349016400ea466725`, open·미병합·충돌 없음, 제출 리뷰 0. 이 미병합 상태는 22:41 사용자 승인 병합으로 대체됨. Actions [39244633487](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39244633487) 성공.
 - 같은 head 로컬 회귀: Python 23/23, JS 32/32, diff check 통과. 이 결과에 새 코드 변경은 없음.
 - AI3 정적검증 7/7 valid. 협업은 4 valid·의도된 OpenAI skip 1, invalid 0. TEST ONLY Concurrent Child Join E2E 폴더 3개 플로우 연결검증 이슈 0.
 - Gemini Flash 웹과 Claude Free 웹에서 각각 독립·교차 검토 응답 2개씩, 실제 총 4개 확인. [Gemini](https://gemini.google.com/app/81dde9123f5873d7), [Claude](https://claude.ai/chat/e54a756f-4b9a-43f0-8a2b-135911a1dd42). 이는 수동 웹 경로이며 API 자동 협업이 아님.
