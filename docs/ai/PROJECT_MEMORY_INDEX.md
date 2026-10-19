@@ -512,3 +512,9 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Next: await review and continue repository-only audit; no merge without explicit instruction. Restore saved browser access before read-only Activepieces/ChatGPT inspection.
 
 - Verification checkout was synchronized to exact PR head `46089313b80b8c00c8b5e13a412df6449a443b57`; tracked tree clean. Only untracked Python cache directories remain in the temporary checkout; recorded in the detailed report.
+
+
+## Activepieces tool inventory — 2026-10-19
+- Current assistant-visible Activepieces manifest count: 47 tools, including read-only flow/run and connection/model listings.
+- No project-scoped Activepieces call was made because current project scope remains unconfirmed with saved site access restricted. Manifest availability does not establish live account/project state. No production changes or provider calls.
+- Details in the [latest execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
