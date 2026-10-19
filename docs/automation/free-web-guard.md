@@ -19,7 +19,7 @@ CODE 단계는 `inputs.request`의 `mode`, `evidence`만 받습니다.
 
 ## 확인한 범위
 
-로컬 `node --test`는 **72개 통과·실패 0개**였습니다. 최초 RED에서는 의도적으로 단순 전달만 하는 기준 구현이 금지된 API 요청을 허용하여 실패하는 것을 확인했습니다. 최종 소스와 테스트, 검증 기록은 이 가이드 옆 `free-web-guard` 폴더에 있습니다.
+로컬 `node --test`는 **72개 통과·실패 0개**였습니다. 최초 RED에서는 의도적으로 단순 전달만 하는 기준 구현이 금지된 API 요청을 허용하여 실패하는 것을 확인했습니다. 최종 소스와 테스트는 `tools/free-web-guard/guard.mjs`, `tools/free-web-guard/guard.test.mjs`에 있으며 CI에서도 같은 테스트를 실행합니다.
 
 Activepieces에서는 아래 **TESTING 샘플 실행 4개**의 결과가 예상과 일치했습니다. 실패로 표시된 차단 시험 2개도 의도한 결과입니다. 업로드한 CODE 소스는 읽어 온 소스와 일치하는 것으로 확인했습니다.
 
