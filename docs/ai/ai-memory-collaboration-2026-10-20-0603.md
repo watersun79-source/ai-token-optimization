@@ -38,3 +38,12 @@
 기존 [01:23 예약 결과 관찰](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-scheduled-result-monitor-2026-10-20.md)의 거절 문구는 `This tool call was blocked by OpenAI's safety checks. Please double check what you are sending.`이다. 이번 작업에서 거절된 쓰기를 다시 시도하거나 차단된 보고서를 대신 생성하지 않았다. **이번 기억 인계·무료 웹 협력 완료와 정규 예약의 자동 기록 차단은 별도 판정**이다. 정규 자동 저장 성공은 여전히 확인되지 않았다.
 
 기존 [병렬 검토](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-parallel-review-2026-10-20.md), [00:13 직접 요청 기록](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-20-0013-readonly-reanalysis.md), [00:20 감사](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-scheduled-unattended-write-check-2026-10-20-0020.md), [23:31 승인 후 복구](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-23h-remote-record-recovery-2026-10-19.md)를 최신 색인에 보존한다.
+
+
+## 색인 압축과 저장 확인
+
+누적 색인은11,599 UTF-16 단위에서5,016 단위로 줄였다. 현재 결정·승인 범위·관찰 시점·미검증·필수 보고서 링크는 남기고, 압축 직전 전체 본문은 커밋 `a2bc682dee8188c0ce0ec94dcdcde80b90e7d7dd`의 immutable 색인으로 연결했다. 별도 읽기 QA가 그 과거 커밋의 본문·blob이 압축 전 현행 색인과 완전히 같음을 확인했다. 이 검토는 문서 QA이며 새 분리 문맥 복원 시험6/6로 집계하지 않았다.
+
+QA의 표현 개선도 반영했다. 현재1477 본문과 과거 저장 검증 시점을 구분하고, Slack 기록 목적지와 보호할Slack운영플로우를 구분했다. Issue#3·main README의 옛 PR/프로젝트/호출 설명을 최신 상태로 복원하지 말라는 경고도 유지했다. 이 Issue와 main 파일을 수정하지 않았다.
+
+이번 보고서·압축한 색인·유지 보고서 세 파일은 각 쓰기 후 실제 fetch하여 기대 본문 전체 문자열과 일치를 확인했다. 이 저장은 이번 직접 사용자 요청의 기억 협력 결과이며 정규 예약 무인 자동 기록0/2 판정을 바꾸지 않는다.
