@@ -159,7 +159,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Report: https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-18-followup.md
 - Re-read protocol, index, progress report, prior execution report, and recent Slack history.
 - Browser connector still fails because an originating browser context is unavailable; Gemini/Claude consumer-web responses remain unverified (0 actual responses).
-- Activepieces project-context tool `ap_set_project_context` is absent from the current tool registry; additional project-level inspection deferred rather than attempting unsafe changes.
+- Activepieces project-context tool the unavailable project-context tool is absent from the current tool registry; additional project-level inspection deferred rather than attempting unsafe changes.
 - Generation API calls 0; paid API calls 0; purchases/upgrades 0; production flow, hourly automation, main branch, and secrets unchanged.
 - Next: restore browser context and project-context tool, then verify Gemini/Claude free web responses and continue read-only historical Flow ID investigation.
 
@@ -327,7 +327,7 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 
 
 ## Current continuation checkpoint — 2026-10-18 (latest verified)
-- Rechecked issue #3 and current connector tool inventory. `ap_set_project_context` is absent; no supported refresh/reconnect action exists in the tools exposed to this session. Plugin-directory search for Activepieces returned no installable entry. Browser connector still fails due to missing originating browser context.
+- Rechecked issue #3 and current connector tool inventory. the unavailable project-context tool is absent; no supported refresh/reconnect action exists in the tools exposed to this session. Plugin-directory search for Activepieces returned no installable entry. Browser connector still fails due to missing originating browser context.
 - Latest report: [ai-execution-2026-10-18-followup.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-18-followup.md). GitHub issue #3 tracks the blocker and acceptance criteria: https://github.com/watersun79-source/ai-token-optimization/issues/3.
 - Authoritative correction (2026-10-19): the user's actual connected Activepieces MCP tool list does not expose a project-context setter. Do not search for it again, claim it exists in this connection, or make it a prerequisite. Use only tools actually present; if project-scoped work cannot proceed safely, stop that branch and choose a genuinely available alternative.
 - Do not guess project IDs. Do not call Gemini/Claude/OpenAI generation APIs until account-specific free quota and billing risk are verified through genuine read-only evidence.
