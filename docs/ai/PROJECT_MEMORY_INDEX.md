@@ -470,3 +470,11 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - No production flow/schedule/main change; provider/API calls and spend 0. Activepieces/ChatGPT current UI remains unverified due saved site access restriction.
 - Detailed report: [2026-10-19 execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
 - Next: await PR review; resume UI checks after browser site permissions change.
+
+
+## Integral-float string parity correction — 2026-10-19
+- Fixed `integral_float_string_comparison_parity`: `expected` changed from JSON integer `1` to `1.0`, so the fixture now exercises Python float normalization against integer 1 and JS numeric equality. Earlier error-count parity fixture is also now `0.0`.
+- PR #1 head `9e2b6942e6e66fb5386e5f122f20729bbed42dd4`, open/unmerged/mergeable. Direct Python and Node checks passed. Actions run 39241135993 (run 58) passed Python regression and JS shared-fixture comparison.
+- No validator implementation, production flow, schedule, or main changes; provider/API calls and spend 0. Activepieces/ChatGPT UI state remains unverified due saved site access restriction.
+- Details: [2026-10-19 execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
+- Next: await review; resume site inspection only after saved browser permissions change.
