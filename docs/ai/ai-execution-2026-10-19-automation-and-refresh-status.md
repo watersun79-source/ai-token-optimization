@@ -56,3 +56,10 @@
 - No task or flow controls changed. No project/run/flow calls, provider API calls, model generation, purchases, or spend.
 - Status: Activepieces run history blocked by sign-in; ChatGPT automation run history still unverified (entry point exists, details not opened); AI automation UI status remains from prior verification (active/hourly vs contradictory old run narrative); catalog refresh effect remains unverified.
 - Next: user opens/signs in to Activepieces in the active browser session if read-only project run inspection is desired; for ChatGPT schedule, use the scheduled-task entry in the signed-in UI and inspect details/history without editing.
+
+
+## Repository continuation — open PR #1 status (2026-10-19)
+- Read-only GitHub inspection found PR #1 (“Add Python shared-fixture parity regression tests”) is still open, with 24 commits and 5 changed files. The PR reports `mergeable=false` and `mergeable_state=dirty`; treat as a merge-conflict/branch-sync blocker until GitHub's current diff is reviewed. No merge, branch update, or PR edit was made.
+- The head SHA `74879c0cb4e57a8e713d49271872b5c1ba764ac0` has one GitHub Actions check named `test`, completed successfully on 2026-10-15 16:03:23 UTC. This is historical CI evidence and does not verify a fresh run against current base.
+- The PR review endpoint returned no reviews. PR files were read; no code was modified. Tests were not run in this workspace.
+- Next: inspect the current diff/merge conflict without altering the PR branch; if a clean isolated fix is available, prepare it for review and run the requested verification before proposing integration. Do not merge without explicit user direction.
