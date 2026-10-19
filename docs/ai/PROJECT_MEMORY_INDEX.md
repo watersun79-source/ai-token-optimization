@@ -347,3 +347,12 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - The current assistant tool manifest exposes 45 Activepieces tool definitions. The UI's task result also claimed 45 tools, but no pre/post snapshot exists and no tool-by-tool diff was checked. The catalog refresh action had returned from loading without a success notice; catalog change remains unverified. Do not search for or call the prohibited project-context action. No project-scoped calls were made in this continuation.
 - Updated report: [ai-execution-2026-10-19-automation-and-refresh-status.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md). Slack read-back: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792404508343849.
 - No provider API calls, paid calls, purchases, tests, or production flow changes.
+
+
+## Continuation checkpoint — 2026-10-19 (Gemini/Claude web access)
+- Report: [automation, refresh, and web access status](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md), commit `f1d8454347715b387ec9a136415c6123e8997b38`.
+- Gemini web UI opened, but account showed AI Plus and an AI Pro upgrade offer. Free/no-billing eligibility was not established, so no prompt or private project data was sent. Claude showed sign-in/plans; no authenticated session, sign-in, or generation.
+- Actual provider responses 0; provider/API calls 0; paid calls 0; purchases/upgrades 0.
+- Slack record posted and read-back pending: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792404633990379.
+- Existing ChatGPT automation AI remains UI-active hourly; result partial and historical disabled-vs-active conflict unresolved. Activepieces catalog count is 45 currently; refresh effect unverified. No project-scoped calls or state changes.
+- Next: continue read-only inspection of catalog application and automation run history; use Gemini/Claude only after clearly free account route is evidenced.
