@@ -427,3 +427,9 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - No flow or task changes; provider/API calls, paid spend, and purchases 0.
 - Next: await browser access if UI run-history verification is wanted; meanwhile continue repository-only work and avoid assuming current app state.
 - Detailed evidence: [latest execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
+
+
+## Saved browser permission blocks UI inspection — 2026-10-19
+- User authorized continuation, but direct read-only requests to both Activepieces and ChatGPT were rejected because saved browser preferences block these domains. Tool policy disallows alternate surfaces or indirect workarounds; none used.
+- Current Activepieces project/run state and ChatGPT automation status/history remain unverified. No flow/schedule changes or project-scoped calls.
+- Next: user updates saved browser access preferences, then we can retry; meanwhile repository-only work remains available. Details in [execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
