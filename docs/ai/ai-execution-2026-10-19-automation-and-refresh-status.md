@@ -32,3 +32,10 @@
 - Independently counted 45 Activepieces tool definitions exposed to this assistant session. This confirms the current count only; no baseline or tool-by-tool diff was checked, and the prohibited tool name was not searched or called.
 - The automation remains listed under Active, with a Pause control and hourly frequency. The result body still says the automation disabled itself, so historical state discrepancy remains unresolved. No task controls were changed.
 - Latest UI findings do not change the prior cost record: external provider API calls 0, purchases 0, production flow actions 0.
+
+
+## Free consumer web access check — 2026-10-19
+- Gemini web UI loaded in the authenticated browser, but the account menu identified an AI Plus plan and offered an AI Pro upgrade. Since an account-specific no-cost route and any billing/quota conditions were not established, no prompt was submitted and no generation response was obtained.
+- Claude opened to a sign-in/plan page (Free, Pro, Max); no authenticated session was available. No sign-in, plan selection, or generation was performed.
+- Actual Gemini/Claude responses: 0. Provider/API calls: 0; paid calls: 0; purchases/upgrades: 0. No project context or private project data was sent to either site.
+- Next safe action: continue read-only verification of ChatGPT tool catalog and automation run history; only use Gemini/Claude if an account-visible, clearly free route can be confirmed without upgrading or uncertain billing.
