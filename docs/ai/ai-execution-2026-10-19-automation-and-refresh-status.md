@@ -163,3 +163,11 @@
 - Current PR #1 remains open/unmerged/mergeable at `9e2b6942e6e66fb5386e5f122f20729bbed42dd4`; Actions run 39241135993 succeeded, reviews 0. No source or PR files changed in this differential turn.
 - No provider/API calls or costs; no production flow, schedule, connection, or main changes. Activepieces/ChatGPT UI remains unverified because saved site-access permissions block inspection.
 - Next: await PR review; inspect app UI read-only only after site access becomes available.
+
+
+## Number-format threshold boundary differential — 2026-10-19
+- Extended the Python-versus-Node.js formatter check around decimal exponent transitions. Compared 5,387 finite values, including each power-of-ten neighborhood across exponents -324 through 308, neighboring representable doubles via `nextafter`, notation thresholds near 1e-6 and 1e21, signed zero, and subnormals.
+- Result: 0 mismatches. The source file is unchanged from PR #1 head; prior read-back confirmed matching source blob SHA `998b14bc6329ae4a845c412af2e0b4a22ed7f1ef`.
+- No PR/source change from this check. PR #1 remains open/unmerged/mergeable; latest verified CI run 39241135993 succeeded, review submissions 0.
+- Provider/API calls and spend 0; production flow, schedule, connection, and main unchanged. Activepieces/ChatGPT UI remains unverified while site access is blocked.
+- Next: await PR review; inspect app status only after site access is restored.
