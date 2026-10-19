@@ -25,3 +25,10 @@
 2. 프로젝트 범위가 명시적으로 확인되지 않은 상태에서는 Activepieces 프로젝트 조회를 하지 않는다.
 3. 자동화 실행 이력에서 활성화/비활성화 상태 모순을 확인할 수 있는 읽기 경로를 조사한다. 기존 주기와 상태는 변경하지 않는다.
 4. GitHub·Slack 기록 저장 및 read-back을 이어간다.
+
+
+## Follow-up UI observation
+- Reopened the task details and menu. The latest result is now shown as 1 minute ago; status remains partial. It reports that the catalog had 45 Activepieces tools and that current catalog change could not be compared against a pre-refresh snapshot. The tool-count claim is from the UI's generated run report, not my direct inventory.
+- Independently counted 45 Activepieces tool definitions exposed to this assistant session. This confirms the current count only; no baseline or tool-by-tool diff was checked, and the prohibited tool name was not searched or called.
+- The automation remains listed under Active, with a Pause control and hourly frequency. The result body still says the automation disabled itself, so historical state discrepancy remains unresolved. No task controls were changed.
+- Latest UI findings do not change the prior cost record: external provider API calls 0, purchases 0, production flow actions 0.
