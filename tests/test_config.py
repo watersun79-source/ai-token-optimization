@@ -64,7 +64,8 @@ class PolicyConfigTests(unittest.TestCase):
         research = routing["internet_research"]
         self.assertTrue(research["enabled"])
         self.assertTrue(research["free_first"])
-        self.assertTrue(research["paid_search_or_api_calls_require_explicit_approval"])
+        self.assertFalse(research["paid_search_or_api_calls_allowed"])
+        self.assertNotIn("paid_search_or_api_calls_require_explicit_approval", research)
         budget = research["search_budget"]
         self.assertEqual(budget["default_max_searches"], 2)
         self.assertTrue(budget["reuse_results_within_run"])
@@ -110,9 +111,24 @@ class PolicyConfigTests(unittest.TestCase):
             "paid external AI APIs unless explicitly approved" in rule
             for rule in rules
         ))
+        self.assertTrue(any("Never create paid caches;" in rule for rule in rules))
+        self.assertFalse(any(
+            "paid caches without explicit approval" in rule
+            for rule in rules
+        ))
         self.assertTrue(any("zero external AI API calls" in rule for rule in rules))
         self.assertTrue(any("separate token-count API request" in rule for rule in rules))
-        self.assertTrue(any("never create paid caches without explicit approval" in rule for rule in rules))
+
+    def test_scheduled_automation_prohibits_paid_search_and_api_calls(self):
+        actions = self.policy["scheduled_automation"]["on_each_run"]
+        self.assertTrue(any(
+            "Never make paid search/API/model calls" in rule
+            for rule in actions
+        ))
+        self.assertFalse(any(
+            "paid search/API/model calls require explicit approval" in rule
+            for rule in actions
+        ))
 
     def test_paid_or_unverified_provider_calls_are_blocked(self):
         guard = self.policy["cost_guard"]

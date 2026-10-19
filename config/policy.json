@@ -43,7 +43,7 @@
         "avoid_duplicate_queries": true
       },
       "free_first": true,
-      "paid_search_or_api_calls_require_explicit_approval": true
+      "paid_search_or_api_calls_allowed": false
     }
   },
   "limits": {
@@ -60,7 +60,8 @@
       "Measure tokens and cost only from actual API usage logs and official rates; otherwise report unavailable",
       "Use deterministic local code for JSON, schema, arithmetic, and format validation; make zero external AI API calls when code can decide correctly",
       "Prefer usage metadata returned by an existing API response; do not issue a separate token-count API request unless its result changes a decision",
-      "Reuse only verified cached results; do not assume caching is available or free, and never create paid caches without explicit approval",
+      "Reuse only verified cached results; do not assume caching is available or free",
+      "Never create paid caches; do not assume a cache is free unless verified",
       "Pass only the relevant diff, changed files, and concise failure output instead of replaying full repository context",
       "For research tasks, use complementary search sources only when they add distinct evidence; deduplicate results and stop once decision-critical facts are verified."
     ]
@@ -79,7 +80,7 @@
       "Read applicable policy and preserve the existing schedule",
       "Use internet research when it materially improves correctness or freshness; search official docs/release notes and repository sources first",
       "Reuse search results and avoid duplicate queries; default to at most two searches, use a third only when sources conflict or a decision-critical fact remains unresolved, and never exceed three.",
-      "Prefer free public sources and local tests; paid search/API/model calls require explicit approval",
+      "Never make paid search/API/model calls or create paid caches; use free public sources and local tests",
       "Minimize tokens by sending focused diffs and relevant excerpts, reusing stable prompts, and keeping outputs concise",
       "Check enabled status and recent execution result when tools permit",
       "Use one AI call for routine checks and a second only for material issues",
