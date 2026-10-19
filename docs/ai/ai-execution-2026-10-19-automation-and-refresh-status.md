@@ -249,3 +249,9 @@
 - Direct parsed comparison to main `4ca63d421d8e5f43cabac492caa9ee74c5bdd492`: all five `cost_guard` fields remain identical. Main untouched.
 - Updated PR description and issue #3 with latest head, CI, and policy state; read-back confirms PR open/unmerged and issue acceptance criteria preserved. Issue link: https://github.com/watersun79-source/ai-token-optimization/issues/3.
 - Provider/API calls and spend 0; no production flows, connections, schedules, main, or merge changes. Activepieces/ChatGPT remain unverified due saved site-access restrictions.
+
+
+## Read-only run-tool scope verified — 2026-10-19
+- Current manifest has 47 Activepieces tools. `ap_list_runs` accepts optional flowId/environment/status but no project identifier; `ap_get_run` requires a concrete flowRunId.
+- Current authenticated project/run context remains unverified, so neither tool was called and no ID was guessed. No app state changed.
+- Issue #3 comment was posted and read back: https://github.com/watersun79-source/ai-token-optimization/issues/3#issuecomment-6266137030.
