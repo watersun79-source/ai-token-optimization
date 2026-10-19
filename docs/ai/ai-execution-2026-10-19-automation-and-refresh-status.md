@@ -181,3 +181,13 @@
 - Read-back: PR #1 is open and unmerged at the above head; review submissions 0. No main merge.
 - Gemini/Claude responses 0; provider/API calls 0; paid spend/purchases 0. No Activepieces flow, connection, or ChatGPT automation changes. Current site access restriction persists; automation/project state remains unverified in this continuation.
 - Next: retain PR open pending review; continue repository-only validation and update site access preference before any UI inspection. Do not merge without explicit instruction.
+
+
+## JavaScript number overflow parity fix — 2026-10-19
+- Re-reviewed the exact PR head and found a boundary divergence: a 400-digit JSON integer is finite as a Python arbitrary-precision int, but JavaScript JSON.parse converts it to Infinity; JavaScript Number.isInteger(Infinity) is false. Before the fix Python emitted `error_count_mismatch:reported=Infinity,computed=1`, while JS returned `error_count_must_be_integer`.
+- TDD RED: added shared fixture `integer_count_overflow_rejected`; Python shared-fixture tests failed in both fixture test classes as expected, while JavaScript passed 32/32.
+- GREEN: Python now checks whether JSON integer counts convert to a finite IEEE-754 number, catching OverflowError. Local exact-tree verification: Python unittest 22/22, JavaScript fixtures 32/32, `git diff --check` clean.
+- Updated only PR #1 feature branch with commit `46089313b80b8c00c8b5e13a412df6449a443b57`. The locally staged Git tree SHA matched the GitHub-created tree before fast-forward update; GitHub read-back confirms fixture/source blobs. PR remains open, unmerged, mergeable; reviews 0.
+- GitHub Actions run [39243215666](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39243215666), run 60, completed successfully; Python regression and JS shared-fixture steps both succeeded.
+- AI-provider/model API calls 0; paid provider spend and purchases 0 (provider billing not accessed). GitHub/Slack connector reads and writes were used for audit and records. No Activepieces flow, connection, schedule, or main changes; current site access restriction means Activepieces/ChatGPT state remains unverified.
+- Next: keep PR open pending review; continue repository-only audit without merging. Resume app checks only after saved browser access is restored.
