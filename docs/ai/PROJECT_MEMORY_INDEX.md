@@ -557,3 +557,9 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Directly enumerated the current assistant-visible Activepieces catalog: 47 tool definitions. Read/list names include `ap_list_flows`, `ap_list_runs`, `ap_get_run`, `ap_list_connections`, and `ap_list_ai_models`.
 - Neither `ap_list_projects` nor the user-prohibited `ap_set_project_context` is present. This inventory describes exposed tool names only; it does not prove site authorization, current project context, or live service state. No Activepieces tool was called because the saved browser denial forbids alternate access paths to the same site data.
 - No project-scoped call, flow/run action, connection/configuration change, provider/API call, or cost occurred. Live Activepieces project/run state remains unverified.
+
+
+## Fresh PR #1 patch review — 2026-10-19
+- Re-read the current PR #1 diff across all five changed files: `config/policy.json`, shared JSON validator fixtures, policy tests, shared-fixture parity test, and Python JSON validator.
+- Review found no new defect in the policy guard, fixture coverage, Python/JavaScript number-string alignment, or invalid JSON constant rejection. This is a static review; it does not replace the already recorded local test and CI evidence.
+- No source edits, merge, provider/API calls, paid use, or production/automation changes were made. PR #1 remains open and unmerged.
