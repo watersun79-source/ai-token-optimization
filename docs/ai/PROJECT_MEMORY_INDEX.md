@@ -447,3 +447,6 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - PR #1 head `db22779d9574e2557d4bb8f567ce29fc3c38df55` independently verified in a fresh temporary clone: Python 22/22, JavaScript fixtures 29/29, `git diff --check` clean. GitHub Actions run 39238473660 passed and there are 0 review submissions. PR stays open/unmerged.
 - Current Activepieces manifest has 47 tools, but no project-context selector/listing tool. Project-scoped run/flow reads were not called. Browser saved-site access remains blocked, so current Activepieces and ChatGPT automation state is unverified.
 - Provider/model API calls and spend: 0. No production, connection, schedule, main, or PR merge changes. Details and execution environment/cleanup note are in the report above.
+
+## Supplemental verification — 2026-10-19
+- PR-head Python numeric formatter matched Node.js `String(number)` for 10,000 deterministic random finite doubles (seed 20261019) plus 10 selected boundary values; 0 mismatches. This was an ad hoc local check; no code/test fixture was added. See the latest execution report for the full test and cleanup status.
