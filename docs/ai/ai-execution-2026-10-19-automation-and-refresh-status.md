@@ -71,3 +71,11 @@
 - Preview location: `work/pr1-readonly-audit`, local branch `audit/pr1-merge-preview`; it is a non-committed merge preview tracking the PR head. No remote branch was updated and no merge was created.
 - Verification on this local preview: `python -m unittest discover -s tests -v` passed 22/22; `node tools/json_output_validator.js` passed 29/29; `git diff --check` clean. These are local preview results, not a new GitHub Actions run.
 - Next: if the user wants the PR updated, publish the reviewed resolution on its feature branch and re-run CI; no PR push or merge was performed in this continuation.
+
+
+## PR #1 conflict resolution on feature branch — 2026-10-19
+- Following the user's continued instruction to proceed, updated only `improve/shared-fixture-parity-tests` and did not merge into `main`. PR #1 now points to `917b56e2a9f2e5db4f5f51e9ff4037d52ec4f7e3`, a two-parent merge commit containing current main plus the PR work. GitHub now reports `mergeable=true`, `mergeable_state=unstable`; PR remains open.
+- The merged `config/policy.json` retains one `cost_guard` and the feature branch's research budget. Removed a duplicate test definition discovered during review; first test pass had masked it because Python replaces same-named class methods. Final local re-verification: `python -m unittest discover -s tests -v` passed 22 tests; `node tools/json_output_validator.js` passed 29/29; `git diff --check` clean. These tests ran locally against the final tree; no fresh GitHub Actions run is present for the new head.
+- PR branch write/read-back verified by current PR head SHA and mergeable state. Git CLI push was unavailable due to noninteractive Git authentication; GitHub Git-data API was used after matching the locally verified tree SHA exactly. No main update or PR merge.
+- Gemini/Claude responses and all provider/API calls: 0; paid calls/spend and purchases/upgrades: 0. Activepieces project/flow actions: 0; scheduled task unchanged.
+- Next: inspect the open PR's current Actions/check status after GitHub recalculation; do not merge to main until CI and review evidence are available. Continue read-only automation/project-state investigation only through currently accessible authenticated paths.
