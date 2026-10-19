@@ -1,8 +1,8 @@
 # AI — 현재 상태와 지속 기억
 
-최종 직접 확인: 2026-10-19 22:24 KST
+최종 직접 확인: 2026-10-19 22:29 KST
 작업 브랜치: `ai/continuation-readonly-audit-2026-10-18`
-판정: 무료 웹 검토·API 차단 검토본 구현과 샘플 검증 완료. 기존 운영 자동화 전체 완료는 아님.
+판정: API 차단 검토본·샘플·CI 검증 및 사용자 승인한 기존 두 AI 플로우 비활성화 완료. 무료 공급자 API 협업의 운영 성공을 입증한 것은 아님.
 
 ## 먼저 읽을 기록
 - [최신 API 차단 구현·샘플 시험·게시 버전 감사](ai-execution-2026-10-19-free-web-guard.md)
@@ -13,6 +13,13 @@
 - Slack 진행 채널: `C0C9649RQAZ`
 - 프로젝트: https://cloud.activepieces.com/projects/Fr9OAsxi4FbVSVLZkexYi/automations
 - [이 압축 전 전체 색인](https://github.com/watersun79-source/ai-token-optimization/blob/789551c62f6e4f2419de5d79e241f5e3c2ea704e/docs/ai/PROJECT_MEMORY_INDEX.md)
+
+## 최종 운영 상태 — 사용자 승인 2026-10-19 22:28 KST
+- 사용자가 “두 AI 플로우 비활성화까지 진행”을 명시 선택. 이 승인에 따라 AI3 `kt2N9yCVA3dLkFiNPSMsH`와 협업 `drNhxMhmCo3A0rKV0OhIZ`를 DISABLED로 변경하고 재조회 확인. 기존 게시 구성은 보존.
+- 두 AI 플로우의 PRODUCTION RUNNING·QUEUED 각각 0건. 새 트리거 실행 차단 완료. 다른 시스템 전체 API 사용까지 차단했다고 주장하지 말 것.
+- Slack `vtRwEYmcwDTunBZut265G`만 ENABLED·published 유지. 기존 ChatGPT AI 예약도 22:29 UI에서 일시 중지 제어와 매시간 표시로 활성 재확인. 일정/상태 변경 없음.
+- 사용자 명시 요청 없이 두 AI 플로우를 다시 활성화하지 말 것. 앞선 “활성3개 보존”은 승인 전 관찰이며 현재 상태가 아님.
+- guard 검토 플로우 `3kRMmWICEPt0vIarX7kLR`는 여전히 DISABLED·미게시. PR#4와 PR#1·main은 미병합/보존.
 
 ## 최신 구현 — 2026-10-19 22:24 KST
 - [초안 PR #4](https://github.com/watersun79-source/ai-token-optimization/pull/4), head `c35dff3c2087756540694767f99f5424258fed3f`, 미병합. 로컬 guard 72/72; [CI 39259453101](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39259453101) Python·JS·신규 guard 모두 성공. 독립 검토 결함 없음.
@@ -50,4 +57,4 @@
 ## 실행 기록 구분
 21:58 재분석: 소비자 웹 응답4개, 새 플로우 시험0, 색인76,201→3,083자로 압축.
 22:24 이어서 실행: 별도 guard 소스·테스트·CI·초안 PR#4 및 비활성 플로우 생성, TESTING 샘플4개.
-공통: 공급자 생성 API·구매·업그레이드0, main·PR#1·기존 운영·예약 보존. 계정 전체 기존 구독·청구액은 미검증.
+22:28 사용자 승인 후 두 AI 플로우 상태만 DISABLED로 변경. Slack·main·PR#1·예약 보존. 공급자 생성 API·구매·업그레이드0. 계정 전체 기존 구독·청구액은 미검증.
