@@ -147,3 +147,11 @@
 - Review submissions: 0. This continuation changed only the shared JSON fixture on the PR branch and these documentation records; no merge/main/production-flow/schedule changes. Provider/model calls and spend 0.
 - Activepieces and ChatGPT UI state remains unverified because saved site-access permissions still block inspection; ambient browser URL does not establish a permission change.
 - Next: await PR review. Resume UI read-only checks only after the saved site-access preference is changed.
+
+
+## Integral-float comparison fixture correction and CI — 2026-10-19
+- Reinspection of the shared fixture suite found a second misleading case: `integral_float_string_comparison_parity` used integer JSON values on both sides. Changed only its `expected` value from `1` to `1.0`, so Python exercises float-to-string normalization while JavaScript compares the equivalent numeric value. Validator implementation unchanged.
+- PR head: `9e2b6942e6e66fb5386e5f122f20729bbed42dd4`; GitHub read-back shows PR #1 open, mergeable, unmerged. Direct Python validation returned no errors; Node normalized both values to `1`.
+- GitHub Actions run [39241135993](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39241135993), run 58, succeeded. Job `test`, Python regression tests, and JavaScript shared-fixture comparison all succeeded. Earlier corrected `integral_float_error_count_parity` remains set to `0.0` on this head.
+- No implementation or production changes, PR merge, schedule/flow changes, or provider/API calls/spend. Reviews remain 0. Activepieces/ChatGPT UI state remains unverified under saved site-access restriction.
+- Next: await PR review; resume app UI checks only after site access settings are changed.
