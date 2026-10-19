@@ -131,3 +131,10 @@
 - Prior deterministic Python-vs-Node numeric differential (10,000 random finite doubles + 10 boundary values) had 0 mismatches. No AI/provider API calls or costs; production flows, connections, schedule, and main unchanged.
 - Cleanup note: the temporary verification clone under `work/pr1-ci-verification` retains Python cache files; explicit cleanup commands were rejected by the command policy. No further deletion attempt was made.
 - Next: await PR review; app UI verification remains unverified until saved site access is adjusted.
+
+## Fixture mutation check — 2026-10-19
+- Ran a local, in-memory mutation check for the new shared fixture `fixed_notation_high_precision_rounding_parity`. The current formatter passes the fixture; replacing it temporarily with the intentionally lossy `format(value, ".15g")` formatter makes the fixture fail with verdict and computed error-count mismatches.
+- This confirms the fixture detects the targeted precision regression. The monkeypatch existed only in the test process; no source or PR files changed during this check.
+- Verification evidence remains Python unittest 22/22, JavaScript fixtures 30/30, `git diff --check` clean, and Actions run 39240412707 successful on PR head `f765a1500972daa7d574961176f5ca766e39d4c9`. PR #1 is open/unmerged with 0 reviews.
+- Provider/model generation calls 0; paid calls/spend 0; production flow or schedule changes 0. Activepieces and ChatGPT UI state remains unverified under saved site-access restrictions.
+- Next: wait for PR review; resume UI read-only checks only after the saved browser access preference changes.
