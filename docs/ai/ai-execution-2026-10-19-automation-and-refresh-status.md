@@ -202,3 +202,9 @@
 - Counted the current assistant-visible Activepieces connector manifest: 47 tools. Read-only/listing capabilities include flow/run listing and run lookup, plus connection and AI-model listings.
 - Did not invoke any Activepieces project/flow/run operation: current project scope/context is not independently confirmed under the saved site-access restriction. This manifest count is not evidence of project access or live project state.
 - No changes to flows, connections, schedules, or provider configurations; no model calls or provider spend.
+
+
+## Post-fix validator differential — 2026-10-19
+- Ran an independent deterministic, structure-aware Python-vs-JavaScript differential on 20,000 generated JSON payloads against exact PR head `46089313b80b8c00c8b5e13a412df6449a443b57`, including invalid schema combinations and very large positive/negative integer error counts.
+- Result: 0 differences in complete ordered error arrays. Python 22/22 and JS fixtures 32/32 remain green; Actions run 39243215666 succeeded.
+- The temporary differential harness was removed after the run. Verification checkout retains only untracked Python `__pycache__` directories from test execution; tracked tree is clean.
