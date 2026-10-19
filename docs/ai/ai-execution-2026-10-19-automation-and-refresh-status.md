@@ -239,3 +239,13 @@
 - Compared parsed `cost_guard` values between current main `4ca63d421d8e5f43cabac492caa9ee74c5bdd492` and new PR head: all five values remain identical; no main change.
 - Updated PR #1 description to latest head/results and refreshed issue #3 latest evidence; both read-backs confirm updates and preservation of open/unmerged state and issue acceptance criteria: https://github.com/watersun79-source/ai-token-optimization/issues/3.
 - AI provider/model calls and spend 0. Production flow/connection/schedule/main unchanged; PR #1 not merged. Activepieces/ChatGPT state remains unverified under saved site-access restrictions.
+
+
+## Paid search/API/cache approval exceptions removed — 2026-10-19
+- Broader policy audit found remaining conditional paid-use rules: internet research required approval for paid search/API calls; scheduled automation likewise said paid search/API/model calls require approval; paid-cache creation also had an approval exception.
+- TDD RED: added/strengthened tests requiring `paid_search_or_api_calls_allowed=false`, absolute paid-call/cache prohibitions in token and scheduled rules, and rejection of the old approval-exception text. Prior policy failed these checks.
+- GREEN: removed `paid_search_or_api_calls_require_explicit_approval`, set `paid_search_or_api_calls_allowed=false`, prohibited paid cache creation and paid search/API/model calls in scheduled rules. Existing automation-management actions still require authorization.
+- PR #1 head `5f5393967a862c716b10f5b349016400ea466725`, commit `fix: prohibit all paid search, API, and cache exceptions`. Local tests: Python 23/23, JS fixtures 32/32, diff check clean. Actions run [39244633487](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39244633487) passed Python and JS steps.
+- Direct parsed comparison to main `4ca63d421d8e5f43cabac492caa9ee74c5bdd492`: all five `cost_guard` fields remain identical. Main untouched.
+- Updated PR description and issue #3 with latest head, CI, and policy state; read-back confirms PR open/unmerged and issue acceptance criteria preserved. Issue link: https://github.com/watersun79-source/ai-token-optimization/issues/3.
+- Provider/API calls and spend 0; no production flows, connections, schedules, main, or merge changes. Activepieces/ChatGPT remain unverified due saved site-access restrictions.
