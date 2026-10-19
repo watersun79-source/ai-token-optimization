@@ -527,3 +527,9 @@ Duplicate display copy (1053-character prompt): https://github.com/watersun79-so
 - Reconciled stale issue #3 status with a dated comment and verified its read-back: [current audit update](https://github.com/watersun79-source/ai-token-optimization/issues/3#issuecomment-6265962974). Original acceptance criteria preserved.
 
 - PR #1 description updated to reflect verified head `46089313b80b8c00c8b5e13a412df6449a443b57`, local tests, 20,000-payload parity result, and successful CI. Read-back confirms still open/unmerged; detail in [execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
+
+
+## Main cost-guard preservation — 2026-10-19
+- PR #2 is merged into main at `4ca63d421d8e5f43cabac492caa9ee74c5bdd492`; its head Actions run 39083650721 passed both CI steps.
+- Parsed current main and PR #1 head policy files: all `cost_guard` values are identical. The guard remains active in both; no branch/file changes from the comparison.
+- Issue #3 comment with evidence and read-back: [main guard verification](https://github.com/watersun79-source/ai-token-optimization/issues/3#issuecomment-6265998316). Details in the [execution report](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/ai-execution-2026-10-19-automation-and-refresh-status.md).
