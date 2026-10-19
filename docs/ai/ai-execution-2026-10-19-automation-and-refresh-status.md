@@ -39,3 +39,12 @@
 - Claude opened to a sign-in/plan page (Free, Pro, Max); no authenticated session was available. No sign-in, plan selection, or generation was performed.
 - Actual Gemini/Claude responses: 0. Provider/API calls: 0; paid calls: 0; purchases/upgrades: 0. No project context or private project data was sent to either site.
 - Next safe action: continue read-only verification of ChatGPT tool catalog and automation run history; only use Gemini/Claude if an account-visible, clearly free route can be confirmed without upgrading or uncertain billing.
+
+
+## Read-only route investigation — 2026-10-19 (continuation)
+- Re-enumerated the current tool manifest. It exposes 45 Activepieces tools, including read-only `ap_list_runs` and `ap_get_run`; there is no separate ChatGPT scheduled-task execution-history API among the connected tools. The tool manifest alone cannot establish what changed after the UI refresh because no pre-refresh snapshot exists.
+- The Activepieces browser inventory contains an existing project tab whose URL includes a project identifier, but it was last opened on 2026-10-13 and is not a current active selection. Attempted to reattach through the browser control; the CDP focus operation timed out after 10 seconds. To avoid using a stale tab identifier as project authorization, no project-scoped Activepieces query was sent.
+- Scheduled task state remains based on the prior UI observation only: AI listed Active/hourly; execution narrative partial and contradictory about disablement. No schedule/status changes.
+- Tool calls in this continuation: manifest inspection only for Activepieces; no project-scoped calls, no run/flow calls, no provider calls, no external generation, no spend.
+- Result classification: automation history = blocked by absent callable task-history API; Activepieces run history = blocked pending a current project selection; catalog refresh effect = unverified (45 current definitions, no before snapshot or diff).
+- Next action: if project-level evidence is needed, reopen the intended Activepieces project in the active browser session and then use only its read-only run listing; inspect scheduled-task history through the ChatGPT task UI when its history controls become available. Never alter or trigger a flow for this check.
