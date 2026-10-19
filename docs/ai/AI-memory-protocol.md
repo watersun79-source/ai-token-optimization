@@ -1,113 +1,58 @@
-# AI Persistent Memory Protocol
-Updated: 2026-10-17
-Slogan: ALWAYS ON · ALWAYS EVOLVING · MAXIMUM AVAILABLE CAPABILITY
+# AI 기억 유지 프로토콜
 
-## Source of truth
-- Repository: https://github.com/watersun79-source/ai-token-optimization
-- Working branch: ai/continuation-readonly-audit-2026-10-18
-- Canonical custom instructions: docs/ai/AI-custom-instructions-ko-1500.md (1053 characters; verified 2026-10-17)
-- Display copy: docs/ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md
-- Memory index: docs/ai/PROJECT_MEMORY_INDEX.md
-- Latest progress report: docs/ai/memory-optimization-progress-2026-10-17.md
-- Slack progress channel: C0C9649RQAZ
-- Activepieces project: https://cloud.activepieces.com/projects/Fr9OAsxi4FbVSVLZkexYi/
+갱신: 2026-10-19 KST. 이 문서는 현재 절차다. 당시 운영 상태를 담은 예전 기록은 최신 상태로 사용하지 않는다.
 
-## Start every AI task
-1. Use internet search for current information and cite reliable sources.
-2. Read this protocol, PROJECT_MEMORY_INDEX.md, the latest GitHub progress report, and relevant recent Slack messages.
-3. Check the current external state; saved notes may be stale.
-4. Check Gemini and Claude access on each task. Use them only through a genuinely accessible free route; distinguish consumer web apps from API usage. Never claim a model was used without a real response.
-5. Do not call APIs until free limits, billing state, and costs are verified. Do not purchase, upgrade, or reveal credentials.
-6. Protect all production flows and the existing hourly automation. Test in disabled/unpublished drafts with sample data.
+## 단일 시작점
 
-## End every meaningful task
-Write a dated GitHub progress report and a concise Slack update. Include actual tools/providers used, links, test IDs and results, cost/API call count, cleanup, blockers, and the next goal. If a read or write fails, report the failure; never pretend it succeeded.
+- 저장소: `watersun79-source/ai-token-optimization`
+- 기억 작업 브랜치: `ai/continuation-readonly-audit-2026-10-18`
+- [현재 기억 색인](https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/PROJECT_MEMORY_INDEX.md)
+- 정규 프로토콜: `docs/ai/AI-memory-protocol.md`
+- 정규 맞춤 지침: `docs/ai/AI-custom-instructions-ko-1500.md`; 동일 표시본: `docs/ai/CHATGPT_CUSTOM_INSTRUCTIONS_1500_KO.md`
+- 최신 실행 보고서는 색인의 첫 링크를 따른다. 날짜가 고정된 옛 보고서를 항상 최신이라고 가정하지 않는다.
+- Slack: `C0C9649RQAZ`. 채널의 관련 기록과 연결된 스레드 답글을 읽는다. 통합 기록 스레드: `1792416391.631669`.
 
-## ChatGPT deployment and limitations
-The current 1053-character prompt is stored at:
-https://github.com/watersun79-source/ai-token-optimization/blob/ai/continuation-readonly-audit-2026-10-18/docs/ai/AI-custom-instructions-ko-1500.md
-On iOS, paste it into Settings > Customize ChatGPT > Custom Instructions with customization enabled. Saving the file does not change ChatGPT settings. Custom Instructions apply across chats when enabled, but GitHub and Slack history are not automatically injected into every conversation; retrieve them explicitly.
+GitHub가 프로젝트 결정·상태의 기준이고 Slack은 진행 기록이다. 연결된 앱이나 Tables의 캐시만으로 완료를 판정하지 않는다. 대소문자가 다른 `AI-MEMORY-INDEX.md`와 `AI-MEMORY-PROTOCOL.md`는 이 단일 시작점으로 연결하는 호환 안내다.
 
-## Latest verification (2026-10-17)
-- Historical note: an earlier prompt revision was 1108 characters. It has been superseded by the current 1053-character prompt; see the latest authoritative update below.
-- This turn: internet research performed; GitHub protocol/index/prompt and Slack recent messages read. Gemini/Claude consumer-app generation not performed because the connected browser context is unavailable and prior API authentication/free billing status is unresolved. Paid API calls: 0.
-- OpenAI official guidance confirms saved Custom Instructions apply across existing and new chats when enabled; this does not automatically inject GitHub/Slack records into each chat.
+## 시작 → 실행 → 복원
 
-## Latest instruction sync (2026-10-17)
-- Historical note: an earlier revision was 992 JavaScript characters. It has been superseded by the current 1053-character prompt.
-- Every task now explicitly requires an actual attempt to use Gemini and Claude's free web apps; if no browser/app access is available, record the blocker and do not claim usage. Read GitHub and Slack at task start and write/read-back meaningful results at task end.
-- Latest check: official web research and GitHub/Slack read-back performed. Gemini/Claude generation calls 0 because the browser connector has no originating browser context and API free/billing status remains unresolved. Paid API calls 0.
+1. 의미 있는 AI 프로젝트·기억 유지 작업을 시작할 때 색인 → 프로토콜 → 색인의 최신 보고서 → 관련 Slack 기록을 실제로 읽는다. 이미 읽은 같은 문서를 한 작업 안에서 이유 없이 반복 조회하지 않는다.
+2. 사용자 최신 지시와 날짜가 명시된 최신 관찰을 우선한다. 과거 보고서의 “현재”는 그 보고서 작성 시점이다. 필요하면 원래 시스템을 읽기 전용으로 확인한다. 상태 복원에 불필요한 예전 테스트·모델 검토를 다시 실행하지 않는다.
+3. 완료·부분 완료·차단·미확인·실패를 구분하고, 영향이 큰 미완료 작업을 진행한다. 공급자 생성 API·구매·업그레이드는 금지한다. 무료 소비자 웹 검토도 실제 응답이 있을 때만 사용 실적으로 기록한다.
+4. 저장 실패·도구 부재·접근 실패가 있으면 해당 항목을 미완료로 남긴다. 예전 접근 장애를 재확인 없이 현재 장애로 반복하지 않는다. 실제 노출된 도구만 사용한다.
 
-## Current blockers
-- Gemini: a read-only model-list request succeeded once, but billing/free tier is unknown.
-- Secondary Gemini API and Claude: previous read-only model-list requests failed HTTP 401; no generation calls were made.
-- Activepieces Tables atomic uniqueness under concurrent runId creation remains unproven.
-- Hosted Cloud support for a custom BARRIER piece remains unverified.
-- The existing hourly automation and the currently verified enabled production flows must remain unchanged unless the user explicitly authorizes a necessary change.
+## 의미 있는 작업 종료
 
+1. 기억 작업 브랜치에 날짜가 있는 보고서를 저장하고 색인을 갱신한다. 결정·변경 파일/커밋·실제 검증·실행 ID·실제 모델 사용·비용/공급자 호출·미확인·다음 작업을 적는다.
+2. 지정된 Slack 채널의 관련 스레드에 간결한 결과와 근거 링크를 기록한다.
+3. GitHub의 저장한 내용을 재조회해 기대 내용과 비교하고, Slack도 게시된 기록을 다시 읽는다. 전송 응답과 저장 검증을 구분한다.
+4. 색인은 짧게 유지하고 상세 자료는 보고서·과거 기록으로 연결한다. 과거 기록 전체를 다음 대화에 복사하지 않는다.
 
-## 2026-10-17 update — persistent memory loop
-- Search current web sources on every task; cite reliable sources.
-- Attempt Gemini and Claude through available free web apps or connected tools on each task. If access fails or credentials are invalid, report that plainly; do not claim they were used.
-- Never call APIs until free quota, pricing, and billing state are verified. No payment/upgrades. Protect secrets.
-- For important/AI tasks, read the GitHub memory index, protocol, latest progress and Slack channel C0C9649RQAZ before acting. At completion, write decisions, changed files/commit, test IDs/results, real AI usage, API/cost status, unresolved issues and next goal to both GitHub and Slack; read back to verify.
-- External records are not automatically injected into every ChatGPT chat. Re-read them in new and existing chats when the task needs continuity.
-- Preserve production Activepieces flows, hourly automation, and main branch; use a separate branch and mock tests.
+개인·비밀 정보, API 키·인증값·헤더·웹훅 비밀·개인 위치를 기록하지 않는다. AI 프로젝트와 무관한 다른 작업의 내용을 공개 저장소·Slack으로 옮기지 않는다.
 
-## Gemini + Claude dual independent review (2026-10-17)
-- For meaningful AI/project decisions, code, automation changes, troubleshooting, and important recommendations, obtain separate independent reviews from both Gemini and Claude when each is genuinely accessible through a free, cost-safe route.
-- Give each reviewer the same task, evidence, constraints, and acceptance criteria independently; do not show Gemini's conclusions to Claude or Claude's conclusions to Gemini before their first-pass reviews.
-- Compare both reviews against source evidence and tests. Produce a consensus list, disagreements, unsupported claims, risks, and a final decision. Do not treat majority agreement as proof.
-- If either model cannot be accessed, report which one was unavailable and why; do not fabricate a review or mark the dual-review step complete.
-- Free-first remains mandatory: do not call paid/uncertain APIs, spend credits, or change billing. Existing production flows and hourly automation remain protected. Implement dual-review orchestration only in a disabled/unpublished draft and validate with sample data before any production rollout.
-- For trivial low-risk conversational tasks, avoid unnecessary repeated model calls; dual review is the default for meaningful project work, not a reason to waste tokens on every small exchange.
+## 현재 상태를 복원할 때 지킬 결정
 
+- 2026-10-19 22:28 사용자 승인으로 AI3 `kt2N9yCVA3dLkFiNPSMsH`와 협업 `drNhxMhmCo3A0rKV0OhIZ`를 DISABLED로 변경하고 재조회했다. 명시적인 재활성화 요청 없이 켜지 않는다. 앞선 “3개 활성” 기록은 이 승인으로 대체됐다.
+- Slack 플로우 `vtRwEYmcwDTunBZut265G`와 매시간 정각 Asia/Seoul ChatGPT 예약은 보존한다. 마지막 운영 직접 관찰은 22:28~22:29다. 이 프로토콜 갱신이 새로운 운영 실행의 증거는 아니다.
+- 별도 사용자 승인으로 PR #1 → #4를 main에 병합했다. 22:41 최종 main은 `297d1d2d52e213e0b3c93c93d74e322fb11e744b`; 실제 main 로컬 127/127과 push CI `39262028914`가 성공했다. 예전 “PR 미병합” 기록은 대체됐다.
+- API 차단 검토 플로우 `3kRMmWICEPt0vIarX7kLR`는 DISABLED·미게시다. 샘플 TESTING 성공을 공급자 API 운영 성공으로 해석하지 않는다.
+- 계정별 공급자 무료 잔량·청구, Tables 원자적 중복 방지·501건 초과 처리·custom BARRIER는 미검증이다. 이번 기억 유지 정리의 완료 조건과 구분한다.
 
-## Dual-review draft implementation (2026-10-17)
-- Created Activepieces draft flow: AI · Gemini + Claude 독립·교차 검토 (비용 확인 전 초안), flow ID 1MAbLTS7HS9LjDRqq9l4b, URL https://cloud.activepieces.com/projects/Fr9OAsxi4FbVSVLZkexYi/flows/1MAbLTS7HS9LjDRqq9l4b.
-- Flow has 6 steps: webhook trigger; Gemini independent first review; Claude independent first review; Gemini critiques Claude's first review; Claude critiques Gemini's first review; CODE step packages all four outputs.
-- Static validation passed: 6/6 valid, 0 issues. Read-back structure confirms the draft is DISABLED and unpublished. No flow test, AI generation call, publish, or enable action was performed.
-- Cost/access blockers: Google Gemini connection appears ACTIVE and model dropdown resolved, but ACTIVE status does not prove free quota. Direct Anthropic Claude model dropdown returned 0 options for the configured connection; the draft uses the configured Activepieces managed AI provider's Claude Sonnet model, whose billing/credits are not confirmed. Therefore do not test or publish this draft until cost and provider access are verified.
-- Security blocker: webhook draft uses no authentication only for unpublished construction; before any publication, configure and verify Header Auth or another appropriate authentication method.
-- The four AI actions are sequential in the flow, not simultaneous. The first two prompts are independent (neither sees the other's output); the following two steps cross-review each first-pass result.
-- Official references checked: Activepieces AI providers https://www.activepieces.com/docs/admin-guide/guides/setup-ai-providers ; Gemini API pricing https://ai.google.dev/gemini-api/docs/pricing?hl=ko ; Claude API pricing https://platform.claude.com/docs/en/about-claude/pricing.
+## 적용과 완료 기준
 
+2026-10-19 이번 적용 확인: ChatGPT 메모리 스위치는 이미 ON이었다. ChatGPT 맞춤 지침과 데스크톱·웹 동기화 Codex 맞춤 지침에 동일한 본문 1,133 UTF-16 단위를 저장하고, 각 화면을 새로고침한 뒤 저장된 값이 기대 본문과 일치함을 확인했다. 로컬 설정의 features.memories·generate_memories·use_memories도 true로 읽었다. 기억 설정 자체는 바꾸지 않았다. 이 설정 확인과 별도 문맥 복원 시험의 결과는 최신 실행 보고서에서 구분한다.
 
-## Authoritative correction — 2026-10-17 15:02 KST
-- Current canonical custom-instruction body is 1010 JavaScript characters and begins `AI — ALWAYS ON`. The display copy was synchronized to match. Older references to 992 or 1108 characters in historical notes are superseded and must not be treated as current.
-- Both files were updated on branch `ai/continuation-readonly-audit-2026-10-18`; verify by reading them back. ChatGPT iOS Settings was not changed; the user must paste/save the canonical prompt manually.
-- Priority remains: (1) GitHub + Slack for persistent ChatGPT memory; (2) Gemini + Claude free consumer-app collaboration. No paid API calls, purchases, or upgrades.
+기억 기능 활성화, 맞춤 지침 저장, 외부 기록 조회, 격리된 문맥에서의 복원 검증은 서로 다른 확인 항목이다. 설정 화면에서 저장된 값을 다시 읽기 전에는 설정 적용 완료라고 하지 않는다. 로컬 Codex 기억 생성은 백그라운드 작업이며 즉시 저장이나 모든 대화의 전체 복원을 보장하지 않는다.
 
+필수 지침은 맞춤 지침/AGENTS.md와 정규 문서로 연결하고, 프로젝트 사실은 최신 색인에서 읽는다. ChatGPT 웹의 기억과 로컬 Codex의 기억 저장소는 구분한다. 연결 도구가 없는 대화의 외부 기록 조회까지 완료됐다고 주장하지 않는다.
 
-## Inventory correction — 2026-10-17 15:06 KST
-- Current Activepieces read-only queries returned 3 ENABLED/published flows and 26 DISABLED flows. Older logs refer to 5 enabled production flows. Treat this as an unresolved state discrepancy, not as permission to enable/disable anything. Preserve all current statuses until the historical two flow IDs and intended state are reconciled.
+복원 검증은 대화의 과거 내용을 제공하지 않은 별도 에이전트에게 시작 주소만 주고, 최신 보고서·결정·제약·다음 작업을 출처와 함께 복원하게 한다. 이것은 실제 외부 기록 복원 시험이며 모든 ChatGPT 새 채팅의 자동 실행을 보장하는 시험은 아니다.
 
+## 보존한 과거 기록과 공식 근거
 
-## Priority continuation — 2026-10-17 15:22 KST
-- Current canonical custom-instruction header is `AI — ALWAYS ON`; body length is 1053 JavaScript characters. Display copy must exactly match the body. The prompt now explicitly preserves current flow statuses until the historical 5-enabled vs current 3-enabled discrepancy is resolved.
-- Automation prompt updated with this unresolved goal and safeguards; the hourly schedule and enabled state remain unchanged.
-- Current Activepieces inventory read-only: 3 ENABLED/published, 26 DISABLED. Do not change states while reconciling history.
+- [정리 전 프로토콜 전체 이력](https://github.com/watersun79-source/ai-token-optimization/blob/f3486f3cd035a2030072c0cd07c2a57fe37d27c2/docs/ai/AI-memory-protocol.md)
+- [정리 전 대문자 색인](https://github.com/watersun79-source/ai-token-optimization/blob/f3486f3cd035a2030072c0cd07c2a57fe37d27c2/docs/ai/AI-MEMORY-INDEX.md)
+- [공식 OpenAI 지침 구성](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
+- [공식 OpenAI 기억 동작과 설정](https://learn.chatgpt.com/docs/customization/memories)
 
-## Latest authoritative verification — 2026-10-17 15:22 KST
-- Canonical and display prompt bodies were fetched again and are exactly identical at 1053 JavaScript characters. Both begin `AI — ALWAYS ON` and fit the 1,500-character Free/Go limit.
-- Existing automation prompt was updated to carry forward the current blocker and safeguards; enabled state and hourly-on-the-hour Asia/Seoul schedule unchanged.
-- Activepieces inventory remains 3 ENABLED/published and 26 DISABLED. Historical count of 5 enabled flows is unresolved; no statuses were changed.
-- Slack update posted and verified by reading recent channel history: https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792218123952119
-
-## Authoritative continuation correction — 2026-10-18 09:34 KST
-- Project name in current user-facing text is **AI**; the legacy directory/file names containing `AI` remain for backward-compatible links and are not a reason to rename or move files automatically.
-- Current canonical custom-instruction file was read back at 1,230 characters including its count/header line; the body is stated as 1,230 characters and fits the 1,500-character limit. Do not claim the ChatGPT iOS Settings were changed: only GitHub files were changed; user must manually save custom instructions in Settings if desired.
-- Current Activepieces connector inventory now returns 10 flows: 3 enabled/published production flows and 7 disabled test/mock flows. The older 7-flow and 29-flow inventory entries are historical snapshots from different connector scope/time; the current direct read is authoritative for this session. No flow status was changed.
-- Current structural checks: `AI 3AI 협업` 7/7 valid; `Gemini + Claude 협업 비서 (비용 확인 필요)` 4 valid + 1 intentionally skipped; `TEST ONLY · Concurrent Child Join E2E` 3 flows/table checked, zero issues. These checks do not prove real provider parallelism.
-- Hourly automation `AI` remains enabled, Asia/Seoul, every hour on the hour. Do not duplicate or change it.
-- Hard cost gate: no paid model APIs. Never make a model-provider call unless the exact route is verified to be within a free allowance with no billing risk. Connection status and public free-tier pricing are not proof of the user's remaining quota. No provider calls were made in this audit.
-- Persistent continuity loop: read this protocol, `PROJECT_MEMORY_INDEX.md`, latest execution report, and Slack channel `C0C9649RQAZ`; after meaningful changes, update GitHub and Slack, then read both back. If a connector is unavailable, record that limitation rather than claiming it worked.
-- Remaining blockers: account-specific free quota/billing cannot be inspected through the current connected tools; browser connector has no originating browser context; production Gemini/Claude execution remains sequential and must not be switched to unproven parallel orchestration.
-
-### Character-count correction — 2026-10-18
-- Read-back comparison confirms canonical and display custom-instruction files are byte-for-byte identical (same Git blob SHA `8011eca50e723a123709f3868335bb968984998b`). The file declares `문자 수: 1230`; counting the normalized body after removing that header yields 1,229 JavaScript UTF-16 code units. Both are under the 1,500-character limit. Do not claim ChatGPT Settings were changed automatically.
-
-
-## Authoritative tool-availability rule — 2026-10-19
-- The user's actual connected Activepieces MCP tool list is authoritative for this session. The project-context setter is not exposed there; never claim it is available, search for it again, or make it a prerequisite.
-- Continue only with tools actually present in the current tool list. If a needed project-scoped operation cannot run without the missing setter, stop that branch and use a genuinely available alternative; do not repeatedly ask the user to prove the absence.
+main·운영 플로우·기존 예약·연결은 보호한다. 기록 작업 브랜치의 갱신이나 지침 개선을 운영 게시 승인으로 확대하지 않는다.
