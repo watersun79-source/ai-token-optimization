@@ -196,3 +196,9 @@
 ## Verification checkout synchronization — 2026-10-19
 - Fetched PR feature branch after CI and aligned the temporary verification checkout to exact head `46089313b80b8c00c8b5e13a412df6449a443b57`; local HEAD and staged tree both match the GitHub commit/tree. Tracked working tree is clean.
 - Python test execution left untracked `tests/__pycache__/` and `tools/__pycache__/` directories in the temporary checkout; they are non-source artifacts and were left in place. No project source changes remain unstaged or staged locally.
+
+
+## Current Activepieces tool manifest snapshot — 2026-10-19
+- Counted the current assistant-visible Activepieces connector manifest: 47 tools. Read-only/listing capabilities include flow/run listing and run lookup, plus connection and AI-model listings.
+- Did not invoke any Activepieces project/flow/run operation: current project scope/context is not independently confirmed under the saved site-access restriction. This manifest count is not evidence of project access or live project state.
+- No changes to flows, connections, schedules, or provider configurations; no model calls or provider spend.
