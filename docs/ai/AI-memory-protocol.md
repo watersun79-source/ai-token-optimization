@@ -67,3 +67,7 @@ GitHub가 프로젝트 결정·상태의 기준이고 Slack은 진행 기록이�
 - [공식 OpenAI 기억 동작과 설정](https://learn.chatgpt.com/docs/customization/memories)
 
 main·운영 플로우·기존 예약·연결은 보호한다. 기록 작업 브랜치의 갱신이나 지침 개선을 운영 게시 승인으로 확대하지 않는다.
+
+## AI-OPEN-SOURCE-EXECUTION-RULE-2026-10-21 — 추가 운영 프로토콜
+
+최신 사용자 지시: 외부 공개 오픈소스를 우선 찾아 **실제로 코드 적용·테스트·GitHub 저장/재조회**하고, 작업 결과를 원본 근거로 검증한다. 중복 보고·동일 테스트·과도한 토큰을 피한다. 기존 AI 예약은 활성·매시간 정각을 유지하되 사용자가 승인한 실행 지침 개선은 가능하다. 운영 플로우와 main, 다른 예약은 유지. 새 구현은 보안·무료/라이선스·실행 가능성을 먼저 확인하고 임시 작업과 운영 연결을 구분한다. [실제 적용 코드](../../tools/ai_memory_bridge.py) · [테스트](../../tests/test_ai_memory_bridge.py) · [설명서](AI_OPEN_SOURCE_MEMORY_BRIDGE.md). 정규 무인 성공에는 동일 회차 공식 run ID와 도구 원본 증거가 필요하며, 코드 자체의 로컬 통과/저장만으로 성공 판정하지 않는다. GitHub의 지속 기억 갱신과 ChatGPT 계정의 메모리 요약 편집은 별개다.
