@@ -97,6 +97,13 @@ def check(payload):
                 problems.append(f"{field}_invalid")
         if cells.get("evidenceLevel") != SELF_REPORTED:
             problems.append("unsupported_evidence_level")
+        # The checkpoint is self-authored: an "officialRunId" value alone
+        # is not authenticated platform run evidence. Fail closed when an
+        # export asserts such an ID without an independent platform log.
+        # Even a self-declared officialLogOrigin cannot authenticate it.
+        claimed_run_id = cells.get("officialRunId")
+        if claimed_run_id not in (None, "", "미제공"):
+            problems.append("unverified_official_run_id_claim")
         if str(cells.get("readResult", "")).startswith("SUCCESS"):
             required = ("githubIndexSha", "githubProtocolSha", "githubReportSha", "slackLatestMessageTs")
             if any(not cells.get(field) for field in required):

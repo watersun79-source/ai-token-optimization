@@ -16,7 +16,7 @@ _spec.loader.exec_module(audit)
 def record(slot='2026-10-22 01:00 Asia/Seoul', when='2026-10-21T16:01:36.792Z', rid='first'):
     return {'id': rid, 'cells': {
         'automationId': 'test-automation', 'scheduledSlotKst': slot,
-        'observedAtUtc': when, 'officialRunId': 'unverified-self-claim',
+        'observedAtUtc': when, 'officialRunId': '미제공',
         'githubIndexSha': 'a' * 40, 'githubProtocolSha': 'b' * 40,
         'githubReportSha': 'c' * 40,
         'slackParentTs': '1792416391.631669', 'slackLatestMessageTs': '1792593557.131679',
@@ -70,6 +70,34 @@ class CheckpointAuditTests(unittest.TestCase):
         r = record()
         r['cells']['evidenceLevel'] = 'VERIFIED_PLATFORM'
         self.assertIn('unsupported_evidence_level', audit.check({'records':[r]})['rows'][0]['issues'])
+
+    def test_claimed_official_run_id_without_platform_log_rejected(self):
+        r = record()
+        r['cells']['officialRunId'] = '2dd0fc00-b660-832a-91ea-f47d7f289b00'
+        result = audit.check({'records': [r]})
+        self.assertEqual(result['status'], 'CHECKPOINT_ANOMALY')
+        self.assertIn('unverified_official_run_id_claim', result['rows'][0]['issues'])
+        self.assertFalse(result['official_run_proven'])
+
+    def test_self_claimed_platform_origin_does_not_authenticate_id(self):
+        r = record()
+        r['cells']['officialRunId'] = '2dd0fc00-b660-832a-91ea-f47d7f289b00'
+        r['cells']['officialLogOrigin'] = 'platform_original_run_log'
+        self.assertIn('unverified_official_run_id_claim',
+                      audit.check({'records': [r]})['rows'][0]['issues'])
+
+    def test_missing_official_run_id_allowed_but_never_proved(self):
+        r = record()
+        r['cells'].pop('officialRunId')
+        result = audit.check({'records': [r]})
+        self.assertEqual(result['status'], 'CHECKPOINTS_CONSISTENT_NOT_INDEPENDENTLY_PROVEN')
+        self.assertFalse(result['official_run_proven'])
+
+    def test_non_string_claimed_run_id_is_unverified(self):
+        r = record()
+        r['cells']['officialRunId'] = 1234
+        self.assertIn('unverified_official_run_id_claim',
+                      audit.check({'records': [r]})['rows'][0]['issues'])
 
     def test_empty_export_not_success(self):
         self.assertEqual(audit.check({'records': []})['status'], 'CHECKPOINT_ANOMALY')
