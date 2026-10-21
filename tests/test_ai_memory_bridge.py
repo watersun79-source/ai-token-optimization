@@ -37,6 +37,23 @@ class MemoryBridgeTests(unittest.TestCase):
         self.assertEqual(bridge.sync(self.db, [self.doc])["changed"], 1)
         self.assertTrue(bridge.recall(self.db, "새기능"))
 
+    def test_prune_removes_obsolete_instruction(self):
+        old = self.path / "obsolete.md"
+        old.write_text("오래된 지시 Work 강제 사용", encoding="utf-8")
+        bridge.sync(self.db, [self.doc, old])
+        self.assertTrue(bridge.recall(self.db, "강제"))
+        result = bridge.sync(self.db, [self.doc], prune=True)
+        self.assertEqual(result["pruned"], 1)
+        self.assertFalse(bridge.recall(self.db, "강제"))
+
+    def test_incremental_without_prune_keeps_sources(self):
+        old = self.path / "cache.md"
+        old.write_text("기존 추가 자료 저장", encoding="utf-8")
+        bridge.sync(self.db, [self.doc, old])
+        result = bridge.sync(self.db, [self.doc])
+        self.assertEqual(result["pruned"], 0)
+        self.assertTrue(bridge.recall(self.db, "추가"))
+
     def test_missing_original_log_rejected(self):
         self.assertIn("original_platform_log_missing", bridge.audit({})["errors"])
 
