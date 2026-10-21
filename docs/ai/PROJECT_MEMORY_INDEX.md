@@ -1,5 +1,13 @@
 # AI — 현재 상태와 지속 기억
 
+### AI-AUDIT-CLI-EXITCODE-FIX-2026-10-21 — 무인 검증 가짜 CI 성공 차단
+
+- `tools/ai_memory_bridge.py audit`는 원본 실행 증거 미제공·불일치 시 JSON `UNVERIFIED`와 프로세스 종료 코드 `2`를 반환하도록 실제 수정했다. 이전에는 실패 판정 출력에도 정상 종료 코드 `0`이어서 자동화가 거짓 통과할 위험이 있었다.
+- `tests/test_ai_memory_bridge.py`의 CLI 종료코드 회귀 테스트 2건 추가: **총 14건**. 대응하는 로컬 코드 검증에서 14/14 통과, GitHub 코드/테스트/문서 저장 후 SHA 독립 재조회 완료. **원격 GitHub Actions 새 성공 증거는 미확보**.
+- 같은 비운영 기억 브랜치의 `.github/workflows/ai-memory-bridge.yml`은 해당 코드·테스트 push에 트리거되도록 설정했으나, 연결 GitHub `fetch_commit_workflow_runs`는 PR 트리거만 조회하므로 반환된 빈 목록은 push 워크플로 미실행/실패를 뜻하지 않는다. 실제 Actions run ID·결론을 별도로 확보해야 한다.
+- 동일 정규 예약의 원본 ChatGPT run ID/도구 로그는 여전히 미제공: **무인 기억 복원 완료 미검증**. 기존 예약 활성·Asia/Seoul 정각·운영 main 보존, 기존 차단된 무인 쓰기 우회·재시도 없음. [실제 사용법](AI_OPEN_SOURCE_MEMORY_BRIDGE.md).
+
+
 ### AI-MEMORY-BRIDGE-PRUNE-CI-2026-10-21 — 구식 기억 재검색 버그 실제 수정
 
 - [기억 코드](../../tools/ai_memory_bridge.py)에 `sync --prune` 도입: **현재 원본 목록이 완전할 때만** 예전 문서의 SQLite 캐시 항목을 제거한다. 원본 Markdown과 ChatGPT 자체 메모리/예약 로그는 수정하지 않는다.
