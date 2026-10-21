@@ -1,9 +1,17 @@
-# AI 현재 인계 — 예약 R12·검증 증거 (2026-10-22 06:47 KST)
+# AI 현재 인계 — 예약 R13·검증 증거 (2026-10-22 07:30 KST)
 
-> **이 파일은 예약/새 대화가 가장 먼저 읽을 현재 상태 진입점이다.** R12가 우선 참조하는 원본이며, 파일 SHA는 현재 GitHub에서 실제 다시 읽은 값으로 검증한다. 오래된 `PROJECT_MEMORY_INDEX.md`의 첫머리 R7 스냅샷은 당시 사실을 기록한 역사 자료이며 현재 R11을 대체하지 않는다. 이 인계는 ChatGPT 플랫폼 자체 메모리 요약 UI가 아니다. 사용자의 **가장 최신 직접 지시**가 외부 기록보다 우선한다.
+> **이 파일은 예약/새 대화가 가장 먼저 읽을 현재 상태 진입점이다.** R13이 우선 참조하는 원본이며, 파일 SHA는 현재 GitHub에서 실제 다시 읽은 값으로 검증한다. 오래된 `PROJECT_MEMORY_INDEX.md`의 첫머리 R7 스냅샷은 당시 사실을 기록한 역사 자료이며 현재 R13을 대체하지 않는다. 이 인계는 ChatGPT 플랫폼 자체 메모리 요약 UI가 아니다. 사용자의 **가장 최신 직접 지시**가 외부 기록보다 우선한다.
+
+### AI-R13-SLOT-PROVENANCE-2026-10-22 — 07시 새 감사 체크포인트·공식 실행 ID 오인 방지
+
+- 원래 예약 `6acb017062a08191a4136238b78b313a`: 2026-10-22 07:30 KST에 **R13 지침 저장**; 응답에서 `is_enabled=true`, `Asia/Seoul`, `RRULE:FREQ=HOURLY;BYMINUTE=0;BYSECOND=0` 유지 확인. `automations.peek.last_run_time=2026-10-21T22:02:47.006262Z` (= **07:02:47 KST**)로 **새 실행 메타데이터** 확인. 이 값은 정규 실행 ID나 도구 호출 원시 로그가 아니다.
+- Activepieces `AI Scheduled Run Evidence (AUDIT ONLY)` 원본 테이블 2026-10-22 **07시 자체 체크포인트 1건 추가**, 총 **7건**. 07시 `observedAtUtc=2026-10-21T22:02:22.239Z` (= **07:02:22 KST**), `automationId`는 원래 예약과 일치, 당시 GitHub 현재 인계 blob SHA `aa8a45ba11ea9ac7006e47e647b7cd90763b3dce` 및 기억 색인 `fcec353735530ed1f57e4fcfc9db05567b24dc87`, 프로토콜 `a7ff81101a72e8ca4d0c40b6756e8bb95e52636a`, 직전 보고서 `db48b83dca9c9a07864031ec202cf8a64042a425`의 독립 읽기 값과 일치. **이 SHA는 당시 버전의 지문**이며 본 문서 갱신 뒤 SHA가 바뀌는 건 정상이다.
+- 새 07시 레코드의 `notes`에는 `officialRunId copied from automations.peek last_run.id`라는 **출처 설명**이 있지만, 현재 실제 `automations.peek` 도구 응답에는 `last_run.id`가 없고 예약 자체의 `id` 및 `last_run_time`만 있다. **07시의 공식 scheduled run ID는 독립 검증되지 않았다.** 해당 UUID를 플랫폼이 제공한 원본 ID로 인정하거나 기존 레코드를 정정하지 않는다.
+- 00~05시 여섯 건은 그대로 보존(00시 슬롯 선행 **98.967초**, 01~05시 5건 시간 일치, 전체 officialRunId 독립 증명 없음). 06시 체크포인트 없음. **07시 실행 메타데이터 + 자체 체크포인트는 정황 증거이나 공식 호출 로그의 독립 인증이 아니며**, R12·R13 정규 무인 기억 복원 완전 성공을 단정하지 않는다.
+- R13은 앞으로 예약 도구 `automations.peek`에서 제공되지 않는 `last_run.id`를 인용하거나 UUID를 만들어 `officialRunId`로 저장하는 것을 명시적으로 금지. 실제 플랫폼 공식 회차 ID·원본 호출 로그가 제공되지 않으면 `officialRunId=미제공`, `evidenceLevel=SELF_REPORTED_UNATTENDED_NOT_INDEPENDENTLY_PROVEN`, 읽기 성공은 `SELF_REPORTED_SOURCE_READ`처럼 제한해 표기. 기존 7건 원본 및 운영 Activepieces 플로우·연결·예약 상태 보존, 유료 API 호출 금지.
 
 ## 1. 보호 대상과 운영 결정
-- **원래 예약**: `6acb017062a08191a4136238b78b313a` / AI / `Asia/Seoul` / `FREQ=HOURLY;BYMINUTE=0;BYSECOND=0` / `is_enabled=true` / **R12**. R12부터 이 현재 인계 문서를 옛 R7 색인보다 먼저 읽도록 지침을 갱신·재조회했고 기존 활성·정각 예약은 유지했다. 최신 도구 `automations.peek`에서 확인. 중지·일시정지·삭제·중복 예약 생성 금지.
+- **원래 예약**: `6acb017062a08191a4136238b78b313a` / AI / `Asia/Seoul` / `FREQ=HOURLY;BYMINUTE=0;BYSECOND=0` / `is_enabled=true` / **R13**. R12부터 이 현재 인계 문서를 옛 R7 색인보다 먼저 읽도록 지침을 갱신·재조회했고 기존 활성·정각 예약은 유지했다. 최신 도구 `automations.peek`에서 확인. 중지·일시정지·삭제·중복 예약 생성 금지.
 - 사용자는 AI 프로젝트의 필수적인 GitHub `main`·Activepieces 최소 수정은 허가했다. 단 운영 플로우·연결·타 예약을 충분한 근거와 영향/테스트 없이 변경하지 않으며 개별 정책 거절을 우회하지 않는다. 유료 AI API·결제·키 노출 금지, 무료 우선·불필요한 Work와 토큰 소비 방지.
 - 모든 대화/예약의 작업 순서: **원본 복원→문제 분석·우선순위→공식 문서/검증된 무료 오픈소스 조사→안전한 최소 적용→로컬/원격 테스트→파일 SHA와 실제 로그 독립 재조회→허용된 GitHub·Slack·Activepieces 저장·재조회→다음 목표**. 바뀌지 않은 성공 검사는 반복하지 않는다.
 - 항상 **직관적 단계 그래프**와 `완료/부분/차단/미검증`으로 간결히 보고한다. 근거 없는 완료율·성공 판정 금지.
