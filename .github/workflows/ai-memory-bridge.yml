@@ -1,0 +1,32 @@
+name: Validate AI memory bridge (free, branch-only)
+on:
+  push:
+    branches:
+      - ai/continuation-readonly-audit-2026-10-18
+    paths:
+      - tools/ai_memory_bridge.py
+      - tests/test_ai_memory_bridge.py
+      - .github/workflows/ai-memory-bridge.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-memory-bridge-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-memory-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out read-only source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile memory bridge
+        run: python -m compileall -q tools/ai_memory_bridge.py tests/test_ai_memory_bridge.py
+      - name: Run offline memory regression tests
+        run: python -m unittest discover -s tests -p 'test_ai_memory_bridge.py' -v
