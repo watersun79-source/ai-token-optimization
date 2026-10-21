@@ -1,5 +1,14 @@
 # AI — 현재 상태와 지속 기억
 
+### AI-R7-SCHEDULED-EVIDENCE-CHECKPOINT-2026-10-21 — 새 독립 관찰 경로 준비
+
+- 원래 ChatGPT AI 예약 ID `6acb017062a08191a4136238b78b313a`: **R7** 지침 수정 및 `automations.peek` 독립 재조회 완료. 기존 활성·Asia/Seoul 매시간 정각 유지; 기존 예약 이외의 추가 예약 없음. R7 저장 전 확인된 마지막 정규 실행은 `2026-10-21T14:00:10.052904Z` (23:00:10 KST), R7 성공 증거 아님.
+- 인증된 Activepieces 프로젝트의 기존 `AI Memory Persistence` 폴더에 **새로 생성한 증거 전용 테이블** `AI Scheduled Run Evidence (AUDIT ONLY)` (테이블 ID `bYxKH9XvAf27ODJ6GrC1U`; externalId `a8LPvdEzV16oGZMcnjheP`)의 12개 필드·초기 0건을 `ap_list_tables` 및 `ap_find_records`로 독립 재조회. 기존 `AI Memory Index (SEARCH INDEX ONLY)` 테이블 ID `gjZyjgsXIeG0fCKlibEe7`의 4개 기록 중 최신 운영 메타데이터와 R7 미검증 목표 **2건만 제자리 수정**하고 다시 조회하여 일치 확인.
+- R7에서는 실제 그 정규 회차에 GitHub 색인·프로토콜·최신 보고서 및 Slack 지정 스레드를 읽었다면 체크포인트에 각 source SHA/ts·읽기 성공 여부·슬롯·실제 제공된 공식 ID를 **중복 없이 최대 1건 기록·재조회**하도록 요청. 정책·인증 차단이면 반복 쓰기/우회 없음. 자체 기록은 `SELF_REPORTED_UNATTENDED_NOT_INDEPENDENTLY_PROVEN`로 저장하며 **공식 run ID/원본 로그의 독립 증거가 아님**.
+- 이 시점까지 **R7 정규 실행의 실제 읽기/쓰기 성공과 증거 테이블 첫 레코드는 미확인**. 기존 GitHub Actions [37/37 원격 CI 성공](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39611501507)은 코드 검증이며 예약 성공과 구별한다.
+- 유료 생성 API·새 Work 전환·운영 Activepieces 플로우/예약 상태 변경 없음. GitHub/Slack 연결 앱 자체는 예약 작업에서 지원될 수 있지만, 별도 승인이 필요하면 작업이 중단될 수 있다. 공식 참고 [OpenAI Scheduled Tasks](https://help.openai.com/en/articles/10291617-scheduled-tasks-in-chatgpt).
+
+
 ### AI-PRODUCTION-APPROVAL-MAIN-AP-2026-10-21 — 사용자 승인 후 운영 범위 확대 및 실제 적용
 
 - 사용자는 이제 AI 개선에 필요한 **GitHub main과 Activepieces 수정도 허가**했다. 단 안전한 범위에서 영향 조사→관련 테스트→최소 수정→독립 재조회; 예약·운영 플로우를 임의 중지/삭제하지 않으며 결제/유료 AI API 금지. 과거의 일괄 'main 변경 불가' 결정은 사용자의 최근 명시적 승인으로 이 항목에 한하여 갱신됨.
