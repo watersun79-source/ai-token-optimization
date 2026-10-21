@@ -60,5 +60,42 @@ class MemoryBridgeTests(unittest.TestCase):
         self.assertIn("memory_index:run_id_mismatch", bridge.audit(payload)["errors"])
 
 
+    @staticmethod
+    def complete_manifest():
+        rid = "example-only"
+        run = {"source": "scheduled", "official_run_id": rid, "automation_id": "sample",
+               "started_at": "2026-10-21T10:00:00+00:00", "ended_at": "2026-10-21T10:05:00+00:00"}
+        events = []
+        for kind in bridge.KINDS:
+            ev = {"kind": kind, "run_id": rid, "ok": True, "tool": "test-tool", "resource": kind,
+                  "observed_at": "2026-10-21T10:01:00+00:00"}
+            if kind == "slack_thread":
+                ev["message_ts"] = "1792416391.631669"
+            else:
+                ev["blob_sha"] = "a" * 40
+            events.append(ev)
+        return {"run": run, "events": events, "official_log_origin": "platform_original_run_log"}
+
+    def test_timestamp_outside_run_rejected(self):
+        payload = self.complete_manifest()
+        payload["events"][0]["observed_at"] = "2026-10-21T10:06:00+00:00"
+        self.assertIn("memory_index:invalid_event_time", bridge.audit(payload)["errors"])
+
+    def test_duplicate_evidence_type_rejected(self):
+        payload = self.complete_manifest()
+        payload["events"].append(dict(payload["events"][0]))
+        self.assertIn("unexpected_or_duplicate_kind", bridge.audit(payload)["errors"])
+
+    def test_invalid_git_sha_rejected(self):
+        payload = self.complete_manifest()
+        payload["events"][0]["blob_sha"] = "not-a-real-blob-sha"
+        self.assertIn("memory_index:invalid_blob_sha", bridge.audit(payload)["errors"])
+
+    def test_invalid_slack_timestamp_rejected(self):
+        payload = self.complete_manifest()
+        payload["events"][-1]["message_ts"] = "invalid"
+        self.assertIn("slack_thread:invalid_message_ts", bridge.audit(payload)["errors"])
+
+
 if __name__ == "__main__":
     unittest.main()
