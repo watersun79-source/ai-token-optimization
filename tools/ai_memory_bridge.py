@@ -35,11 +35,12 @@ def connect(db_file):
     return db
 
 
-def sync(db_file, files):
+def sync(db_file, files, *, prune=False):
     if not files:
         raise ValueError("At least one local Markdown source is required")
     changed = 0
     untouched = 0
+    removed = 0
     entries = []
     with connect(db_file) as db:
         for filename in files:
@@ -60,8 +61,17 @@ def sync(db_file, files):
                 db.execute("INSERT INTO versions(path,sha256) VALUES(?,?) ON CONFLICT(path) DO UPDATE SET sha256=excluded.sha256", (path, digest))
                 changed += 1
             entries.append({"path": path, "sha256": digest})
+        # Explicit complete-source sync discards old cached instructions.
+        # Incremental sync retains them unless caller opts in with --prune.
+        if prune:
+            keep = {entry["path"] for entry in entries}
+            for (cached_path,) in db.execute("SELECT path FROM versions").fetchall():
+                if cached_path not in keep:
+                    db.execute("DELETE FROM memories WHERE path=?", (cached_path,))
+                    db.execute("DELETE FROM versions WHERE path=?", (cached_path,))
+                    removed += 1
         db.commit()
-    return {"changed": changed, "unchanged": untouched, "sources": entries}
+    return {"changed": changed, "unchanged": untouched, "pruned": removed, "sources": entries}
 
 
 def recall(db_file, query, limit=3):
@@ -137,6 +147,7 @@ def main():
     p = sub.add_parser("sync")
     p.add_argument("--db", type=Path, required=True)
     p.add_argument("sources", nargs="+", type=Path)
+    p.add_argument("--prune", action="store_true", help="Remove stale sources not in this complete source list")
     p = sub.add_parser("recall")
     p.add_argument("--db", type=Path, required=True)
     p.add_argument("query")
@@ -144,7 +155,7 @@ def main():
     p = sub.add_parser("audit")
     p.add_argument("manifest", type=Path)
     args = parser.parse_args()
-    result = sync(args.db, args.sources) if args.cmd == "sync" else recall(args.db, args.query, args.limit) if args.cmd == "recall" else audit(json.loads(args.manifest.read_text(encoding="utf-8")))
+    result = sync(args.db, args.sources, prune=args.prune) if args.cmd == "sync" else recall(args.db, args.query, args.limit) if args.cmd == "recall" else audit(json.loads(args.manifest.read_text(encoding="utf-8")))
     print(json.dumps(result, indent=2, ensure_ascii=False))
 
 
