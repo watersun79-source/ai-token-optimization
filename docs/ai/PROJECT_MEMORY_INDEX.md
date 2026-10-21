@@ -1,5 +1,16 @@
 # AI — 현재 상태와 지속 기억
 
+## AI-OPEN-SOURCE-EXECUTION-RULE-2026-10-21 — 최신 사용자 지시 / 실행 기본 원칙
+
+**새 최우선 작업 방식:** 상태 보고만 반복하지 말고, 새 문제별로 (1) 공개 GitHub·인터넷·기존 Slack 원본 조사 → (2) 이미 검증된 오픈소스나 선행 구현을 우선 검토 → (3) 무료·안전·호환성 확인 → (4) 기존 AI 프로젝트에 최소 변경으로 실제 적용 → (5) 로컬/기존 자동 테스트 → (6) GitHub 저장과 독립 재조회 → (7) 기존 예약 지침 반영 및 다음 정규 실행의 독립 증거 검증 → (8) 바뀐 점과 미완료만 간결히 보고. **가능할 때 실제 실행과 검증을 선행하며, 확인 없이 적용·성공을 주장하지 않는다.**
+
+**운영 선호:** 한국어 반말·결론 우선·표/직관적 단계 상태. Chat에서 처리하고 토큰·중복 검색·동일 검사 반복을 최소화한다. 사용자 요청에 따라 특정 실행 환경 자체에 불필요하게 집중하지 않는다. 무료 오픈소스·기존 연결 도구를 먼저 쓰고 유료 API/구매/키 출력은 사전 승인 없이 금지. **기존 AI 예약 ID 6acb017062a08191a4136238b78b313a의 활성·매시간 정각·Asia/Seoul 유지**, 개선을 위해 *지침 수정은 사용자가 허용*. 운영 Activepieces·GitHub main·기타 예약과 흐름은 보호한다.
+
+**실제 적용된 오픈소스 기반 경량 구성:** [Python Markdown/SQLite 기억 인덱스 + 실행 증거 검증](../../tools/ai_memory_bridge.py), [회귀 테스트](../../tests/test_ai_memory_bridge.py), [사용 설명서](AI_OPEN_SOURCE_MEMORY_BRIDGE.md). 참조한 설계: [tigerless-labs/agent-memory](https://github.com/tigerless-labs/agent-memory), [jayzeng/agentmemory](https://github.com/jayzeng/agentmemory), [langchain-ai/langgraph](https://github.com/langchain-ai/langgraph). 외부 패키지를 설치한 것이 아니라 공개 설계를 참고한 별도 표준 라이브러리 구현이며, **파일 저장만으로 ChatGPT 예약에서 Python이 자동 실행되는 것은 아니다**. 지금까지 검증된 저장 파일 SHA와 로컬 테스트는 각각 출처를 구분한다.
+
+**핵심 미해결:** 정규 예약이 실제로 같은 회차에서 GitHub 색인·프로토콜·최신 보고서·Slack 스레드를 읽었다는 *공식 run ID/원시 도구 로그* 검증. 과거 직접 실행 성공이나 로컬 테스트는 무인 성공의 근거가 아니다. 정규 예약의 안전 검사 거절 쓰기는 유효 허용 조건의 실제 변화가 없으면 반복·우회하지 않는다. PR #1·#4는 이미 병합됨. 본 GitHub 기억 문서 변경은 ChatGPT 제품의 ‘메모리 요약’ 직접 변경을 입증하지 않는다.
+
+
 기억 브랜치: `watersun79-source/ai-token-optimization` / `ai/continuation-readonly-audit-2026-10-18`.
 최근 진단: **2026-10-20 06시 안전 검사 거절 조사·상태 판정 규칙 수정**. 현재 앱 허용과 과거 cloud 유효 정책을 구분하며, 정규 무인 쓰기는 미해결이다. 문서 갱신이 운영 관찰 시각을 갱신하는 것은 아니다.
 이후 사용자 요청으로 **06:37 기존 AI 예약 프롬프트3,226단위 저장·새로고침 전체 일치**를 확인했다. 일정·활성은 보존했고 정규 무인 쓰기 거절은 미해결이다.
