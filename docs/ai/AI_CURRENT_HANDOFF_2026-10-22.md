@@ -38,3 +38,10 @@
 4. 기억 색인 `PROJECT_MEMORY_INDEX.md`의 새 요약 직접 수정은 이전 개별 안전 검사에서 거절된 이력이 있으므로 근거 변화 없이는 동일 쓰기 재시도/우회하지 않는다. **이 파일은 새로운 인계 원본으로 만들었고 기존 색인/예약/운영 흐름은 보존했다.**
 
 근거: [GitHub Issue #3](https://github.com/watersun79-source/ai-token-optimization/issues/3), [PR #7](https://github.com/watersun79-source/ai-token-optimization/pull/7), [원격 CI](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39680389613), [Slack 원본 스레드](https://chatgpt-mor9047.slack.com/archives/C0C9649RQAZ/p1792618877689749?thread_ts=1792416391.631669).
+
+## 5. 2026-10-22 07:51 KST 재검증 — 알림 설정 및 7건 감사
+- 실제 `automations.peek` 원본 재조회: 기존 동일 예약 ID, `is_enabled=true`, `Asia/Seoul`, `RRULE:FREQ=HOURLY;BYMINUTE=0;BYSECOND=0`, 현재 R13. `last_run_time=2026-10-21T22:02:47.006262Z` (= 07:02:47.006 KST)는 **플랫폼 실행 시각 메타데이터만** 의미하며 GitHub·Slack 읽기 원시 로그나 공식 개별 회차 ID가 아니다.
+- 새로 확인된 설정: `notifications_enabled=false` 및 `email_enabled=false`. **예약 중지 상태가 아니라 알림 비활성 상태**다. 현 대화의 예약 도구는 알림 on/off를 변경하는 매개변수를 지원하지 않는다. 사용자는 ChatGPT **설정 → 알림 → Push 또는 Email**에서 직접 선택할 수 있다. 이 변경이 정규 회차의 원본 도구 로그 접근 권한을 만드는 것은 아니다. 공식 자료: https://help.openai.com/en/articles/10291617-scheduled-tasks-in-chatgpt
+- 실제 Activepieces 감사 원본 7건(00~05시 6건 + 07시 1건)을 **읽기 전용 재조회**하고 선언 슬롯 대비 관찰 시간 계산: 6건이 선언 시간대 안, **00시 1건은 98.967초 선행**. 모든 7건에 출처 독립 미검증인 `officialRunId` UUID가 있음. 본인의 데이터에 `SELF_REPORTED_UNATTENDED_NOT_INDEPENDENTLY_PROVEN`이라고 적힌 사실과 일치한다. `07시` 항목은 GitHub 색인/프로토콜/당시 검증 보고서 SHA 필드가 현재 동일 파일의 SHA와 일치했으나, **같은 예약 회차의 플랫폼 원본 호출 로그를 인증한 것은 아니다**.
+- `main/tools/ai_checkpoint_audit.py`의 이전 테스트 통과한 `unverified_official_run_id_claim` 규칙이 인증 GitHub 원본 읽기에도 존재함을 재확인. 코드/기존 감사 7건/운영 플로우/원래 정각 예약의 상태는 이번 점검에서 **변경하지 않았다**. 기검증 CI는 재실행하지 않았다. 08시 예약은 예정 시각 이후 실제 확인해야 하며 **미래 성공을 미리 기록하지 않는다**.
+- 결론: **현재 예약 활성/실행 시각 메타데이터 존재**, 외부 자체 체크포인트 기록 존재. **정규 R13 회차 공식 run ID와 동일 회차 GitHub·Slack 원시 호출의 독립 증명은 여전히 미검증**. 원본에 접근하는 합법적 도구가 새로 제공되기 전에는 반복적인 프롬프트 수정으로 성공을 조작하지 않는다. 모든 사용자 보고에 단계별 직관적 그래프와 완료/미검증 구분 유지.
