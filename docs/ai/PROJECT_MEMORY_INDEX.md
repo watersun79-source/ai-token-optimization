@@ -1,5 +1,14 @@
 # AI — 현재 상태와 지속 기억
 
+### AI-PRODUCTION-APPROVAL-MAIN-AP-2026-10-21 — 사용자 승인 후 운영 범위 확대 및 실제 적용
+
+- 사용자는 이제 AI 개선에 필요한 **GitHub main과 Activepieces 수정도 허가**했다. 단 안전한 범위에서 영향 조사→관련 테스트→최소 수정→독립 재조회; 예약·운영 플로우를 임의 중지/삭제하지 않으며 결제/유료 AI API 금지. 과거의 일괄 'main 변경 불가' 결정은 사용자의 최근 명시적 승인으로 이 항목에 한하여 갱신됨.
+- GitHub [검증 전용 PR #5](https://github.com/watersun79-source/ai-token-optimization/pull/5): 기존 검증된 두 파일 **tools/ai_memory_bridge.py / tests/test_ai_memory_bridge.py**만 포함, 원격 GitHub Actions [run 39611501507](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39611501507)에서 Python 37/37 및 JS 단계 통과. 이후 사용자의 새 승인에 따라 squash merge로 **main 반영 완료**. 병합 커밋 `5e1b3a63df651970fbaa068917b113244af259f6`. `main`에서 두 파일을 재조회해 blob SHA가 검증 브랜치와 일치함을 확인.
+- 실제 연결된 Activepieces 프로젝트에서 플로우 11개(활성 Slack webhook 1개, 나머지 10개 비활성) 확인. 활성 Slack 플로우 `vtRwEYmcwDTunBZut265G`는 정적 검증 **2/2 유효**, 이번 `ap_list_runs(flowId, PRODUCTION)`에서 기록 0건으로 실제 무인 실행 성공을 입증하지 못함. **기존 운영 플로우 설정·상태는 변경하지 않음**.
+- 기존 폴더 `AI Memory Persistence`와 테이블 `AI Memory Index (SEARCH INDEX ONLY)`(테이블 ID `gjZyjgsXIeG0fCKlibEe7`)는 실제 인증된 현재 프로젝트에서 조회했음. 사용자 최신 지시·main 코드 검증·Activepieces 컨텍스트·최우선 미검증 목표 총 **4개 인덱스 레코드를 새로 저장**하고 `ap_find_records`로 4개 내용을 독립 재조회 완료. 이는 **검색 인덱스**이며 원본 GitHub Markdown/Slack과 별개이고, ChatGPT 예약의 무인 실행 성공을 입증하지 않는다.
+- 기존 ChatGPT 매시간 AI 예약 ID `6acb017062a08191a4136238b78b313a`의 일정·활성 유지. **공식 동일 정규 run ID/원본 GitHub·Slack 읽기 호출 로그는 여전히 미확인**. 정규 예약 쓰기 과거 안전 검사 차단은 새 허가만으로 해제됐다고 단정하지 않고, 동일 거절 요청 우회·반복 금지.
+
+
 ### AI-MEMORY-BRIDGE-REMOTE-CI-PROVEN-2026-10-21 — 원격 CI 성공 원본 확보
 
 - [GitHub Actions 원본 run 39611501507](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39611501507): **completed/success**. 공식 job ID **119261247778** 로그 원문 `Ran 37 tests in 0.160s`, `OK` 확인. 기억 복원 코드 14개 포함 Python **37/37 통과**, JavaScript·무료 AI 메타데이터 보호 단계도 `success`.
