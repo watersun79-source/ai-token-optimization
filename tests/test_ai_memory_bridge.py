@@ -54,6 +54,28 @@ class MemoryBridgeTests(unittest.TestCase):
         self.assertEqual(result["pruned"], 0)
         self.assertTrue(bridge.recall(self.db, "추가"))
 
+    def test_cli_audit_failure_exits_nonzero(self):
+        import subprocess
+        import sys
+        import json
+        manifest = self.path / "missing-evidence.json"
+        manifest.write_text("{}", encoding="utf-8")
+        result = subprocess.run([sys.executable, str(SOURCE), "audit", str(manifest)],
+                                capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(json.loads(result.stdout)["status"], "UNVERIFIED")
+
+    def test_cli_schema_pass_exits_zero_only(self):
+        import subprocess
+        import sys
+        import json
+        manifest = self.path / "schema-only.json"
+        manifest.write_text(json.dumps(self.complete_manifest()), encoding="utf-8")
+        result = subprocess.run([sys.executable, str(SOURCE), "audit", str(manifest)],
+                                capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(json.loads(result.stdout)["status"], "PASS_SCHEMA_ONLY")
+
     def test_missing_original_log_rejected(self):
         self.assertIn("original_platform_log_missing", bridge.audit({})["errors"])
 
