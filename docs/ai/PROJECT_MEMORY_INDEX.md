@@ -1,5 +1,12 @@
 # AI — 현재 상태와 지속 기억
 
+### AI-MEMORY-BRIDGE-REMOTE-CI-PROVEN-2026-10-21 — 원격 CI 성공 원본 확보
+
+- [GitHub Actions 원본 run 39611501507](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39611501507): **completed/success**. 공식 job ID **119261247778** 로그 원문 `Ran 37 tests in 0.160s`, `OK` 확인. 기억 복원 코드 14개 포함 Python **37/37 통과**, JavaScript·무료 AI 메타데이터 보호 단계도 `success`.
+- [검증 전용 Draft PR #5](https://github.com/watersun79-source/ai-token-optimization/pull/5)는 `main`에서 분기한 별도 `ai/memory-bridge-ci-validation-2026-10-21`에 기존 기억 브랜치의 코드/테스트 **2개 파일만 SHA 동일하게 복사**, `main` 병합 없음. 원래 기억 브랜치 전체는 main 대비 496개 커밋 앞/40개 뒤이므로 대형 PR을 피했다. Draft를 유지한다.
+- [상세 실행 증거](AI_MEMORY_BRIDGE_CI_2026-10-21.md). 이 성공은 **검증용 PR의 GitHub 코드 CI 통과**이며 원래 ChatGPT 예약의 **정규 무인 기억 복원 성공과 무관**하다. 예약의 공식 회차 ID/원본 도구 호출 로그 귀속은 별도 미검증, 운영 예약 활성·매시간 정각·Asia/Seoul 유지.
+
+
 ### AI-AUDIT-CLI-EXITCODE-FIX-2026-10-21 — 무인 검증 가짜 CI 성공 차단
 
 - `tools/ai_memory_bridge.py audit`는 원본 실행 증거 미제공·불일치 시 JSON `UNVERIFIED`와 프로세스 종료 코드 `2`를 반환하도록 실제 수정했다. 이전에는 실패 판정 출력에도 정상 종료 코드 `0`이어서 자동화가 거짓 통과할 위험이 있었다.
