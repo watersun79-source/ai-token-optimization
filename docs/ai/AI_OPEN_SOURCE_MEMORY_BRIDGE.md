@@ -49,3 +49,12 @@ python tools/ai_memory_bridge.py sync --db .ai-memory-cache.sqlite docs/ai/AI-me
 회귀 테스트는 기존 10건에 구식 기억 제거/기존 증분 동작 보존 2건을 더한 **12건**이다. 별도의 로컬 동작 시험에서 12/12 통과했고, GitHub에 올라간 코드·테스트 파일도 저장 후 SHA 재조회로 확인했다. GitHub Actions에서 그 버전의 실행 통과 여부는 별도 확인해야 한다.
 
 GitHub Actions 비운영 브랜치 전용 검증: [`.github/workflows/ai-memory-bridge.yml`](../../.github/workflows/ai-memory-bridge.yml). 기억 브랜치에서 코드/테스트/워크플로 변경 시 Python 컴파일·12개 회귀 시험을 시도한다. 퍼블릭 저장소의 표준 ubuntu-latest runner만 사용하고 GitHub Actions는 읽기 전용 권한, artifact/유료 AI API 미사용. **자동화 CI 성공과 ChatGPT 정규 예약의 무인 기억 복원 성공은 서로 다른 검증 대상**이다. 기존 ChatGPT 예약/운영 main은 건드리지 않았다.
+
+
+## 감사 CLI의 실패 종료 코드 — 2026-10-21
+
+이전 `audit` 명령은 필수 원본 실행 증거가 누락되어 `UNVERIFIED`를 출력해도 정상 종료 코드 `0`을 반환했다. GitHub Actions에서 해당 검사만 호출하면 전체 자동 테스트가 거짓 통과할 수 있는 실제 결함이다.
+
+현재는 `audit` 출력이 `UNVERIFIED`일 때 **종료 코드 2**를 반환하고, 형식상 완전한 매니페스트만 **종료 코드 0 + PASS_SCHEMA_ONLY**를 반환한다. JSON 진단 출력은 유지한다. `PASS_SCHEMA_ONLY` 역시 제출자가 주장한 실행 증거의 *형식 검사 통과*일 뿐 서버 원본 진위/정규 무인 성공을 보증하지 않는다. 따라서 공식 원본 로그가 없는 정규 실행은 계속 미검증으로 보고한다.
+
+관련 코드·테스트: [기억 증거 CLI](../../tools/ai_memory_bridge.py), [CLI 종료코드 회귀 검사 2건 포함 총 14개 테스트](../../tests/test_ai_memory_bridge.py). **별도 로컬 실행에서 14/14 통과**했고 GitHub 파일 재조회도 완료. 원격 GitHub Actions 실행 결과는 이 기록에서 입증되지 않는다. GitHub의 `fetch_commit_workflow_runs`는 현재 PR 트리거 실행만 반환하므로, 새 브랜치 `push` 워크플로가 목록에 없다는 사실로 미실행/실패를 확정할 수 없다. GitHub Actions 실행 페이지에서 별도 확인 필요.
