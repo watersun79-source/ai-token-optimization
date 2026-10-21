@@ -157,6 +157,10 @@ def main():
     args = parser.parse_args()
     result = sync(args.db, args.sources, prune=args.prune) if args.cmd == "sync" else recall(args.db, args.query, args.limit) if args.cmd == "recall" else audit(json.loads(args.manifest.read_text(encoding="utf-8")))
     print(json.dumps(result, indent=2, ensure_ascii=False))
+    # Make an unverified audit a failing CI step. A zero exit code only
+    # means the user-provided evidence manifest passed schema checks.
+    if args.cmd == "audit" and result.get("status") != "PASS_SCHEMA_ONLY":
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":
