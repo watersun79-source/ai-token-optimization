@@ -107,4 +107,34 @@ class AuditV2Tests(unittest.TestCase):
     def test_out_of_order_run(self):
         p=self.make();p['native_run']['completed_at']='2026-10-22T22:01:00+09:00';self.assertIn('시각 불일치',check(p)['reason'])
 
+
+    def test_fractional_hour_slot_rejected(self):
+        p=self.make()
+        fractional='2026-10-22T22:00:00.500000+09:00'
+        p['target_slot']=fractional
+        p['native_run']['scheduled_for']=fractional
+        r=check(p)
+        self.assertEqual(r['status'],'미검증')
+        self.assertIn('정각 슬롯',r['reason'])
+
+    def test_unhashable_target_does_not_crash(self):
+        p=self.make()
+        p['tool_calls'].insert(0,{'target': []})
+        r=check(p)
+        self.assertTrue(r['status'].startswith('형식 통과'))
+
+    def test_unhashable_tool_does_not_crash(self):
+        p=self.make()
+        p['tool_calls'][0]['tool']=[]
+        r=check(p)
+        self.assertEqual(r['status'],'미검증')
+        self.assertIn('current_handoff',r['missing'])
+
+    def test_oversized_tool_call_list_rejected(self):
+        p=self.make()
+        p['tool_calls'].extend([{'target':'irrelevant'} for _ in range(15)])
+        r=check(p)
+        self.assertEqual(r['status'],'미검증')
+        self.assertIn('16건 초과',r['reason'])
+
 if __name__=='__main__':unittest.main()
