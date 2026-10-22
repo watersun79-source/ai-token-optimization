@@ -1,5 +1,14 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-23 07:12 KST 긴급 상태 변화 — 일시정지 발견 후 활성 복구
+- **첫 예약 상태 원본 조회 07:11~07:12 KST**: 기존 R16 정확한 예약 ID `6acb017062a08191a4136238b78b313a`가 `is_enabled=false`, `paused_count=1`로 변경된 것을 `automations.peek`에서 직접 확인. 당시 메타 `updated_at=2026-10-22T22:11:40.258672Z`(07:11:40 KST), `last_run_time=2026-10-22T22:01:12.762052Z`(07:01:12 KST).
+- **사용자 기존 명시 지시 '예약 AI 일시정지 금지/활성 유지'에 따라 즉시 복구**: 공식 `automations.update(jawbone_id, is_enabled=true)` 1회 성공. 새 메타 `updated_at=2026-10-22T22:12:07.678750Z`, 기존 제목/프롬프트/일정/시간대/예약 ID/알림·이메일 설정 유지. 별도 `automations.peek` 재조회에서 `is_enabled=true`, `paused_count=0` 확인. 새 예약을 만들거나 기존 예약을 삭제하지 않았음.
+- **왜 정지됐는지 실제 로그는 미제공, 원인 단정 금지**: OpenAI 공식 [Scheduled tasks 도움말](https://help.openai.com/en/articles/10291617-scheduled-tasks-in-chatgpt) 및 [앱 트러블슈팅](https://help.openai.com/en/articles/20001497-troubleshooting-plugins-and-apps-in-chatgpt)은 추가 승인 필요, 앱 접근 문제 및 자동 비활성화 가능성을 설명하나, **이 회차의 특정 원인은 플랫폼 개별 실행 기록/승인 대기 화면에서 확인해야 함**. 자동화 도구는 활성/프롬프트/last_run_time만 제공, 일시정지 작업자 및 이유 로그는 제공하지 않음. 필요한 사용자 승인·연결이 있으면 Scheduled의 해당 R16 → Previous runs/승인 대기 확인. 과거 권한 거부 우회/쓰기를 재시도하지 말 것.
+- **복구 후 분리 확인**: GitHub `main`/격리 기억 브랜치 정규 07시 이후 새 커밋 0건, Activepieces 감사 테이블 2026-10-23 날짜 행 0건, Slack의 07:00 이후 글은 수동 채팅 기록만 확인. 읽기 호출의 부재를 증명하지는 않음. **정규 회차 GitHub/Slack 무인 성공은 아직 미검증**.
+- **보호 범위**: GitHub `main` 및 운영 Activepieces 플로우/연결, 유료 API 건드리지 않았음. 복구 외에 R16의 주기/프롬프트/시간대/알림/제목 변경 없음. **다음 최우선: 정지 원인(승인 대기·계정/앱 권한·제품 자동 일시정지 여부) 공식 실행 화면에서 확인 및 활성 상태 재검증**, 추가 정지 금지.
+
+---
+
 ## 2026-10-23 아침 후속 — 누락된 00:07 커밋 3개 + 도구명 별칭 격리 수정
 - 현행 예약 ID `6acb017062a08191a4136238b78b313a`, `is_enabled=true`, Asia/Seoul 매시간 정각, 10/23 마지막 `last_run_time=2026-10-22T21:00:49.759834Z`(=06:00:49 KST). 예약 설정 수정·중지 없음. 이는 *예약 실행 시각 메타데이터*이며 실제 앱 작업 결과가 아님.
 - **자정 이후 GitHub 원본 새 발견**: main/기억 브랜치는 신규 커밋 0건이지만 **격리 브랜치** `ai/r16-evidence-reconciler-2026-10-22`에 10/23 **00:07:21, 00:07:44, 00:08:10 KST** 커밋 3건이 실제 존재한다: `f5986dbc7f9f1f6ca04f94d1823709ab7c7875c6` 테스트, `a5d54e757887d16b51868c8177334e0992b65a32` 검사기 연결 앱 도구명 별칭, `f7a2cfbb30288feffee122ca0528281a048a6892` 설명. GitHub 작성자 watersun79-source, 전부 unsigned. 00시 정규 예약과 시각상 연관 가능하나 **공식 native per-run ID 및 tool-call ledger 독립 검증 없음 → 무인 성공 미검증**. 00:08 README 내 `run_details.last_run.id` 제공 주장은 **당시 문서의 자기 보고**이며 현 채팅 플랫폼 API readback 아님.
