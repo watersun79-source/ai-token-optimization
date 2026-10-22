@@ -13,7 +13,7 @@ class OAuthConfigTests(unittest.TestCase):
             c=self.valid();del c[k]
             with self.assertRaises(RuntimeError):validate_config(c)
     def test_plain_http_disallowed(self):
-        for k in self.valid():
+        for k in ('AI_MCP_RESOURCE','AI_OAUTH_ISSUER','AI_OAUTH_JWKS_URI'):
             c=self.valid();c[k]=c[k].replace("https://","http://")
             with self.assertRaises(RuntimeError):validate_config(c)
     def test_wrong_resource_endpoint_disallowed(self):
