@@ -110,8 +110,8 @@ def check(payload: dict) -> dict:
     if not isinstance(tool_calls, list):
         outcome['reason'] = '원본 호출 형식 오류'
         return outcome
-    if len(tool_calls) > 16:
-        outcome['reason'] = '원본 호출 목록 16건 초과'
+    if len(tool_calls) > 1024:
+        outcome['reason'] = '원본 호출 목록 1024건 초과'
         return outcome
     accepted = {}
     invocation_ids = set()
