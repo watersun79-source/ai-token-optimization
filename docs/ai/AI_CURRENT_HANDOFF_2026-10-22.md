@@ -1,5 +1,15 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 최신 후속 — R16 첫 회차 도래 후 검증기 결함 수정 (2026-10-22 23시 이후, 수동 채팅)
+- **예약 원본 직접 재조회**: 예약 ID `6acb017062a08191a4136238b78b313a` / `is_enabled=true` / `Asia/Seoul` 매시간 정각 / 프롬프트 첫 줄 `[AI R16 ...]` / `last_run_time=2026-10-22T14:00:27.196513Z` (= **23:00:27 KST**). 이 값은 실행 시각 메타데이터이지 예약 실행 성공·공식 회차 ID·앱 호출 성공 근거가 아니다.
+- **실제 신규 코드 버그 해결**: 기존 격리 감사 검증기는 매시 정각의 `last_run_time`이 갱신된 후에 **과거 회차 22:00의 원본 실행 증거를 뒤늦게 대조하면 부당하게 미검증 처리**하는 false-negative 가능성이 있었다. `ai/r16-evidence-reconciler-2026-10-22` 브랜치 `experiments/r16-evidence-reconciler/audit_v2.py`에서 최신 `last_run_time`을 공식 개별 실행 증거의 필수조건이 아닌 진단값으로 분리했다. 스케줄러 원본 `native_run` 및 같은 회차 호출 증거가 실제 제공될 때 과거 회차도 대조 가능. 단, 원본이 없으면 계속 `미검증`.
+- **직접 회귀 테스트 23/23 통과**(수동 Python, 무료, 실제 예약 실행 증명 아님). 원격 소스 GitHub blob SHA `86d90166b8c8ed18162fd097583c5d506e23cd09`, 테스트 SHA `8b8cb06194125737eb827bcc731c5192dca6dc74` 독립 재조회 확인. [격리 브랜치 README](https://github.com/watersun79-source/ai-token-optimization/blob/ai/r16-evidence-reconciler-2026-10-22/experiments/r16-evidence-reconciler/README_KO.md).
+- **엄격한 운영 판정**: 22:00 및 23:00 공식 개별 회차 ID/앱 원시 도구 호출 로그는 현재 노출 도구에서 미제공. Activepieces 자체 기록·GitHub CI·수동 앱 읽기/쓰기 기록을 ChatGPT 공식 예약 무인 증거로 대체할 수 없다. 예약 성공의 **완료 판정은 여전히 미검증**.
+- **보호**: 기존 예약·프롬프트·시각·알림·운영 Activepieces·GitHub `main`은 변경하지 않았다. 변경은 격리 실험 브랜치 코드와 이 읽기 전용 운영 인계 문서 갱신뿐이다. 이전 21:17 R16 섹션은 당시의 역사적 사실이며 최신 상태는 이 단락을 우선한다.
+
+---
+
+
 ## 최상위 현재 상태 — 예약 R16 실제 재조회 (2026-10-22 21:17 KST)
 
 - **사용자 최신 직접 지시**: "예약 ai 적용. 진행"에 따라 기존 예약 `6acb017062a08191a4136238b78b313a`의 **실행 지침만 R15→R16** 갱신. 이번 후속 "진행"에서 `automations.peek`로 R16 문구, `is_enabled=true`, 제목 `AI`, `Asia/Seoul`, `RRULE:FREQ=HOURLY;BYMINUTE=0;BYSECOND=0`, `timing_mode=exact_schedule`, 알림·메일 모두 기존 false 직접 확인. ID·일정·활성·운영 플로우·main에 변경 없음. 새 예약 생성/중지 없음.
