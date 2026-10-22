@@ -46,3 +46,18 @@
   - 17건 과다 호출 입력: `gwoWTJ27DoZQo72oGuYFS`, `UNVERIFIED`
 - **밤사이 상태**: 2026-10-23 06:00:49 KST `automations.peek.last_run_time` 확인, 예약 활성 유지. Activepieces 감사 테이블의 `scheduledSlotKst`에 `2026-10-23` 기록 0건. Slack 지정 스레드·채널의 자정 이후 새 증거 0건. ChatGPT의 공식 per-run ID·원시 앱 호출 로그가 없으므로 **정규 무인 성공 미검증**.
 - 기존 Activepieces 운영 플로우 및 격리 플로우의 `DISABLED/published=false` 상태, ChatGPT 예약 일정, GitHub `main`, 유료 API 모두 변경 없음. 위 테스트는 수동 모의 TESTING 실행이며 생산 자동화가 아니다.
+
+
+## 2026-10-23 06시 이후 — 유효하지 않은 날짜 정규화 버그 수정
+- **수동 Activepieces TESTING에서 발견한 실제 결함**: JavaScript `Date.parse("2026-02-30T22:00:00+09:00")`가 존재하지 않는 2월 30일을 3월 2일로 정규화. 모의 원본을 꾸미면 검증기에서 잘못 `format_check=PASS` 처리될 수 있었음. 실패 재현 테스트 run ID `tn2GQJrDnnqswEyKjSzNb`의 실제 출력 `FORMAT_MATCH_ONLY`.
+- **격리 코드 수정**: 정규 ISO-8601 입력 및 윤년·월별 실제 날짜·시분초·시간대 오프셋을 먼저 검사한 뒤 UTC 시각 계산. 비정상 날짜는 `UNVERIFIED: Invalid timezone-aware scheduled slot`으로 차단. `Date.parse`의 부정확한 날짜 자동 정규화 경로 제거.
+- **모의 회귀 6/6 직접 실행·각 run step_1 원본 재조회**:
+  - `sY1Jel7pTGI8wPxxLGDRe` 불가능한 2월 30일 → 미검증/날짜 오류
+  - `B3qxXihKkzKYIFk0WlIxa` 평년 2월 29일 → 미검증/날짜 오류
+  - `ZD7052otvIep1o0slJX3O` 실제 윤년 2028-02-29 → 형식 통과·원본 미인증
+  - `AfE951KFQrFmIzgOMHAL8` 정상 2026-10-22 샘플 → 형식 통과·원본 미인증
+  - `f5qnUmJcGo3uShJqMM70P` 공식 실행 ID 누락 → 미검증
+  - `vulqtYLylYdDnAgNnUp2F` +25:00 시간대 → 미검증/날짜 오류
+- 모든 회차 Activepieces 자체 테스트 `SUCCEEDED`, 출력 `official_success_verified=false`, `external_calls=0`; ChatGPT 실제 무인 실행 성공이 아니라 mock 검증기 자체 품질 검증임.
+- 격리 JavaScript 코드와 GitHub 원격 read-back 일치. [소스](activepieces_mock_guard_2026-10-23.js) blob SHA `262d0e25ec84a6d29be59d22f6bbadbc939c433d`.
+- 기존 정규 R16 예약(매시간 정각/활성), GitHub `main`, 운영 Activepieces, Slack 운영 설정은 변경 없음. 격리 플로우는 비활성·미게시 유지.
