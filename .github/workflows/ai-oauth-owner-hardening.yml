@@ -1,0 +1,38 @@
+name: AI OAuth owner-only MCP regression (isolated)
+on:
+  push:
+    branches: [ai/oauth-provider-readiness-2026-10-22]
+    paths:
+      - 'experiments/ai-bot-team/**'
+      - '.github/workflows/ai-oauth-owner-hardening.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  oauth-owner-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    defaults:
+      run:
+        working-directory: experiments/ai-bot-team
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install MCP v1 and signed-JWT validation
+        run: python -m pip install -r requirements-oauth.txt
+      - name: Real MCP valid-owner call plus unauthorized-other-owner rejection
+        run: python verify_oauth_mcp.py
+      - name: Test all regression scenarios
+        run: python -m unittest discover -s tests -v
+      - name: Owner allowlist absent means server will not start
+        run: |
+          python - <<'PY'
+          from oauth_mcp import validate_config
+          c={"AI_MCP_RESOURCE":"https://bot.example.com/mcp","AI_OAUTH_ISSUER":"https://login.example.com","AI_OAUTH_JWKS_URI":"https://login.example.com/jwks"}
+          try: validate_config(c)
+          except RuntimeError as err: assert "AI_OAUTH_ALLOWED_SUBJECTS" in str(err)
+          else: raise AssertionError("Owner restriction is not fail-closed")
+          print("OWNER_FAIL_CLOSED PASS")
+          PY
