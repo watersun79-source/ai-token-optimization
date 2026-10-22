@@ -32,3 +32,17 @@
 
 ## 보호 준수
 기존 R16 ChatGPT 예약 활성·정각·프롬프트·알림을 변경하지 않았다. 기존 Activepieces 11개 플로우의 설정을 바꾸거나 게시·중지·삭제하지 않았다. 새 격리 모의 플로우 1개만 추가해 **DISABLED/미게시**로 유지한다. GitHub `main` 수정, 유료 API 호출, 비밀키 변경 없음.
+
+
+## 후속 보안/안정성 패치 — 2026-10-23 06시 KST
+- **이전 버전에서 실제 오류 재현**: JSON 도구 호출 `target: "constructor"` 가 JS 일반 객체의 상속된 속성으로 잘못 통과하여 `cfg.pattern.test` 접근에서 `TypeError: Cannot read properties of undefined (reading 'test')` 발생. Activepieces TESTING 실패 run ID `H1cS2Vs7dTLwk8FRAf0Ek`. 운영 플로우가 아니라 기존 비활성·미게시 격리 플로우에서 재현.
+- **실제 패치**: `Object.prototype.hasOwnProperty.call(checks,c.target)` 검사로 `constructor`, `toString`, `__proto__` 등 상속 키를 거부. 입력 도구 호출 목록은 최대 16건으로 제한하고, 배열·비문자 target도 검증 전 거부. `external_calls=0`, `official_success_verified=false`의 fail-closed 정책 유지.
+- **변경된 코드 원본**: [activepieces_mock_guard_2026-10-23.js](activepieces_mock_guard_2026-10-23.js), GitHub blob SHA `b1e35d29f0b9ce623d5696495d4ff76f9abf2a10`; 원격 재조회 후 Activepieces `ap_read_step_code`와 내용 일치.
+- **수정 후 TESTING 직접 실행 + 단계 출력 재조회 5/5 통과**:
+  - 이전 오류 `constructor` 케이스: `rmGy0IulUCq6L9QFcdoS4`, `UNVERIFIED` (더 이상 단계 실패 없음)
+  - 원본 회차 ID 누락: `DLB6ZzWh0pCrCDAruf6mH`, `UNVERIFIED`
+  - 형식만 맞춘 가짜 원본 증거: `bUXxCDXFbQL8iborBMliH`, `format_check=PASS`이나 `official_success_verified=false`, `authenticity=UNVERIFIED`
+  - 예약 ID 불일치: `OFJsfrVjxMwP33eoGMoWS`, `UNVERIFIED`
+  - 17건 과다 호출 입력: `gwoWTJ27DoZQo72oGuYFS`, `UNVERIFIED`
+- **밤사이 상태**: 2026-10-23 06:00:49 KST `automations.peek.last_run_time` 확인, 예약 활성 유지. Activepieces 감사 테이블의 `scheduledSlotKst`에 `2026-10-23` 기록 0건. Slack 지정 스레드·채널의 자정 이후 새 증거 0건. ChatGPT의 공식 per-run ID·원시 앱 호출 로그가 없으므로 **정규 무인 성공 미검증**.
+- 기존 Activepieces 운영 플로우 및 격리 플로우의 `DISABLED/published=false` 상태, ChatGPT 예약 일정, GitHub `main`, 유료 API 모두 변경 없음. 위 테스트는 수동 모의 TESTING 실행이며 생산 자동화가 아니다.
