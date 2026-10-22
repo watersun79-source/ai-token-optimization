@@ -1,0 +1,32 @@
+name: AI Real Bot Gateway isolated Python CI
+on:
+  push:
+    branches: [ai/real-bot-gateway-2026-10-22]
+    paths:
+      - 'experiments/ai-bot-team/**'
+      - '.github/workflows/ai-real-bot-gateway-test.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-workers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: experiments/ai-bot-team
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Run Python offline regression and real local HTTP tests
+        run: python -m unittest discover -s tests -v
+      - name: Actually execute an error-analysis worker
+        run: |
+          python real_gateway.py --message "에러 고쳐" --code 'print(' > /tmp/worker.json
+          python -c "import json; x=json.load(open('/tmp/worker.json')); assert x['workers'][0]['status']=='DONE' and x['workers'][0]['evidence']['syntax_valid'] is False and x['production_writes']==0 and x['external_llm_calls']==0"
+      - name: Ensure scheduling provenance is not invented
+        run: |
+          python real_gateway.py --message "예약 AI 로그 확인" > /tmp/audit.json
+          python -c "import json; x=json.load(open('/tmp/audit.json')); assert x['workers'][0]['status']=='UNVERIFIED'"
