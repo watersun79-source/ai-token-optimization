@@ -44,9 +44,17 @@ export const code = async (inputs) => {
   const start = time(original.started_at), end = time(original.completed_at);
   if (![start,end].every(Number.isFinite) || !(slot <= start && start <= end && end < slot + 3600000))
     return result('Run timestamps inconsistent');
+  // Only these exact verified connector names are allowed. The alias spelling
+  // can differ between ChatGPT scheduled Work and ordinary connected chats.
   const checks = {
-    current_handoff: {tool:'mcp__GitHub__fetch_file',locator:'docs/ai/AI_CURRENT_HANDOFF_2026-10-22.md',pattern:/^[a-f0-9]{40}$/},
-    slack_thread: {tool:'mcp__Slack__slack_read_thread',locator:'C0C9649RQAZ/1792416391.631669',pattern:/^\d{10}\.\d{6}$/},
+    current_handoff: {
+      tools:['mcp__GitHub__fetch_file','mcp__codex_apps__github_fetch_file'],
+      locator:'docs/ai/AI_CURRENT_HANDOFF_2026-10-22.md',pattern:/^[a-f0-9]{40}$/
+    },
+    slack_thread: {
+      tools:['mcp__Slack__slack_read_thread','mcp__codex_apps__slack_slack_read_thread'],
+      locator:'C0C9649RQAZ/1792416391.631669',pattern:/^\d{10}\.\d{6}$/
+    },
   };
   const calls = Array.isArray(request.tool_calls) ? request.tool_calls : [];
   if (calls.length > 16) return result('Too many tool calls in untrusted evidence payload');
@@ -57,7 +65,7 @@ export const code = async (inputs) => {
         !Object.prototype.hasOwnProperty.call(checks, c.target) || seen.has(c.target)) continue;
     const cfg = checks[c.target], ts = time(c.observed_at);
     if (c.origin !== 'official_task_tool_call' || c.run_id !== original.run_id ||
-        c.tool !== cfg.tool || c.locator !== cfg.locator || c.success !== true ||
+        !cfg.tools.includes(c.tool) || c.locator !== cfg.locator || c.success !== true ||
         typeof c.version !== 'string' || !cfg.pattern.test(c.version) ||
         typeof c.invocation_id !== 'string' || !c.invocation_id ||
         invocations.has(c.invocation_id) || !Number.isFinite(ts) ||
