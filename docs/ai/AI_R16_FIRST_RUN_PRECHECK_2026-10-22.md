@@ -17,3 +17,9 @@
 - **미검증**: R16의 최초 정규 22:00 회차 전체 작업 실행, 그 회차 GitHub·Slack 실제 호출, 공식 플랫폼 per-run ID 및 원본 호출 ledger.
 - **다음 목표**: 22:00 KST **후** `automations.peek`(일정/last_run_time 메타데이터) 및 Activepieces 해당 22:00 행의 존재 여부, 사용자 계정/플랫폼이 실제 제공하는 회차 ID+원본 도구 호출 로그와 동일 회차로 대조. self-reported row/수동 작업은 독립 성공 아님. 빈 근거를 채우려고 자체 UUID/레코드 작성/수동 스케줄 호출 금지.
 - **중요**: 이미 합격한 109개 테스트/CI를 변경 없이 재실행하지 말 것; Render 생성 보안 차단 우회 금지; 유료 모델 API 0.
+
+## 공식 제품 지원 확인 및 정규 회차 독립 확인 경로 (21시 27분 KST 후속)
+- OpenAI 공식 Scheduled Tasks 문서 (2026-10-22 최신 조회): https://help.openai.com/en/articles/10291617-scheduled-tasks-in-chatgpt . Scheduled Tasks는 계정에서 이용 가능한 GitHub·Slack 등 **지원되는 연결 앱**을 사용할 수 있다. 앱 접근·쓰기에는 개별 연결/권한/승인이 필요하며, 설치된 앱이 예약 회차마다 호출된다는 뜻은 아님.
+- 동일 문서는 Scheduled 화면에서 **예약별 결과 및 이전 실행**을 확인할 수 있다고 안내한다. 일정만 보이는 `automations.peek` 메타데이터는 per-run 성공·실제 호출 로그가 아니다. 현재 `automations` 도구에 예약 실행 히스토리 조회·즉시 실행 기능이 제공되지 않고 Browser 앱은 현재 모바일 대화에서 originating-browser-context 부족으로 접근 실패. 브라우저 인증 UI/API 우회하지 않는다.
+- 다음 회차의 가장 강한 확인 경로: Scheduled → 기존 `AI` → Previous runs/결과에서 **22:00 KST 이후 실제 실행 항목**의 작업 결과·사용된 앱·원본 출처 링크를 확인하고, 같은 회차에 대응하는 GitHub blob SHA·Slack message ts를 교차 대조. 단순 완료 표시·자체 Activepieces 체크포인트로 무인 앱 작업 성공 판정 금지.
+- 또한 Activepieces `ap_list_flows` 읽기 전용 결과: 현재 프로젝트 11개 flow 중 `Slack` webhook 1개 ENABLED, 기타 테스트/협업 flow DISABLED. `ap_list_runs(environment=PRODUCTION)` 최신 검색 15건은 `TEST ONLY · Join Child Worker` flow의 SUCCEEDED이며 ChatGPT R16 정규 예약 로그가 아니다. 모두 운영 상태 변경 없음.
