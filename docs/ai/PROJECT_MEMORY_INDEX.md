@@ -1,5 +1,12 @@
 # AI — 현재 상태와 지속 기억
 
+### AI-BOT-TEAM-ISOLATED-PROOF-2026-10-22 — 3역할 협업 로컬·원격 성공, 실모델 미연동
+
+- 사용자 직접 요청으로 `ai/bot-team-sandbox-2026-10-22` 별도 브랜치에 Python **ResearchBot→BuilderBot→VerifierBot** 구현. 운영 `main`·기존 ChatGPT 정각 예약·Activepieces 플로우 변경 없음.
+- 로컬 **15/15** 회귀·정책 **7/7** 및 원격 [Actions run 39754406104](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39754406104) **success**(job 119742664956 원본 로그 `Ran 15 tests`). 코드·테스트·참고데이터·README Git blob SHA 모두 로컬과 독립 재조회 일치.
+- **오프라인 정책/역할 연결 PoC**만 완성. 실제 LLM 에이전트·실시간 조사·생성 코드 배포·기존 예약 무인 성공은 미구현/미검증. 공급자 호출/결제 0, 운영변경 0. [구현](https://github.com/watersun79-source/ai-token-optimization/tree/ai/bot-team-sandbox-2026-10-22/experiments/ai-bot-team) · [검증 상세](AI_BOT_TEAM_POC_2026-10-22.md).
+
+
 ### AI-R7-SCHEDULED-EVIDENCE-CHECKPOINT-2026-10-21 — 새 독립 관찰 경로 준비
 
 - 원래 ChatGPT AI 예약 ID `6acb017062a08191a4136238b78b313a`: **R7** 지침 수정 및 `automations.peek` 독립 재조회 완료. 기존 활성·Asia/Seoul 매시간 정각 유지; 기존 예약 이외의 추가 예약 없음. R7 저장 전 확인된 마지막 정규 실행은 `2026-10-21T14:00:10.052904Z` (23:00:10 KST), R7 성공 증거 아님.
