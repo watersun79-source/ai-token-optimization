@@ -1,0 +1,17 @@
+{
+  "target_slot": "2026-10-22T22:00:00+09:00",
+  "schedule": {
+    "id": "6acb017062a08191a4136238b78b313a",
+    "is_enabled": true,
+    "last_run_time": "2026-10-22T13:01:47.915363Z"
+  },
+  "native_run": null,
+  "tool_calls": [],
+  "external": {
+    "activepieces_audit_table": "bYxKH9XvAf27ODJ6GrC1U",
+    "activepieces_row_found": false,
+    "github_post_run_commit_found": false,
+    "slack_post_run_message_found": false,
+    "notes": "외부 쓰기 부재만으로 읽기 호출 성공/실패 모두 단정 불가; 개별 실행 결과/원시 호출 증거 없음"
+  }
+}
