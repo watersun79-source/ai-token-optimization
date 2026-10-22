@@ -130,11 +130,25 @@ class AuditV2Tests(unittest.TestCase):
         self.assertEqual(r['status'],'미검증')
         self.assertIn('current_handoff',r['missing'])
 
-    def test_oversized_tool_call_list_rejected(self):
+    def test_more_than_16_valid_tool_call_records_accepted(self):
         p=self.make()
         p['tool_calls'].extend([{'target':'irrelevant'} for _ in range(15)])
         r=check(p)
+        self.assertTrue(r['status'].startswith('형식 통과'))
+        self.assertEqual(r['missing'],[])
+        self.assertFalse(r['official_success_verified'])
+
+    def test_maximum_1024_tool_call_records_accepted(self):
+        p=self.make()
+        p['tool_calls'].extend([{'target':'irrelevant'} for _ in range(1022)])
+        r=check(p)
+        self.assertTrue(r['status'].startswith('형식 통과'))
+
+    def test_oversized_tool_call_list_rejected(self):
+        p=self.make()
+        p['tool_calls'].extend([{'target':'irrelevant'} for _ in range(1023)])
+        r=check(p)
         self.assertEqual(r['status'],'미검증')
-        self.assertIn('16건 초과',r['reason'])
+        self.assertIn('1024건 초과',r['reason'])
 
 if __name__=='__main__':unittest.main()
