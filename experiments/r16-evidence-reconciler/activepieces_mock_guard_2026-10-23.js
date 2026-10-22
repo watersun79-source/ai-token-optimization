@@ -10,8 +10,25 @@ export const code = async (inputs) => {
     return result('Missing structured trigger payload');
   if (request.automation_id !== '6acb017062a08191a4136238b78b313a')
     return result('Protected ChatGPT automation ID mismatch');
-  const time = v => typeof v === 'string' && /(?:Z|[+-]\d\d:\d\d)$/.test(v)
-    ? Date.parse(v) : NaN;
+  // Date.parse silently normalizes impossible dates (e.g. Feb 30 to Mar 2).
+  // Validate every calendar/time component before computing a UTC instant.
+  const time = v => {
+    if (typeof v !== 'string' || v.length > 48) return NaN;
+    const m = /^([12]\d{3})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,9}))?(Z|([+-])(\d{2}):(\d{2}))$/.exec(v);
+    if (!m) return NaN;
+    const year = +m[1], month = +m[2], day = +m[3];
+    const hour = +m[4], minute = +m[5], second = +m[6];
+    const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+    const monthDays = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    if (month < 1 || month > 12 || day < 1 || day > monthDays[month - 1] ||
+        hour > 23 || minute > 59 || second > 59) return NaN;
+    const zoneHour = m[10] === undefined ? 0 : +m[10];
+    const zoneMinute = m[11] === undefined ? 0 : +m[11];
+    if (zoneHour > 23 || zoneMinute > 59) return NaN;
+    const offset = m[8] === 'Z' ? 0 : (m[9] === '+' ? 1 : -1) * (zoneHour * 60 + zoneMinute);
+    const ms = +(m[7] || '').padEnd(3, '0').slice(0, 3);
+    return Date.UTC(year, month - 1, day, hour, minute, second, ms) - offset * 60000;
+  };
   const slot = time(request.scheduled_for);
   if (!Number.isFinite(slot) || !/T\d\d:00:00(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)$/.test(request.scheduled_for))
     return result('Invalid timezone-aware scheduled slot');
