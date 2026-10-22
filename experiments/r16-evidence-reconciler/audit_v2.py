@@ -22,6 +22,18 @@ REQUIRED = {
     'current_handoff': ('mcp__GitHub__fetch_file', 'docs/ai/AI_CURRENT_HANDOFF_2026-10-22.md', 'sha'),
     'slack_thread': ('mcp__Slack__slack_read_thread', 'C0C9649RQAZ/1792416391.631669', 'slack_ts'),
 }
+# Accept the canonical names used by the original verifier and the exact
+# connected-app names emitted by current ChatGPT Work scheduled runs.
+TOOL_ALIASES = {
+    'mcp__GitHub__fetch_file': {
+        'mcp__GitHub__fetch_file',
+        'mcp__codex_apps__github_fetch_file',
+    },
+    'mcp__Slack__slack_read_thread': {
+        'mcp__Slack__slack_read_thread',
+        'mcp__codex_apps__slack_slack_read_thread',
+    },
+}
 # Ancillary R16 references may be fetched when needed but are optional.
 OPTIONAL = {
     'memory_index': ('mcp__GitHub__fetch_file', 'docs/ai/PROJECT_MEMORY_INDEX.md', 'sha'),
@@ -112,7 +124,7 @@ def check(payload: dict) -> dict:
         version = c.get('version')
         is_valid_version = isinstance(version, str) and bool((SHA if version_type == 'sha' else SLACK_TS).fullmatch(version))
         if (c.get('origin') != 'official_task_tool_call' or c.get('run_id') != run_id
-                or c.get('success') is not True or c.get('tool') != tool
+                or c.get('success') is not True or c.get('tool') not in TOOL_ALIASES.get(tool, {tool})
                 or c.get('locator') != locator or not isinstance(invocation, str) or not invocation
                 or invocation in invocation_ids or observed is None
                 or not (start <= observed <= end) or not is_valid_version):
