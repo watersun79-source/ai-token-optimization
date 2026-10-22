@@ -45,6 +45,7 @@ async def verify():
             "wrong_audience":token(aud="http://localhost:9999/mcp"),
             "wrong_issuer":token(iss="http://localhost:9999"),
             "missing_scope":token(scope="other:read"),
+            "wrong_subject":token(sub="unapproved-user"),
             "future":token(nbf=int(time.time())+300),
             "forged_signature":token()[:-6]+"ABCDEF",
         }
@@ -72,7 +73,7 @@ def main():
     threading.Thread(target=mock.serve_forever,daemon=True).start()
     env=os.environ.copy()
     env.update({"AI_MCP_RESOURCE":RESOURCE,"AI_OAUTH_ISSUER":ISSUER,
-                "AI_OAUTH_JWKS_URI":ISSUER+"/jwks","AI_OAUTH_LOCAL_TEST":"1"})
+                "AI_OAUTH_JWKS_URI":ISSUER+"/jwks","AI_OAUTH_LOCAL_TEST":"1","AI_OAUTH_ALLOWED_SUBJECTS":"sandbox-user"})
     proc=subprocess.Popen([sys.executable,"-m","uvicorn","oauth_mcp:build_app",
                            "--factory","--host","127.0.0.1","--port",str(PORT)],
                           env=env,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE)
