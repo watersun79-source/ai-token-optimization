@@ -1,0 +1,34 @@
+name: AI bot team sandbox test
+
+on:
+  push:
+    branches:
+      - ai/bot-team-sandbox-2026-10-22
+    paths:
+      - 'experiments/ai-bot-team/**'
+      - '.github/workflows/ai-bot-team-sandbox.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: experiments/ai-bot-team
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Run 15 offline regression cases
+        run: python -m unittest discover -s tests -v
+      - name: Run sample collaboration without provider calls
+        run: |
+          python bot_team.py --task 'AI 봇 협업' --sources examples/sources.json > /tmp/bot-team-audit.json
+          python -c "import json; d=json.load(open('/tmp/bot-team-audit.json')); assert d['verifier']['status']=='PASS' and d['provider_api_calls']==0 and d['production_changes']==0"
