@@ -1,0 +1,28 @@
+name: AI actual MCP protocol handshake (test-only)
+on:
+  push:
+    branches: [ai/mcp-live-handshake-2026-10-22]
+    paths:
+      - 'experiments/ai-bot-team/**'
+      - '.github/workflows/ai-mcp-live-handshake.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mcp-real-session:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    defaults:
+      run:
+        working-directory: experiments/ai-bot-team
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install official MCP Python SDK v1 maintenance branch
+        run: python -m pip install 'mcp>=1.28,<2'
+      - name: Real MCP HTTP initialize then tools/list then tools/call
+        run: python verify_live_mcp.py
+      - name: Re-run impacted local MCP and routing regressions
+        run: python -m unittest discover -s tests -v
