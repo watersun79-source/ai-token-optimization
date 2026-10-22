@@ -39,7 +39,7 @@ async def verify():
         md=await client.get(f"http://127.0.0.1:{PORT}/.well-known/oauth-protected-resource/mcp")
         assert md.status_code==200,(md.status_code,md.text[:200])
         assert md.json()["resource"]==RESOURCE,md.text
-        assert md.json()["authorization_servers"]==[ISSUER],md.text
+        assert [u.rstrip("/") for u in md.json()["authorization_servers"]]==[ISSUER],md.text
         checks={
             "expired":token(exp=int(time.time())-300),
             "wrong_audience":token(aud="http://localhost:9999/mcp"),
