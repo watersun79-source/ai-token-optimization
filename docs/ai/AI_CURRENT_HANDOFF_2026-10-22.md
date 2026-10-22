@@ -1,5 +1,15 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+
+## R16 검증 기준 최신 보완 — 2026-10-22 23시 이후
+- **새로 발견·실제 수정**: 기존 격리 실행 증거 검사기가 과거 R13에서 사용했던 `PROJECT_MEMORY_INDEX.md`·`AI-memory-protocol.md`·오래된 unattended-report의 3개 GitHub 원본을 R16 필수로 요구하는 불일치. 실제 R16 프롬프트는 **`docs/ai/AI_CURRENT_HANDOFF_2026-10-22.md` 인계 읽기 우선**이므로 정상 회차여도 false-negative 가능.
+- **수정 완료**: 격리 브랜치 `ai/r16-evidence-reconciler-2026-10-22`의 검사기 필수 호출 `current_handoff` + `slack_thread`으로 조정. R13 자료만 있으면 R16 검증 불충분 처리. R16 선택 문서는 optional 취급. 공식 원본 실행 ID·동일 회차 원시 호출 로그가 없을 때는 여전히 `미검증`을 엄격 유지.
+- **재현·재검증**: Python 27/27 통과, *검사기* GitHub blob SHA `eb3387b724e32e352b7eef8655e8997a3b843eaa`, *테스트* SHA `0139caeb04e8e0a0b51532d447467a8ca12b611e`를 GitHub 재조회 및 로컬 `git hash-object`로 대조. [격리 브랜치 기록](https://github.com/watersun79-source/ai-token-optimization/blob/ai/r16-evidence-reconciler-2026-10-22/experiments/r16-evidence-reconciler/README_KO.md).
+- **여전히 미완료인 목표**: R16 22:00/23:00 공식 개별 실행 ID 및 예약 무인 GitHub/Slack 앱 호출 원본 증거는 현재 도구에서 미제공. **수동 채팅에서 한 테스트·메시지 작성은 정규 무인 예약 성공의 근거가 아니다.**
+- 기존 AI 예약 ID/프롬프트/활성/일정·알림/Activepieces·GitHub `main` **변경하지 않음**. 이 문서 갱신은 사용자의 수동 채팅 작업.
+
+---
+
 ## 최신 후속 — R16 첫 회차 도래 후 검증기 결함 수정 (2026-10-22 23시 이후, 수동 채팅)
 - **예약 원본 직접 재조회**: 예약 ID `6acb017062a08191a4136238b78b313a` / `is_enabled=true` / `Asia/Seoul` 매시간 정각 / 프롬프트 첫 줄 `[AI R16 ...]` / `last_run_time=2026-10-22T14:00:27.196513Z` (= **23:00:27 KST**). 이 값은 실행 시각 메타데이터이지 예약 실행 성공·공식 회차 ID·앱 호출 성공 근거가 아니다.
 - **실제 신규 코드 버그 해결**: 기존 격리 감사 검증기는 매시 정각의 `last_run_time`이 갱신된 후에 **과거 회차 22:00의 원본 실행 증거를 뒤늦게 대조하면 부당하게 미검증 처리**하는 false-negative 가능성이 있었다. `ai/r16-evidence-reconciler-2026-10-22` 브랜치 `experiments/r16-evidence-reconciler/audit_v2.py`에서 최신 `last_run_time`을 공식 개별 실행 증거의 필수조건이 아닌 진단값으로 분리했다. 스케줄러 원본 `native_run` 및 같은 회차 호출 증거가 실제 제공될 때 과거 회차도 대조 가능. 단, 원본이 없으면 계속 `미검증`.
