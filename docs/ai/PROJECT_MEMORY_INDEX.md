@@ -1,5 +1,13 @@
 # AI — 현재 상태와 지속 기억
 
+### AI-CHAT-PLUGIN-INTEGRATION-2026-10-22 — ChatGPT 개인 플러그인 생성·코드 검증, 새 채팅 호출 미검증
+
+- 사용자 승인으로 Private [AI 3봇 협업 플러그인](https://chatgpt.com/plugins/plugins_6ad9d7b745448191bb087af817f02f68) **실제 생성**(`0.1.0`), `ai-chat-collaboration` skill 및 `allow_implicit_invocation: true`. `get_plugin_files`로 릴리스 파일 10개 독립 재조회.
+- 기존 Python 3역할 PoC 기반 채팅 분기 실험을 `ai/bot-team-sandbox-2026-10-22` 격리 브랜치에 추가. 로컬·플러그인 ZIP 압축해제 **23/23 OK** 및 GitHub 최종 [CI run 39756217258](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39756217258) **success**. 실제 AI 모델 호출 0, 운영 변경 0.
+- **한계:** 플러그인은 ChatGPT 내부 3역할 작업 지침과 오프라인 Python 예제이며 실제 서로 다른 3개 모델/자동 채팅 훅 아님. 설치된 플러그인은 관련 대화에서 자동 선택 *가능*하지만 새 채팅 실제 자동 선택·실제 도구 연계는 **미검증**. 현재 `skills__list`는 새 스킬을 즉시 노출하지 않음. 필요시 `@AI 3봇 협업` 명시 선택.
+- 기존 매시간 정각 Asia/Seoul 예약·운영 Activepieces 11개 플로우·`main` 변경 없음. [근거·실행 기록](AI_CHAT_PLUGIN_INTEGRATION_2026-10-22.md).
+
+
 ### AI-BOT-TEAM-ISOLATED-PROOF-2026-10-22 — 3역할 협업 로컬·원격 성공, 실모델 미연동
 
 - 사용자 직접 요청으로 `ai/bot-team-sandbox-2026-10-22` 별도 브랜치에 Python **ResearchBot→BuilderBot→VerifierBot** 구현. 운영 `main`·기존 ChatGPT 정각 예약·Activepieces 플로우 변경 없음.
