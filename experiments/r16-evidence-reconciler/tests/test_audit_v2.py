@@ -36,8 +36,22 @@ class AuditV2Tests(unittest.TestCase):
         p=self.make();p['schedule']['id']='different';self.assertEqual(check(p)['status'],'미검증')
     def test_disabled_task(self):
         p=self.make();p['schedule']['is_enabled']=False;self.assertEqual(check(p)['status'],'미검증')
-    def test_stale_last_run_time(self):
-        p=self.make();p['schedule']['last_run_time']='2026-10-22T12:01:47Z';self.assertIn('메타데이터 없음',check(p)['reason'])
+    def test_old_last_run_does_not_claim_metadata_evidence(self):
+        p=copy.deepcopy(BASE);p['schedule']['last_run_time']='2026-10-22T12:01:47Z'
+        result=check(p)
+        self.assertEqual(result['status'],'미검증')
+        self.assertIn('원본 로그 미제공',result['reason'])
+        self.assertIn('회차 실행 여부 확인 불가',result['trigger'])
+    def test_historical_official_run_still_checks_after_later_slot(self):
+        p=self.make();p['schedule']['last_run_time']='2026-10-22T14:00:27.196513Z'
+        result=check(p)
+        self.assertTrue(result['status'].startswith('형식 통과'))
+        self.assertIn('원본 진위',result['authenticity'])
+    def test_historical_metadata_alone_is_not_evidence(self):
+        p=copy.deepcopy(BASE);p['schedule']['last_run_time']='2026-10-22T14:00:27.196513Z'
+        result=check(p)
+        self.assertEqual(result['status'],'미검증')
+        self.assertIsNone(result['native_run_id'])
     def test_self_reported_source_invalid(self):
         p=self.make();p['native_run']['origin']='activepieces_self_report';self.assertEqual(check(p)['status'],'미검증')
     def test_missing_official_run_id(self):
