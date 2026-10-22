@@ -1,70 +1,82 @@
-"""Live MCP v1 transport integration with a real Python worker on localhost."""
+"""Live MCP v1 loopback integration: initialize, list tools, call real Python worker.
+This is not proof of ChatGPT plugin linkage or public HTTPS deployment.
+"""
 from __future__ import annotations
+
 import asyncio
 import json
+import os
 import socket
 import subprocess
 import sys
 import time
 from pathlib import Path
 
-async def check_protocol():
+
+def wait_for_tcp(host: str, port: int, process: subprocess.Popen, timeout: float = 18) -> None:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            raise RuntimeError('MCP server exited prematurely with code '+str(process.returncode))
+        try:
+            with socket.create_connection((host, port), timeout=0.3):
+                return
+        except OSError:
+            time.sleep(0.15)
+    raise RuntimeError('MCP server did not bind localhost within timeout')
+
+
+async def actual_client_session() -> None:
     from mcp import ClientSession
     from mcp.client.streamable_http import streamable_http_client
 
-    async with streamable_http_client("http://127.0.0.1:8000/mcp") as streams:
-        read_stream, write_stream = streams[:2]
+    async with streamable_http_client('http://127.0.0.1:8000/mcp') as transport:
+        read_stream, write_stream = transport[:2]
         async with ClientSession(read_stream, write_stream) as session:
-            welcome = await session.initialize()
-            assert welcome.serverInfo.name
+            initialize = await session.initialize()
+            assert initialize.serverInfo.name, 'server identity missing'
             tools = await session.list_tools()
-            assert "delegate_message" in {tool.name for tool in tools.tools}
-            response = await session.call_tool("delegate_message", {
-                "message": "에러 고쳐", "python_code": "print("
+            names = {tool.name for tool in tools.tools}
+            assert 'delegate_message' in names, f'list_tools missing: {names}'
+            call = await session.call_tool('delegate_message', {
+                'message': '에러 고쳐', 'python_code': 'print('
             })
-            assert not response.isError, response
-            data = getattr(response, "structuredContent", None)
-            if data is None:
-                blocks = [x.text for x in response.content if x.type == "text"]
-                assert blocks
-                data = json.loads(blocks[0])
-            payload = data.get("result", data)
-            assert payload["workers"][0]["role"] == "ai-auto-debug", payload
-            assert payload["workers"][0]["status"] == "DONE", payload
-            assert payload["workers"][0]["evidence"]["syntax_valid"] is False, payload
-            assert payload["external_llm_calls"] == 0
-            assert payload["production_writes"] == 0
-            assert payload["chatgpt_composer_hook"] is False
-            print(json.dumps({
-                "real_mcp_initialize_list_tools_call_tool": "PASS",
-                "worker_status": payload["workers"][0]["status"],
-                "provider_calls": 0, "production_writes": 0,
-                "chatgpt_connected": False
-            }, ensure_ascii=False))
+            assert not call.isError, f'MCP reported tool failure: {call}'
+            structured = getattr(call, 'structuredContent', None)
+            if structured is None:
+                blocks = [b.text for b in call.content if getattr(b,'type',None)=='text']
+                assert blocks, 'missing tool result content'
+                structured = json.loads(blocks[0])
+            payload = structured.get('result', structured)
+            assert payload['workers'][0]['role'] == 'ai-auto-debug', payload
+            assert payload['workers'][0]['status'] == 'DONE', payload
+            assert payload['workers'][0]['evidence']['syntax_valid'] is False, payload
+            assert payload['external_llm_calls'] == 0
+            assert payload['production_writes'] == 0
+            assert payload['chatgpt_composer_hook'] is False
+            print(json.dumps({'mcp_live_transport': 'PASS', 'server': initialize.serverInfo.name,
+                'tool': 'delegate_message', 'worker': payload['workers'][0]['role'],
+                'worker_status': payload['workers'][0]['status'],
+                'python_syntax_valid': False, 'external_llm_calls': 0,
+                'production_writes': 0, 'connected_to_chatgpt': False}, ensure_ascii=False))
 
-def main():
-    cwd = Path(__file__).resolve().parent
-    server = subprocess.Popen([sys.executable, "mcp_server.py"], cwd=cwd,
-                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def main() -> None:
+    root = Path(__file__).resolve().parent
+    if not (root/'mcp_server.py').exists():
+        raise SystemExit('Place verify_live_mcp.py beside mcp_server.py')
+    env = os.environ.copy()
+    env['PYTHONUNBUFFERED'] = '1'
+    process = subprocess.Popen([sys.executable, str(root/'mcp_server.py')], cwd=root,
+                               env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
-        deadline = time.monotonic() + 20
-        while time.monotonic() < deadline:
-            if server.poll() is not None:
-                raise RuntimeError("MCP server exited before accepting connections")
-            try:
-                with socket.create_connection(("127.0.0.1", 8000), timeout=.5):
-                    break
-            except OSError:
-                time.sleep(.15)
-        else:
-            raise TimeoutError("MCP server never bound to loopback port 8000")
-        asyncio.run(check_protocol())
+        wait_for_tcp('127.0.0.1', 8000, process)
+        asyncio.run(actual_client_session())
     finally:
-        server.terminate()
-        try: server.wait(timeout=4)
+        process.terminate()
+        try: process.wait(timeout=4)
         except subprocess.TimeoutExpired:
-            server.kill()
-            server.wait(timeout=4)
+            process.kill(); process.wait(timeout=4)
 
-if __name__ == "__main__":
+if __name__=='__main__':
     main()
