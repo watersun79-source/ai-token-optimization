@@ -1,5 +1,13 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 최신 예약 R16 다음 진행 목표 등록 — 2026-10-22 23:42 KST
+- **사용자 새 지시**: "진행. 다음 진행 목표는 예약 ai 등록. 진행" → 기존 **단일 예약 ID** `6acb017062a08191a4136238b78b313a`의 **프롬프트만** 갱신해 다음 진행 목표를 직접 등록함. 새 예약/중지/일시정지/시간대 변경 없음. 제목 AI, Asia/Seoul 매시간 정각, `is_enabled=true`, 기존 `notifications_enabled=false`, `email_enabled=false` 재조회 유지. 실제 `automations.update` 성공 및 별도 `automations.peek` readback으로 저장 확인; `updated_at=2026-10-22T14:42:47.055881Z`.
+- **새 최우선 목표**: 매 정규 회차에서 ChatGPT 예약의 공식 개별 실행 ID·종료 상태·원시 GitHub/Slack 앱 호출 로그 제공 여부를 확인하고, 같은 회차의 SHA/ts를 독립 대조. 없다면 반드시 `무인 성공 미검증`. 해당 실행 세션에 실제 연결 앱이 제공될 때 최신 GitHub 기억 인계·Slack을 먼저 복원하고, 가능한 안전한 범위 내에 분석→최소 수정→테스트→원격 readback→보고. 새로운 다음 목표 1개를 **회차 보고 내에서** 이어서 설정; 설정 때문에 예약을 추가하거나 임의 수정하지 않음.
+- **R16 코드 현황**: 격리 `ai/r16-evidence-reconciler-2026-10-22`의 `experiments/r16-evidence-reconciler/` Python 감사 검증기, 마지막 로컬 27/27 테스트 통과. 공식 개별 예약 run ID와 원본 호출 로그는 이전 22:00/23:00에 대해 아직 제공되지 않아 무인 성공 **미검증**. 코드 자동 배포/실제 예약 세션 Python 가용성을 추정하지 않음.
+- **보호**: GitHub `main`, 운영 Activepieces 플로우/연결/기록, 별도 예약, 비용·키, 이전 알림 상태는 변경 없음. 현재 문서 수정과 Slack 알림은 **사용자가 채팅에서 직접 승인한 등록 작업의 기록**이며 무인 예약 자체의 자동 앱 호출 증거가 아님.
+
+---
+
 
 ## R16 검증 기준 최신 보완 — 2026-10-22 23시 이후
 - **새로 발견·실제 수정**: 기존 격리 실행 증거 검사기가 과거 R13에서 사용했던 `PROJECT_MEMORY_INDEX.md`·`AI-memory-protocol.md`·오래된 unattended-report의 3개 GitHub 원본을 R16 필수로 요구하는 불일치. 실제 R16 프롬프트는 **`docs/ai/AI_CURRENT_HANDOFF_2026-10-22.md` 인계 읽기 우선**이므로 정상 회차여도 false-negative 가능.
