@@ -1,0 +1,49 @@
+name: AI MCP Free Hosting Staging (authenticated, no deploy)
+on:
+  push:
+    branches: [ai/render-free-mcp-staging-2026-10-22]
+    paths:
+      - 'experiments/ai-bot-team/**'
+      - '.github/workflows/ai-render-mcp-staging.yml'
+      - 'render.yaml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bearer-authenticated-mcp:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    defaults:
+      run:
+        working-directory: experiments/ai-bot-team
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install existing official Python MCP v1 dependencies
+        run: python -m pip install 'mcp>=1.28,<2'
+      - name: Verify fail-closed startup without bearer secret
+        run: |
+          python - <<'PY'
+          import os,subprocess,sys
+          env={k:v for k,v in os.environ.items() if k!='AI_MCP_BEARER_TOKEN'}
+          env['AI_MCP_ALLOWED_HOST']='127.0.0.1'
+          x=subprocess.run([sys.executable,'-c','import remote_mcp'],env=env,capture_output=True,text=True,timeout=10)
+          assert x.returncode != 0 and 'AI_MCP_BEARER_TOKEN' in x.stderr
+          assert 'Traceback' in x.stderr
+          print('FAIL_CLOSED_WITHOUT_KEY PASS')
+          PY
+      - name: Real MCP HTTP bearer authentication and Python worker invocation
+        run: python verify_remote_mcp.py
+      - name: All established non-MCP regressions
+        run: python -m unittest discover -s tests -v
+      - name: Parse Render staging config, no automatic deploy
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          c=Path('../../render.yaml').read_text()
+          assert 'plan: free' in c and 'autoDeployTrigger: "off"' in c
+          assert 'sync: false' in c and 'AI_MCP_BEARER_TOKEN' in c
+          print('RENDER_FREE_BLUEPRINT_STATIC_CHECK PASS')
+          PY
