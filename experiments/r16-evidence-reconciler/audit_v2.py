@@ -76,7 +76,7 @@ def check(payload: dict) -> dict:
     if not isinstance(task, dict) or task.get('id') != AUTOMATION_ID or task.get('is_enabled') is not True:
         outcome['reason'] = '보호 예약 ID·활성 상태 불일치'
         return outcome
-    if not target or target.minute != 0 or target.second != 0:
+    if not target or target.minute != 0 or target.second != 0 or target.microsecond != 0:
         outcome['reason'] = '정각 슬롯/시간대가 확인되지 않음'
         return outcome
     last_run = parsed_time(task.get('last_run_time'))
@@ -110,13 +110,16 @@ def check(payload: dict) -> dict:
     if not isinstance(tool_calls, list):
         outcome['reason'] = '원본 호출 형식 오류'
         return outcome
+    if len(tool_calls) > 16:
+        outcome['reason'] = '원본 호출 목록 16건 초과'
+        return outcome
     accepted = {}
     invocation_ids = set()
     for c in tool_calls:
         if not isinstance(c, dict):
             continue
         t = c.get('target')
-        if t not in REQUIRED or t in accepted:
+        if not isinstance(t, str) or t not in REQUIRED or t in accepted:
             continue
         tool, locator, version_type = REQUIRED[t]
         invocation = c.get('invocation_id')
@@ -124,7 +127,8 @@ def check(payload: dict) -> dict:
         version = c.get('version')
         is_valid_version = isinstance(version, str) and bool((SHA if version_type == 'sha' else SLACK_TS).fullmatch(version))
         if (c.get('origin') != 'official_task_tool_call' or c.get('run_id') != run_id
-                or c.get('success') is not True or c.get('tool') not in TOOL_ALIASES.get(tool, {tool})
+                or c.get('success') is not True or not isinstance(c.get('tool'), str)
+                or c.get('tool') not in TOOL_ALIASES.get(tool, {tool})
                 or c.get('locator') != locator or not isinstance(invocation, str) or not invocation
                 or invocation in invocation_ids or observed is None
                 or not (start <= observed <= end) or not is_valid_version):
