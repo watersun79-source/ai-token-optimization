@@ -61,13 +61,16 @@ def check(payload: dict) -> dict:
         outcome['reason'] = '정각 슬롯/시간대가 확인되지 않음'
         return outcome
     last_run = parsed_time(task.get('last_run_time'))
-    if not last_run or not (target <= last_run < target + timedelta(hours=1)):
-        outcome['reason'] = '목표 슬롯과 일치하는 예약 실행 시각 메타데이터 없음'
-        return outcome
-    outcome['trigger'] = '예약 실행 시각 메타 확인 (완료/성공 증거 아님)'
+    # last_run_time is latest-task metadata, not an individual historical run.
+    # A later hourly run must never invalidate official evidence for an older slot.
+    metadata_matches_slot = bool(last_run and target <= last_run < target + timedelta(hours=1))
+    outcome['trigger'] = ('예약 실행 시각 메타 확인 (완료/성공 증거 아님)'
+                          if metadata_matches_slot else
+                          '마지막 실행 메타데이터만으로 이 회차 실행 여부 확인 불가')
     native = payload.get('native_run') or {}
     if not isinstance(native, dict) or native.get('origin') != 'official_task_run_details':
-        outcome['reason'] = '공식 개별 회차 원본 로그 미제공'
+        outcome['reason'] = ('공식 개별 회차 원본 로그 미제공' if metadata_matches_slot else
+                             '공식 개별 회차 원본 로그 미제공; 최신 예약 시각은 과거 회차 원본 증거가 아님')
         return outcome
     run_id = native.get('run_id')
     if not isinstance(run_id, str) or not run_id.strip():
