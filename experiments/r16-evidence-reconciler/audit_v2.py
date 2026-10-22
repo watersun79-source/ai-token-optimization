@@ -66,7 +66,7 @@ def check(payload: dict) -> dict:
 
     A format pass NEVER authenticates that JSON really came from a trusted provider.
     """
-    outcome = {'status': '미검증', 'native_run_id': None, 'verified_targets': [],
+    outcome = {'status': '미검증', 'native_run_id': None, 'official_success_verified': False, 'verified_targets': [],
                'missing': list(REQUIRED), 'authenticity': '실행 증거 입력의 원본 진위 별도 확인 필요'}
     if not isinstance(payload, dict):
         outcome['reason'] = '입력 형식 오류'
@@ -156,7 +156,9 @@ def main():
     except (OSError, ValueError) as exc:
         parser.error(str(exc))
     print(json.dumps(output, ensure_ascii=False, indent=2))
-    return 0 if output['status'].startswith('형식 통과') else 2
+    # Exit 0 is reserved for authenticated success, which this offline tool
+    # cannot establish. A format match must never be mistaken for scheduler success.
+    return 3 if output['status'].startswith('형식 통과') else 2
 
 
 if __name__ == '__main__':
