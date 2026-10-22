@@ -43,3 +43,11 @@ ChatGPT Scheduled → AI → Previous runs에서 정확한 22:00 회차를 열�
 - **수정**: R16 실무 최초 조사 증거를 `current_handoff` (현행 인계 문서 SHA) + `slack_thread` (지정 스레드 ts)로 조정. 이전 R13 출처는 R16을 대신할 수 없으며, 기타 R16 문서는 필요시 선택 호출로 별도 처리. 이 두 출처가 모두 존재해도 `형식 통과 · 진위 미검증`으로 남기고 실제 목표 수행/원본 진위는 별도 판정.
 - **재현·검증**: `python3 -m unittest discover -s tests -q` **27/27 통과**. 로컬 파일 git blob SHA와 원격 재조회 값 정확히 일치: `audit_v2.py` `eb3387b724e32e352b7eef8655e8997a3b843eaa`, `tests/test_audit_v2.py` `0139caeb04e8e0a0b51532d447467a8ca12b611e`. 실제 22:00 회차 입력은 계속 **미검증**: 공식 per-run ID/원시 tool call ledger 미제공.
 - 이 브랜치의 변경은 **검증기 코드/테스트**에만 적용. 현행 ChatGPT 매시간 정각 예약, 예약 프롬프트·알림, GitHub `main`, Activepieces 운영 플로우는 변경하지 않음.
+
+
+## 2026-10-23 00시 — 실제 연결 앱 도구명 호환 수정
+- 이번 정규 회차에서 실제 노출된 도구명은 `mcp__codex_apps__github_fetch_file` 및 `mcp__codex_apps__slack_slack_read_thread`였다. 기존 검증기는 별칭이 없는 과거 canonical 이름만 허용해, 향후 공식 원시 호출 로그가 제공돼도 정상 호출을 누락할 수 있었다.
+- TDD 재현: 새 테스트가 패치 전 실패함을 확인한 뒤 최소 별칭 목록을 추가했다. 기존 이름과 현재 연결 앱 이름만 허용하며 임의 도구명은 계속 거부한다.
+- 로컬 검증: 신규 회귀 1/1, 기존 회귀 27/27 통과. 이는 검증기 코드의 수동 테스트이며 정규 예약의 무인 성공 증거가 아니다.
+- 원격 read-back: `audit_v2.py` blob `0a362a8f66c16d066c4dd35cb2258fd87e53ee6c`, 신규 테스트 blob `6e1623d0797473a34cdd21b0292095c40d45cb09`.
+- 현재 00시 예약의 `run_details.last_run.id`는 제공됐지만 상태가 조회 시 `in_progress`였고, 같은 회차의 플랫폼 원시 tool-call ledger는 미제공이므로 정규 무인 성공은 계속 미검증이다.
