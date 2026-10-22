@@ -1,5 +1,14 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-23 아침 후속 — 누락된 00:07 커밋 3개 + 도구명 별칭 격리 수정
+- 현행 예약 ID `6acb017062a08191a4136238b78b313a`, `is_enabled=true`, Asia/Seoul 매시간 정각, 10/23 마지막 `last_run_time=2026-10-22T21:00:49.759834Z`(=06:00:49 KST). 예약 설정 수정·중지 없음. 이는 *예약 실행 시각 메타데이터*이며 실제 앱 작업 결과가 아님.
+- **자정 이후 GitHub 원본 새 발견**: main/기억 브랜치는 신규 커밋 0건이지만 **격리 브랜치** `ai/r16-evidence-reconciler-2026-10-22`에 10/23 **00:07:21, 00:07:44, 00:08:10 KST** 커밋 3건이 실제 존재한다: `f5986dbc7f9f1f6ca04f94d1823709ab7c7875c6` 테스트, `a5d54e757887d16b51868c8177334e0992b65a32` 검사기 연결 앱 도구명 별칭, `f7a2cfbb30288feffee122ca0528281a048a6892` 설명. GitHub 작성자 watersun79-source, 전부 unsigned. 00시 정규 예약과 시각상 연관 가능하나 **공식 native per-run ID 및 tool-call ledger 독립 검증 없음 → 무인 성공 미검증**. 00:08 README 내 `run_details.last_run.id` 제공 주장은 **당시 문서의 자기 보고**이며 현 채팅 플랫폼 API readback 아님.
+- 격리 Activepieces `MOCK ONLY · AI R16 evidence verifier · isolated` `zgSopq6Txh68wxsDc5K5Z`도 구 도구명만 수용하던 불일치를 테스트 `o4UG1IpKOrd4AMX7hS1Mv`로 재현·수정. ChatGPT Work alias `mcp__codex_apps__github_fetch_file`, `mcp__codex_apps__slack_slack_read_thread`를 원래 이름과 함께 정확히 허용. 형식만 통과해도 결과는 반드시 `UNVERIFIED`, `official_success_verified=false`.
+- Activepieces 격리 `TESTING` 신규 회귀 **5/5 통과**, 원본 `ap_get_run` 확인. GitHub 격리 JS 소스 blob SHA `ffd1b3f351808f22bcab4feec5f42762e0f6ebea`, read-back 완료. [상세 검증 기록](https://github.com/watersun79-source/ai-token-optimization/blob/ai/r16-evidence-reconciler-2026-10-22/experiments/r16-evidence-reconciler/ACTIVEPIECES_MOCK_SAFE_FLOW_2026-10-22.md).
+- ChatGPT Scheduled의 직접 개별 회차 결과/원본 호출 조회는 현재 채팅 연결 도구에 미노출. 수동 TESTING 실행이나 자체 GitHub 커밋은 대체 불가. 새 예약/유료 API/운영 Activepieces/ GitHub main 변경 없음.
+
+---
+
 ## 최신 예약 R16 다음 진행 목표 등록 — 2026-10-22 23:42 KST
 - **사용자 새 지시**: "진행. 다음 진행 목표는 예약 ai 등록. 진행" → 기존 **단일 예약 ID** `6acb017062a08191a4136238b78b313a`의 **프롬프트만** 갱신해 다음 진행 목표를 직접 등록함. 새 예약/중지/일시정지/시간대 변경 없음. 제목 AI, Asia/Seoul 매시간 정각, `is_enabled=true`, 기존 `notifications_enabled=false`, `email_enabled=false` 재조회 유지. 실제 `automations.update` 성공 및 별도 `automations.peek` readback으로 저장 확인; `updated_at=2026-10-22T14:42:47.055881Z`.
 - **새 최우선 목표**: 매 정규 회차에서 ChatGPT 예약의 공식 개별 실행 ID·종료 상태·원시 GitHub/Slack 앱 호출 로그 제공 여부를 확인하고, 같은 회차의 SHA/ts를 독립 대조. 없다면 반드시 `무인 성공 미검증`. 해당 실행 세션에 실제 연결 앱이 제공될 때 최신 GitHub 기억 인계·Slack을 먼저 복원하고, 가능한 안전한 범위 내에 분석→최소 수정→테스트→원격 readback→보고. 새로운 다음 목표 1개를 **회차 보고 내에서** 이어서 설정; 설정 때문에 예약을 추가하거나 임의 수정하지 않음.
