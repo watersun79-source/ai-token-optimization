@@ -1,0 +1,38 @@
+name: AI OAuth MCP resource server isolated test (no deploy)
+on:
+  push:
+    branches: [ai/oauth-mcp-test-2026-10-22]
+    paths:
+      - 'experiments/ai-bot-team/**'
+      - '.github/workflows/ai-oauth-mcp-test.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  oauth-local-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    defaults:
+      run:
+        working-directory: experiments/ai-bot-team
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install official v1 MCP SDK and cryptographic JWT validator
+        run: python -m pip install -r requirements-oauth.txt
+      - name: Verify signed JWT and actual authenticated MCP client call
+        run: python verify_oauth_mcp.py
+      - name: Run existing 92 regressions plus new OAuth configuration tests
+        run: python -m unittest discover -s tests -v
+      - name: Check production configuration rejects missing issuer/JWKS/resource
+        run: |
+          python - <<'PY'
+          import os, subprocess,sys
+          env={k:v for k,v in os.environ.items() if not k.startswith('AI_OAUTH_') and k!='AI_MCP_RESOURCE'}
+          proc=subprocess.run([sys.executable,'-c','from oauth_mcp import build_app; build_app()'],env=env,capture_output=True,text=True,timeout=15)
+          assert proc.returncode != 0
+          assert 'Invalid or missing AI_MCP_RESOURCE' in proc.stderr
+          print('OAUTH_FAIL_CLOSED_NO_PROVIDER PASS')
+          PY
