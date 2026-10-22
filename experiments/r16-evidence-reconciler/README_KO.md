@@ -23,7 +23,7 @@ LangGraph는 MIT 라이선스, Activepieces 핵심 오픈소스도 MIT(엔터프
 
 로컬 회귀 검사 21/21 통과. 본문 예시의 샘플 실행 ID는 실제 ID가 아니라서 절대 정규 실행의 증거로 사용하면 안 된다.
 
-실측 22:00 입력은 공식 native_run=null, tool_calls=[]여서 정상적으로 "미검증: 공식 개별 회차 원본 로그 미제공" 판정한다. CLI 미검증은 종료 코드 2, 형식만 통과 시 0이지만 원본 신뢰성 확인이 필요하다.
+실측 22:00 입력은 공식 native_run=null, tool_calls=[]여서 정상적으로 "미검증: 공식 개별 회차 원본 로그 미제공" 판정한다. CLI 종료 코드는 **미검증 2 / 형식만 통과·진위 미검증 3**이다. 종료 코드 **0은 진위가 인증된 성공 전용으로 예약**했으며 이 오프라인 검증기는 0을 반환하지 않는다.
 
 ## 완료 조건과 보호 범위
 
@@ -51,3 +51,12 @@ ChatGPT Scheduled → AI → Previous runs에서 정확한 22:00 회차를 열�
 - 로컬 검증: 신규 회귀 1/1, 기존 회귀 27/27 통과. 이는 검증기 코드의 수동 테스트이며 정규 예약의 무인 성공 증거가 아니다.
 - 원격 read-back: `audit_v2.py` blob `0a362a8f66c16d066c4dd35cb2258fd87e53ee6c`, 신규 테스트 blob `6e1623d0797473a34cdd21b0292095c40d45cb09`.
 - 현재 00시 예약의 `run_details.last_run.id`는 제공됐지만 상태가 조회 시 `in_progress`였고, 같은 회차의 플랫폼 원시 tool-call ledger는 미제공이므로 정규 무인 성공은 계속 미검증이다.
+
+
+## 2026-10-23 오전 — 종료 코드 0의 오인 위험 수정 · fail-closed
+- 실제 재현: 공식 회차 ID와 원본 호출처럼 꾸민 **모의 자료**를 입력하면 이전 Python CLI가 `형식 통과 · 진위 미검증`이라 쓰면서 `exit 0`을 반환. 다른 자동화가 이를 **정규 예약 성공**으로 오해할 수 있었음.
+- 수정: 출력 JSON 전체에 `official_success_verified=false`를 명시. **진위 불명인 형식 통과는 exit 3**, 아예 증거가 없는/부적합한 회차는 **exit 2**. 실제 플랫폼 인증이 없는 현재 검증기에서 **exit 0 사용 금지**. 이는 CLI를 호출하는 상위 자동화의 성공 판정 기준을 더 엄격히 만드는 하위 호환성 변경이므로 운영 파이프라인에는 자동 배포하지 않는다.
+- 새 `tests/test_cli_exit_codes.py` 테스트 3개를 먼저 만들어 기존 코드에서 **3개 실패/오류를 확인**한 뒤 수정. 최신 원격 소스 및 기존 테스트를 완전한 Git blob SHA로 대조해 **로컬 회귀 테스트 35/35 통과**. 테스트는 수동 Python 오프라인이며 **ChatGPT Scheduled 정규 실행의 인증이 아니다**.
+- 확인한 현재 원격 SHA: `audit_v2.py` **`07433beddad31fd72b5a8c66eae3e5f0e58d053f`**, `tests/test_audit_v2.py` `f174eea913c1484884aaba8124a02d80311d0dff`, `tests/test_connected_tool_names.py` `6e1623d0797473a34cdd21b0292095c40d45cb09`, `tests/test_cli_exit_codes.py` **`e417f706e9b8f760987d17de72708ad4863047f0`**. 네 파일 모두 실제 로컬 git blob hash 와 GitHub 원격 read-back 정확히 일치.
+- **동시 변경 보존**: 이 작업 중 다른 개발 이력에서 발견된 `0eefa7e7434f046350b2ee8de5367aed4e7f352d` (날짜 소수부/잘못된 tool-call 타입/과다 로그 차단)와 관련 테스트 `5195114d4ca408cef8c43e617f8dede5ed670b12`를 확인·보존하고 통합 테스트에 포함했다.
+- 유료 API·운영 Activepieces·기존 R16 예약 ID/일정/활성/프롬프트·GitHub main 변경 없음. R16 00:00 및 최신 회차 공식 개별 실행 ID와 플랫폼 원본 호출 로그는 여전히 현재 도구에서 미제공. **무인 성공 미검증**.
