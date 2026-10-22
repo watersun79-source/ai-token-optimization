@@ -1,0 +1,28 @@
+name: AI Top10 isolated roles (provider-free)
+on:
+  push:
+    branches: [ai/top10-role-sandbox-2026-10-22]
+    paths:
+      - 'experiments/ai-bot-team/**'
+      - '.github/workflows/ai-top10-offline.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ten-specialists:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: experiments/ai-bot-team
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Offline unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Execute all 10 offline specialist roles
+        run: |
+          python specialist_team.py --role all > /tmp/ai-top10-demo.json
+          python -c "import json; d=json.load(open('/tmp/ai-top10-demo.json')); assert d['role_count']==10 and d['external_model_calls']==0 and d['external_writes']==0 and not d['chatgpt_unattended_execution_verified']"
