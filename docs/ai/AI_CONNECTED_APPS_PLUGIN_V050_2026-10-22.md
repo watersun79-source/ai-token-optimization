@@ -20,3 +20,11 @@
 - Render 서비스 생성 도구의 과거 안전 차단 재시도/우회 금지. 유료 생성 API 호출·결제 0. 허용되지 않은 외부 모델/비밀 사용 없음.
 - 다음 우선순위: 새 채팅에서 개인 플러그인 v0.5.0/ai-connected-tools 자동 노출 여부 실제 확인, 채팅에서 '내 AI 프로젝트 최신 CI 대조해' 같은 관련 요청으로 GitHub 도구 원시 호출과 Slack 읽기 증거 확인. 성공해도 일반 모든 메시지 100% 자동 호출 보장 아님.
 - 별도 안전한 HTTPS MCP OAuth 배포는 사용자 요구가 아직 충족되지 않는 다른 경로임. 이 새 app-backed 플러그인은 기존 앱으로 즉시 실제 작업을 수행하기 위해 서버 문제를 우회하는 것이 아니라 정상적인 제품 지원 경로를 새로 선택한 것.
+
+## 2026-10-22 후속 연결 실행 관찰 (동일 대화 후속 '진행')
+- **새 스킬 현재 채팅에서 실제 로딩 확인**: tools.skills__read('skills://plugins/ai-chat-bot-team/ai-connected-tools/skill.md') 성공. tools.skills__list에서 ai-chat-bot-team에 속한 스킬 **12개**, 이 중 ai-connected-tools 존재. 기존 기록의 '현재 채팅에 새 스킬 미표시'는 **과거 시점 사실**, 후속 관찰로 갱신됨.
+- Plugin Creator get_plugin_files로 계정 개인 플러그인 **v0.5.0**, release pluginrel_6ad9fb1fa79c8191bb00ea0658123982, 44 files, .app.json의 검증된 GitHub/Slack ID, ai-connected-tools/agents/openai.yaml allow_implicit_invocation true 직접 재확인.
+- **@ 멘션 없는 사용자 메시지 '진행'을 AI 프로젝트 문맥으로 해석하고 실제 연결 도구 호출**: mcp__GitHub__fetch_file로 이 문서 자체의 이전 버전 blob SHA 60e9e11d820a286de21245226971594b69bbfa21 읽음, Slack mcp__Slack__slack_read_thread로 기존 v0.5 CI/릴리스 기록 읽음. 이는 '현재 대화에서 의도 기반 도구 사용 성공'을 뜻하지만, 플랫폼이 별도 플러그인 내부 에이전트를 독립 자동 실행했다는 증거나 다른 새 채팅에서 항상 implicit 호출된다는 증거는 아님.
+- 설치 권한 API 간 불일치 발견: Plugin Management search_plugins는 GitHub·Slack installed=true를 반환하는 한편 get_app_permissions(각 동일 exact id)는 status=not_installed를 반환. 그러나 현재 채팅에서 양쪽 실제 읽기 도구는 정상 동작. 진단 불일치로 표시하며 어느 값을 전역 설치/권한 보장이라고 단정하지 않음. 사용자 승인 없이 권한을 상향/변경하지 않음.
+- 별도 원격 OAuth/Python MCP 호스팅 미연결, ChatGPT 일반 메시지를 외부 Python에 **항상 강제** 전달하는 기능은 불명/보장 불가. 기존 R15 예약은 automations.peek으로 is_enabled=true·Asia/Seoul 매시간 정각 확인; 스케줄/프롬프트 및 Activepieces 운영·GitHub main 변경 없음.
+- 남은 목표: **새 채팅 표면에서** @ 멘션 없이 같은 사용자 프로젝트 요청을 넣고 해당 채팅의 실제 GitHub/Slack 도구 호출 원본으로 자동 선택 여부 확인. 이 현재 대화의 후속 턴만으로 새 채팅 implicit 동작을 재현했다고 주장하지 말 것.
