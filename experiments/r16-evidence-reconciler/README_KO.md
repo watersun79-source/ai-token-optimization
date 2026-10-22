@@ -36,3 +36,10 @@ ChatGPT Scheduled → AI → Previous runs에서 정확한 22:00 회차를 열�
 - 수정: 마지막 실행 시각은 **진단용 최신 메타데이터**로만 사용하며, 공식 원본 실행 ID·회차별 시작/종료·호출 로그를 검증하는 독립 경로는 유지. 과거 회차의 `native_run`이 진짜 원본일 때 최신 예약 실행 시각 때문에 거절하지 않음. 증거가 없는 과거 회차는 계속 `미검증`이며 가짜 실행 ID는 인정하지 않음.
 - 직접 로컬 회귀 테스트 **23/23 통과**. 실측 `23:00:27`을 최신 예약 시각으로 반영해 `22:00` 회차를 재검사하면 `미검증: 공식 개별 회차 원본 로그 미제공; 최신 예약 시각은 과거 회차 원본 증거가 아님`으로 판정. 공식 실행 증거를 새로 얻었다는 뜻은 아님.
 - 원격 격리 브랜치 코드 blob SHA `86d90166b8c8ed18162fd097583c5d506e23cd09`, 테스트 blob SHA `8b8cb06194125737eb827bcc731c5192dca6dc74`; GitHub `fetch_file` 직접 재조회로 확인. 운영 예약/시간대/프롬프트와 Activepieces, `main` 변경 없음.
+
+
+## 최신 수정 — R16 인계 문서와 검증 대상 정합성 (2026-10-22)
+- **실제 발견 오류**: 1차 검사기의 `REQUIRED`가 과거 R13의 `PROJECT_MEMORY_INDEX.md`, `AI-memory-protocol.md`, `ai-unattended-success-audit-2026-10-21-0624.md` 및 Slack으로 고정돼 있었음. 현행 R16 지침은 `AI_CURRENT_HANDOFF_2026-10-22.md`를 최상위 기억 인계로 우선 읽기 때문에 R16 정상 실행도 오판할 수 있었음.
+- **수정**: R16 실무 최초 조사 증거를 `current_handoff` (현행 인계 문서 SHA) + `slack_thread` (지정 스레드 ts)로 조정. 이전 R13 출처는 R16을 대신할 수 없으며, 기타 R16 문서는 필요시 선택 호출로 별도 처리. 이 두 출처가 모두 존재해도 `형식 통과 · 진위 미검증`으로 남기고 실제 목표 수행/원본 진위는 별도 판정.
+- **재현·검증**: `python3 -m unittest discover -s tests -q` **27/27 통과**. 로컬 파일 git blob SHA와 원격 재조회 값 정확히 일치: `audit_v2.py` `eb3387b724e32e352b7eef8655e8997a3b843eaa`, `tests/test_audit_v2.py` `0139caeb04e8e0a0b51532d447467a8ca12b611e`. 실제 22:00 회차 입력은 계속 **미검증**: 공식 per-run ID/원시 tool call ledger 미제공.
+- 이 브랜치의 변경은 **검증기 코드/테스트**에만 적용. 현행 ChatGPT 매시간 정각 예약, 예약 프롬프트·알림, GitHub `main`, Activepieces 운영 플로우는 변경하지 않음.
