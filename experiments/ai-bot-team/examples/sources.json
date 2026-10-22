@@ -1,0 +1,12 @@
+[
+  {
+    "title": "Python concurrent.futures documentation",
+    "url": "https://docs.python.org/3/library/concurrent.futures.html",
+    "tags": ["AI", "협업", "병렬", "봇", "python"]
+  },
+  {
+    "title": "LangGraph multi-agent framework (architecture reference)",
+    "url": "https://github.com/langchain-ai/langgraph",
+    "tags": ["AI", "협업", "봇", "orchestration"]
+  }
+]
