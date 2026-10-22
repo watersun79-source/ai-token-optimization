@@ -63,23 +63,45 @@ class AuditV2Tests(unittest.TestCase):
     def test_wrong_status(self):
         p=self.make();p['native_run']['status']='failed';self.assertIn('종료 성공',check(p)['reason'])
     def test_late_tool_call(self):
-        p=self.make();p['tool_calls'][0]['observed_at']='2026-10-22T22:05:00+09:00';self.assertIn('memory_index',check(p)['missing'])
+        p=self.make();p['tool_calls'][0]['observed_at']='2026-10-22T22:05:00+09:00';self.assertIn('current_handoff',check(p)['missing'])
     def test_cross_run_tool_call(self):
-        p=self.make();p['tool_calls'][0]['run_id']='other';self.assertIn('memory_index',check(p)['missing'])
+        p=self.make();p['tool_calls'][0]['run_id']='other';self.assertIn('current_handoff',check(p)['missing'])
     def test_duplicate_invocation(self):
-        p=self.make();p['tool_calls'][1]['invocation_id']=p['tool_calls'][0]['invocation_id'];self.assertIn('memory_protocol',check(p)['missing'])
+        p=self.make();p['tool_calls'][1]['invocation_id']=p['tool_calls'][0]['invocation_id'];self.assertIn('slack_thread',check(p)['missing'])
     def test_wrong_tool_name(self):
-        p=self.make();p['tool_calls'][0]['tool']='fabricated';self.assertIn('memory_index',check(p)['missing'])
+        p=self.make();p['tool_calls'][0]['tool']='fabricated';self.assertIn('current_handoff',check(p)['missing'])
     def test_wrong_locator(self):
-        p=self.make();p['tool_calls'][2]['locator']='other-file';self.assertIn('latest_report',check(p)['missing'])
+        p=self.make();p['tool_calls'][0]['locator']='other-file';self.assertIn('current_handoff',check(p)['missing'])
     def test_wrong_sha(self):
-        p=self.make();p['tool_calls'][0]['version']='not-a-sha';self.assertIn('memory_index',check(p)['missing'])
+        p=self.make();p['tool_calls'][0]['version']='not-a-sha';self.assertIn('current_handoff',check(p)['missing'])
     def test_slack_ts_invalid(self):
-        p=self.make();p['tool_calls'][3]['version']='hello';self.assertIn('slack_thread',check(p)['missing'])
+        p=self.make();p['tool_calls'][1]['version']='hello';self.assertIn('slack_thread',check(p)['missing'])
     def test_manual_tool_call_is_not_scheduled(self):
-        p=self.make();p['tool_calls'][0]['origin']='manual_chat';self.assertIn('memory_index',check(p)['missing'])
+        p=self.make();p['tool_calls'][0]['origin']='manual_chat';self.assertIn('current_handoff',check(p)['missing'])
     def test_missing_one_required_call(self):
         p=self.make();p['tool_calls']=p['tool_calls'][:-1];self.assertIn('slack_thread',check(p)['missing'])
+    def test_r16_handoff_is_required(self):
+        p=self.make()
+        p['tool_calls']=[c for c in p['tool_calls'] if c['target']!='current_handoff']
+        r=check(p)
+        self.assertEqual(r['status'],'미검증')
+        self.assertIn('current_handoff',r['missing'])
+    def test_r13_legacy_docs_cannot_replace_r16_handoff(self):
+        p=self.make()
+        p['tool_calls'][0]['target']='memory_index'
+        p['tool_calls'][0]['locator']='docs/ai/PROJECT_MEMORY_INDEX.md'
+        r=check(p)
+        self.assertIn('current_handoff',r['missing'])
+    def test_r16_handoff_slack_sufficient_for_format(self):
+        p=self.make()
+        r=check(p)
+        self.assertTrue(r['status'].startswith('형식 통과'))
+        self.assertEqual(r['missing'],[])
+        self.assertIn('실제 업무 목표 수행',r['reason'])
+    def test_r16_slack_target_remains_required(self):
+        p=self.make()
+        p['tool_calls']=[c for c in p['tool_calls'] if c['target']!='slack_thread']
+        self.assertIn('slack_thread',check(p)['missing'])
     def test_naive_time_rejected(self):
         p=self.make();p['target_slot']='2026-10-22T22:00:00';self.assertEqual(check(p)['status'],'미검증')
     def test_out_of_order_run(self):
