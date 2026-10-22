@@ -20,3 +20,12 @@
 ## 기존 보호
 - 한국시간 매시간 정각의 기존 예약 AI R15 `6acb017062a08191a4136238b78b313a` 및 운영 Activepieces 플로우·연결·GitHub main 변경 0. 기존 개인 ChatGPT 플러그인 `plugins_6ad9d7b745448191bb087af817f02f68` v0.4.1 변경 0 (아직 실행기 코드를 원격 MCP로 직접 연결하지 않았음).
 - 사용자의 최종 요구 '평소 ChatGPT 채팅하면 필요한 실제 봇 자동 실행'은 완결되지 않았다. 다음 필수 단계는 Render Free 계정 연결, 보안 비밀 수동 설정, 실제 HTTPS `/mcp` URL 반환 후 ChatGPT 사용 가능한 표면에서 연결·실제 자동선택 검증. 사용자 메시지의 **무조건적 전역 도구 호출은 ChatGPT 제품에서 보장하지 않는다**. 정규 R15 예약의 플랫폼 공식 개별 실행 로그도 계속 미검증.
+
+
+## 2026-10-22 후속 운영 상태: 계정 연결 확인 및 생성 요청 차단
+
+- Render 플러그인이 **사용자 연결 완료** 상태로 제공되어 `mcp__Render__list_workspaces`를 읽기 전용 호출했고, 계정의 단일 워크스페이스를 확인. 사용자 Render 사용량/잔액이나 Free 플랜 자격은 도구로 독립 확인하지 못함.
+- `mcp__Render__create_web_service`에 `plan="free"`, `autoDeploy="no"`, 싱가포르 리전, 위 격리 브랜치, 환경변수 비밀을 포함하는 실제 생성 요청을 1회 보냈으나 **OpenAI 안전 검사에서 해당 도구 호출 차단**. 서비스 생성 성공 응답을 받지 못했다. 차단된 요청을 반복하거나 우회하지 않는다. 이후 읽기 전용 `list_services` 응답은 `null`이며 **실제 서비스 생성/배포 상태 미확인**, URL 추정 금지.
+- **중요한 인증 설계 변경:** OpenAI 공식 인증 안내 `https://developers.openai.com/plugins/build/auth`에 따르면 ChatGPT는 커스텀 API 키나 client-credentials를 전달하지 못한다. 앱을 인증하려면 OAuth 2.1의 인증/리소스 서버와 토큰 검증, refresh token 메타데이터 등이 필요. **현재 코드의 고정 Bearer 키 방식은 ChatGPT 커스텀 MCP 연결에 곧바로 호환된다고 단정할 수 없으며, 보안 검사 후 무조건 배포할 대상이 아니다.** 관련 도움말 `https://help.openai.com/en/articles/12584461-connecting-custom-mcp-servers-in-chatgpt` 참고.
+- ChatGPT 커스텀 MCP 서버 설정은 지원 계정에서 **웹 UI 전용**이며 iPhone 앱에서 연결 설정이 되지 않는다(연결 후 앱 내 사용 가능 여부는 별도). ChatGPT 플러그인의 자동 선택 또한 *관련성 조건부*이지 모든 메시지 강제 외부 실행 보장 아님.
+- 후속 안전 작업: 인증 설계를 공식 OAuth 2.1로 바꿀지 검증하거나, 완전히 공개해도 되는 무상태 읽기 전용 도구만 별도의 안전 심사 후 분리. 그전까지 본 staging 서비스는 **배포 차단 / 로컬 격리 인증·실행 CI PASS**로 표시. Render 계정 인증·결제/권한, 운영 플로우, 예약 R15는 변경하지 않음.
