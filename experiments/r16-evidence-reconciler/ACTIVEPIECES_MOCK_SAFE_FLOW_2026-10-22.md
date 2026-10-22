@@ -61,3 +61,18 @@
 - 모든 회차 Activepieces 자체 테스트 `SUCCEEDED`, 출력 `official_success_verified=false`, `external_calls=0`; ChatGPT 실제 무인 실행 성공이 아니라 mock 검증기 자체 품질 검증임.
 - 격리 JavaScript 코드와 GitHub 원격 read-back 일치. [소스](activepieces_mock_guard_2026-10-23.js) blob SHA `262d0e25ec84a6d29be59d22f6bbadbc939c433d`.
 - 기존 정규 R16 예약(매시간 정각/활성), GitHub `main`, 운영 Activepieces, Slack 운영 설정은 변경 없음. 격리 플로우는 비활성·미게시 유지.
+
+
+## 후속 조사 — 2026-10-23 06:29 이후, 00시 회차 연관 가능 커밋 발견
+- 기존 `main` 및 기억 브랜치에서 자정 이후 커밋 0건이라고만 말하면 **불완전**하다. 격리 개발 브랜치 `ai/r16-evidence-reconciler-2026-10-22`에서 **00:07:21 KST** `f5986dbc7f9f1f6ca04f94d1823709ab7c7875c6` (도구명 추가 테스트), **00:07:44** `a5d54e757887d16b51868c8177334e0992b65a32` (Python 검사기 별칭 허용), **00:08:10** `f7a2cfbb30288feffee122ca0528281a048a6892` (문서) 3건을 GitHub 커밋 원본으로 확인했다. 실제 GitHub 사용자 계정에 귀속되어 있으나 `commit.verification.verified=false` (unsigned). **스케줄러 공식 개별 회차 ID와 해당 커밋을 연결하는 독립 원본 로그가 없으므로 무인 실행 성공 확정은 아님.**
+- 00:08 문서에는 예약 세션에서 `mcp__codex_apps__github_fetch_file`, `mcp__codex_apps__slack_slack_read_thread` 이름으로 연결 앱을 봤고 `run_details.last_run.id` 메타데이터가 있었다는 당사 서술이 존재한다. **문서 자기 보고이지 플랫폼 공식 실행 기록을 현재 채팅에서 재조회한 것이 아님**.
+- 새로 발견한 **실제 코드 정합성 오류**: Python `audit_v2.py`는 00:07부터 이 별칭을 허용하지만 Activepieces `MOCK ONLY` 검사기 코드는 옛 도구명만 인정. 테스트 `o4UG1IpKOrd4AMX7hS1Mv`에서 새 이름 GitHub·Slack 2개를 모두 `missing`으로 잘못 판정.
+- **격리 Activepieces 안전 패치**: 허용 목록을 옛 이름과 새 이름 각각 정확히 두 개씩으로 좁혀서 추가하고, `cfg.tools.includes(c.tool)` 검사로 교체. 등록되지 않은 도구명은 여전히 거부. 기존 상속 키/윤년·날짜/오프셋 입력 방어 그대로 유지. **절대 ChatGPT 공식 실행이 확인됐다는 의미는 아님**.
+- 직접 `TESTING` 환경의 모의 실행 5/5 및 각 `ap_get_run` 원본 출력 독립 조회:
+  - 새 별칭 `uEZfY1i2YFloKW6kcD9h2` → `FORMAT_MATCH_ONLY`/진위 `UNVERIFIED`.
+  - 기존 canonical `dZgpLvoOPG4rAYf0N6w3n` → `FORMAT_MATCH_ONLY`/진위 `UNVERIFIED`.
+  - 임의 이름 거부 `XKys8C8mL5QlGazMCfT1w` → `UNVERIFIED`, `current_handoff` 누락.
+  - 불가능 날짜 거부 `O58jdABHljnTMtBN2Axq6` → `UNVERIFIED`.
+  - 공식 개별 회차 ID 누락 `shobjWOHf76utpKgtkB9W` → `UNVERIFIED`.
+- 5개 모두 `official_success_verified=false`, `external_calls=0`; 새로운 외부 모델 호출이나 운영 연결 없음. 소스 [activepieces_mock_guard_2026-10-23.js](activepieces_mock_guard_2026-10-23.js)와 Activepieces step_1 실제 소스 독립 대조/원격 GitHub blob SHA `ffd1b3f351808f22bcab4feec5f42762e0f6ebea`.
+- ChatGPT 기존 정규 AI R16 활성/Asia/Seoul 매시 정각/원래 일정 유지. 격리 플로우는 `DISABLED`, `published=false`; 기존 운영 Slack flow, GitHub `main` 보호.
