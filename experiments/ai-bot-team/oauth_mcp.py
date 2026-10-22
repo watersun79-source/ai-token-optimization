@@ -32,14 +32,24 @@ def validate_config(env=None):
         raise RuntimeError("Local test mode must remain loopback-only")
     if not test_mode and urlparse(resource).hostname in ("127.0.0.1","localhost"):
         raise RuntimeError("Production must use external HTTPS endpoint")
+    # Prevent accidental JWKS fetch from an unexpected issuer-independent host.
+    authority=lambda uri: (urlparse(uri).scheme,urlparse(uri).hostname,urlparse(uri).port)
+    if authority(issuer)!=authority(jwks_uri):
+        raise RuntimeError("JWKS URL must use the same origin as the trusted issuer")
+    allowed=tuple(x.strip() for x in env.get("AI_OAUTH_ALLOWED_SUBJECTS","").split(",") if x.strip())
+    if not 1<=len(allowed)<=12 or any(x=="*" or len(x)>180 for x in allowed):
+        raise RuntimeError("AI_OAUTH_ALLOWED_SUBJECTS must list 1-12 exact opaque user IDs")
     return resource,issuer,jwks_uri,test_mode
 
 class JWTTokenVerifier:
-    def __init__(self,resource,issuer,jwks_uri):
+    def __init__(self,resource,issuer,jwks_uri,allowed_subjects):
         self.resource,self.issuer=resource,issuer
+        self.allowed_subjects=frozenset(allowed_subjects)
         self.keys=jwt.PyJWKClient(jwks_uri,cache_keys=True,cache_jwk_set=True,lifespan=300,timeout=4)
     async def verify_token(self,token: str)->AccessToken|None:
         try:
+            if len(token)>8192:
+                return None
             header=jwt.get_unverified_header(token)
             if header.get("alg")!="RS256" or header.get("typ") not in (None,"JWT","at+jwt"):
                 return None
@@ -49,7 +59,8 @@ class JWTTokenVerifier:
             scope=claims.get("scope","")
             scopes=scope.split() if isinstance(scope,str) else []
             client_id=claims.get("client_id") or claims.get("azp")
-            if SCOPE not in scopes or not isinstance(client_id,str) or not client_id:
+            if (SCOPE not in scopes or not isinstance(client_id,str) or not client_id
+                    or claims.get("sub") not in self.allowed_subjects):
                 return None
             return AccessToken(token=token,client_id=client_id,scopes=scopes,
                                expires_at=int(claims["exp"]),resource=self.resource,
@@ -63,8 +74,9 @@ def build_app():
     host=u.hostname
     port=u.port
     origin=f"{u.scheme}://{host}"+(f":{port}" if port else "")
+    allowed_subjects=tuple(x.strip() for x in os.environ["AI_OAUTH_ALLOWED_SUBJECTS"].split(",") if x.strip())
     mcp=FastMCP("AI OAuth Bot Gateway",
-        token_verifier=JWTTokenVerifier(resource,issuer,jwks_uri),
+        token_verifier=JWTTokenVerifier(resource,issuer,jwks_uri,allowed_subjects),
         auth=AuthSettings(issuer_url=AnyHttpUrl(issuer),resource_server_url=AnyHttpUrl(resource),
                           required_scopes=[SCOPE]),
         json_response=True,stateless_http=True,host="0.0.0.0",
