@@ -16,12 +16,19 @@ from pathlib import Path
 import re
 
 AUTOMATION_ID = '6acb017062a08191a4136238b78b313a'
+# R16 source-of-truth: current GitHub handoff first, then authorized Slack
+# collaboration. Older R13 reports are NOT mandatory for an R16 run.
 REQUIRED = {
-    'memory_index': ('mcp__GitHub__fetch_file', 'docs/ai/PROJECT_MEMORY_INDEX.md', 'sha'),
-    'memory_protocol': ('mcp__GitHub__fetch_file', 'docs/ai/AI-memory-protocol.md', 'sha'),
-    'latest_report': ('mcp__GitHub__fetch_file', 'docs/ai/ai-unattended-success-audit-2026-10-21-0624.md', 'sha'),
+    'current_handoff': ('mcp__GitHub__fetch_file', 'docs/ai/AI_CURRENT_HANDOFF_2026-10-22.md', 'sha'),
     'slack_thread': ('mcp__Slack__slack_read_thread', 'C0C9649RQAZ/1792416391.631669', 'slack_ts'),
 }
+# Ancillary R16 references may be fetched when needed but are optional.
+OPTIONAL = {
+    'memory_index': ('mcp__GitHub__fetch_file', 'docs/ai/PROJECT_MEMORY_INDEX.md', 'sha'),
+    'execution_standard': ('mcp__GitHub__fetch_file', 'docs/ai/AI_EXECUTION_STANDARD_2026-10-21.md', 'sha'),
+    'plugin_v050': ('mcp__GitHub__fetch_file', 'docs/ai/AI_CONNECTED_APPS_PLUGIN_V050_2026-10-22.md', 'sha'),
+}
+
 SHA = re.compile(r'^[a-f0-9]{40}$')
 SLACK_TS = re.compile(r'^\d{10}\.\d{6}$')
 
@@ -118,7 +125,8 @@ def check(payload: dict) -> dict:
         outcome['reason'] = '동일 회차 공식 도구 호출 증거 부족'
         return outcome
     outcome['status'] = '형식 통과 · 진위 미검증'
-    outcome['reason'] = '공식 실행 ID/출처/호출/시각/버전의 형식상 일치; 신뢰 원본 별도 조회 필수'
+    outcome['reason'] = ('R16 필수 인계·Slack의 동일 회차 형식 일치. '
+                         '실제 업무 목표 수행·원본 진위·부가 문서 조회는 별도 확인 필요')
     return outcome
 
 
