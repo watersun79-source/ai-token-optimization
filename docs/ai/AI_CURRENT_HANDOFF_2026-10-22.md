@@ -1,5 +1,19 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+
+## 2026-10-23 — R16 다국어 시간대 검증 차이 해소 20/20 + 공식 원격 CI 성공 (정규 무인 예약과 구별)
+- **다른 사람 공개 구현 참조**: JSON-Schema-Test-Suite(MIT) 공통 다언어 fixture 구조, Java 21 OffsetDateTime의 `±18:00` 경계 검증, SLSA build provenance의 출처/실행 ID 분리. 외부 코드를 직접 복제·추가 설치하지 않고 R16 격리 코드의 위험한 오프셋 해석 불일치를 수정.
+- **실제 재현**: Python `fromisoformat`은 `+19:00` 시간대를 수용하지만 Java는 거부; 기존 JS는 +23시까지만 검사. 격리 `fixtures/time_cases.tsv` 15→20건으로 확대하여 `±19:00`, `+18:01` 거부·`±18:00` 허용을 세 언어에서 동일하게 판정.
+- **적용**: GitHub 격리 branch `ai/r16-evidence-reconciler-2026-10-22`의 Python `audit_v2.py` commit `d8ad3c4a66b8f2d05d9fdb76a41d266ecde4ba30`, JS `activepieces_mock_guard_2026-10-23.js` commit `d3c8eb284656b789d7ab8695de08c2bba71d9d12`, 원본 blob `831de11d0a132392ea74476fa26288b29b5c020c` / `b0185fc20a939e468065e96ccea8ebf04247313b`. Java 표준 구현은 변경하지 않고 독립 기준 유지.
+- **검증(공식 GitHub 원본)**: Actions [`39896738983`](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39896738983), job `120228819827`, head SHA `d3c8eb284656b789d7ab8695de08c2bba71d9d12`, `completed/success` 및 원본 로그: Python 기존 44/44 OK, polyglot Python 2/2, JS 20/20 PASS, Java 20/20 PASS, 추가 Java oracle 12/12 PASS, 경고 0.
+- **비활성 격리 Activepieces**: flow `zgSopq6Txh68wxsDc5K5Z`의 mock CODE step만 수정. GitHub JS와 `ap_read_step_code` 본문 **완전 일치**, flow `DISABLED/unpublished`, `ap_validate_flow` 2/2 valid. 실제 TESTING 모의 run `a6Wc8LQeKMK055sOX9Fqu` (+19 거부), `dl9wBmcdZt7ZnsSmJWRmr` (+18 형식 통과), 2/2 예상 출력 일치·`official_success_verified=false`·`external_calls=0`.
+- **인계 상세**: [격리 검증 README](https://github.com/watersun79-source/ai-token-optimization/blob/ai/r16-evidence-reconciler-2026-10-22/experiments/r16-evidence-reconciler/README_KO.md) 원격 blob `3bc7ca961f010987176931d12239d0b91afb9e74`, commit `8295afc3c6424cf7f72c856977b997b18d244162`.
+- **최우선 미검증**: GitHub Actions는 **격리 코드 CI**만 증명. ChatGPT 원래 정각 예약의 **공식 개별 per-run ID·실행 종료 상태·같은 회차 GitHub/Slack 도구 호출 원본은 미제공** → **정규 무인 기억 복원 성공 미검증**. 기존 예약·운영 플로우·main·알림·과금 설정은 변경하지 않음.
+- **다음 목표**: 공식 Scheduled → AI → Previous runs에서 인증된 원본이 실제 제공될 경우에만 같은 회차 앱 호출을 독립 대조. 원본 없으면 미검증, 추정 실행 ID·비공식 API 우회 금지.
+
+---
+
+
 ## 2026-10-23 12:20 KST — Python·JavaScript·Java 기존 15건 + 추가 12건 통합 CI 최신 성공
 - **사용자 일반 채팅에서 수동으로 작업한 R16 교차 검증**. 기존 R16 정규 ChatGPT 예약의 무인 성공 증거는 아님.
 - 공개 원본 조사: OpenTelemetry tool-call span과 Temporal workflow ID/run ID 구별, GitHub Actions의 branch/path 필터, Eclipse Temurin JDK+Python/Node 표준 검사 구조를 참고. 외부 오픈소스 프로그램 복제/추가 패키지 설치·유료 생성 API 호출 없이 격리 소스에서 최소 구현.
