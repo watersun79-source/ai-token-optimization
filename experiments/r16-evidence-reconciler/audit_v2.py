@@ -15,6 +15,8 @@ import json
 from pathlib import Path
 import re
 
+from otel_evidence_adapter import adapt_otlp
+
 AUTOMATION_ID = '6acb017062a08191a4136238b78b313a'
 # R16 source-of-truth: current GitHub handoff first, then authorized Slack
 # collaboration. Older R13 reports are NOT mandatory for an R16 run.
@@ -138,7 +140,23 @@ def check(payload: dict) -> dict:
         outcome['reason'] = '공식 개별 회차 종료 성공 여부 미확인'
         return outcome
     outcome['native_run_id'] = run_id
-    tool_calls = payload.get('tool_calls') or []
+    # Prefer structured OTLP evidence when supplied; do not merge it with a
+    # caller-authored private tool_calls list.  The adapter verifies trace
+    # ancestry, ended timestamps, semantic tool names, and status before this
+    # existing run/locator/version gate is applied.
+    if 'otel' in payload:
+        expected_targets = {
+            target_name: (TOOL_ALIASES.get(tool_name, {tool_name}), locator,
+                          SHA if version_type == 'sha' else SLACK_TS)
+            for target_name, (tool_name, locator, version_type) in REQUIRED.items()
+        }
+        adapted = adapt_otlp(payload.get('otel'), expected_run_id=run_id,
+                             expected_targets=expected_targets)
+        tool_calls = adapted['tool_calls']
+        outcome['otel_trace_id'] = adapted['trace_id']
+        outcome['otel_result'] = adapted['reason']
+    else:
+        tool_calls = payload.get('tool_calls') or []
     if not isinstance(tool_calls, list):
         outcome['reason'] = '원본 호출 형식 오류'
         return outcome
