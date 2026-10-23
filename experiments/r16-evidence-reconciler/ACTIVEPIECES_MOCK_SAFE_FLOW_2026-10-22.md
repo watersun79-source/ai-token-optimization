@@ -95,3 +95,17 @@
 - 기존 단일 ChatGPT AI 예약 R16 `6acb017062a08191a4136238b78b313a`는 `is_enabled=true`, Asia/Seoul 매시 정각 유지. Activepieces 격리 flow `zgSopq6Txh68wxsDc5K5Z`는 **DISABLED·unpublished**; 운영 Slack 플로우 `vtRwEYmcwDTunBZut265G` 그대로 ENABLED. GitHub `main`, Activepieces 운영 플로우/연결, 예약 설정/알림, 과금/API 변경 없음.
 - `FORM MATCH`는 원본 진위 인증이 아니다. 공식 ChatGPT 개별 예약 run ID 및 동일 회차 tool-call 원본이 없어 **무인 GitHub/Slack 업무 성공은 미검증**.
 
+
+
+## 2026-10-23 오전 10시대 — 소수초 정밀도 손실 결함 수정 (격리 MOCK ONLY)
+- **사전 재현**: JS `time()`이 ISO-8601 1~9자리 소수초를 `Date.UTC`의 밀리초(3자리)로 자르면서, 완료 시각 `10:00:02.000100+09:00` 이후 `10:00:02.000900+09:00`의 원시 호출을 같은 `10:00:02.000`으로 오인. 사용자 수동 ChatGPT 대화에서 비활성·미게시 격리 플로우에 가상 payload를 넣어 재현: Activepieces `TESTING` run `MSkp2Ej3BfBzI9wMW1KrK`, 실제 `format_check=PASS` (오판).
+- **실제 최소 수정**: 입력된 1~9자리 소수초를 **정수 BigInt 나노초**로 변환해 UTC 시각을 비교하고, JSON 출력에는 BigInt를 포함하지 않도록 유지. 유효하지 않은 시각은 `null`로 차단. 슬롯/시작·종료/동일 회차 호출 시각을 모두 새 정밀도 비교에 적용. JS 판정 `status=UNVERIFIED`, `official_success_verified=false`, `external_calls=0` 불변.
+- 수정 커밋 `dd756f0c03482b73e8a718663acc79303ee7f1b9`, GitHub JS blob SHA `d98d9842191e4e17753c56620800c7eca541e0b9`. Activepieces `ap_update_step`로 **같은 격리 CODE step_1만** 적용하고 `ap_read_step_code`/GitHub `fetch_file` **문자열 완전 일치** 확인. `ap_validate_flow valid=true` (2/2), `ap_list_flows status=DISABLED`, `published=false`.
+- **수정 후 Activepieces TESTING + 각 `ap_get_run` 단계 출력 독립 재조회 3/3 통과**:
+  - `4ftbYULAS5atOy2aCL4hx`: 종료 후 **800μs** 호출 → `Same-run tool-call evidence missing`, `missing=[slack_thread]`, 형식 PASS 오판 제거.
+  - `ICTmdi4XnSLFlFFgk7AAG`: 종료 전 **50μs** 호출 → `FORMAT_MATCH_ONLY`, `format_check=PASS`, 하지만 `authenticity=UNVERIFIED`.
+  - `Op8TOl8FmtqVusbJAV6GS`: 종료 후 **800ns** 호출 → `Same-run tool-call evidence missing`, `missing=[slack_thread]`.
+  - 세 회차의 **Activepieces 실행 환경은 TESTING**, 샘플 payload의 `run_id=SYNTHETIC-NOT-A-REAL-CHATGPT-RUN`. 모든 출력 `official_success_verified=false`, `external_calls=0`. 이는 ChatGPT 정규 예약 실제 무인 실행이 아니라 **모의 검증기 회귀 결과**다.
+- ChatGPT 기존 AI 예약 ID `6acb017062a08191a4136238b78b313a` 읽기 전용 `automations.peek`: `is_enabled=true`, `paused_count=0`, `last_run_time=2026-10-23T01:00:54.365515Z` (=10:00:54 KST), Asia/Seoul 정각 유지. 예약 종료 성공 또는 네이티브 개별 회차/앱 호출 증거가 아님. 별도 Activepieces AUDIT 10/23 기록 `count=0`.
+- 예약 ID·프롬프트·주기·알림/기존 운영 Activepieces flow/연결·GitHub main·비밀/유료 모델 API 변경 없음. **정규 ChatGPT 무인 GitHub/Slack 성공: 미검증**.
+- **다음 목표**: 공식 ChatGPT `Scheduled → AI → Previous runs`의 개별 회차 원본 및 같은 회차 앱 호출 감사 로그를 실제 제공 가능한 권한 있는 도구로 확보할 수 있을 때만 검증. 기존 예약/운영 플로우 쓰기·권한 우회 금지.
