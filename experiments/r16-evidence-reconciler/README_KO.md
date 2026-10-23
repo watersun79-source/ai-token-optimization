@@ -1,5 +1,16 @@
 # R16 무인 예약 실행 증거 대조기 — 격리 개발 브랜치
 
+
+## 2026-10-23 — R16 격리 브랜치 원격 CI 43/43 실제 성공 (ChatGPT 무인 예약과 분리)
+- **원인 독립 대조**: `.github/workflows/validate.yml`은 `push: branches:[main]`, `pull_request: branches:[main]` 전용이고, 기존 `ai-memory-bridge.yml`은 기억 브랜치의 특정 파일 경로 변경에만 반응한다. R16 격리 브랜치에는 기존 CI 트리거가 없어 해당 코드 커밋의 Actions runs/check runs가 0이었던 것. 저장소 전체 Actions 실행 94건, main 브랜치 37건으로 저장소 GitHub Actions 기능은 작동 중. 기존 validate는 루트 `tests/`만 검사하므로 격리 `experiments/r16-evidence-reconciler/tests/`를 별도로 대상으로 삼아야 한다.
+- **정확한 해결**: **격리 브랜치에만** 새 `.github/workflows/r16-evidence-verifier.yml` 파일 생성. `push` 이벤트의 branch는 정확히 `ai/r16-evidence-reconciler-2026-10-22`로 제한하고, 수정 경로도 워크플로 파일·`audit_v2.py`·격리 `tests/**`로만 제한. 루트 `main` 워크플로·운영 자동화·정규 ChatGPT 예약·Activepieces 운영은 수정하지 않았다. GitHub 토큰 `contents: read`만 허용, `ubuntu-latest`, Python 3.12 표준 라이브러리, 외부 AI API/웹훅/유료 모델 호출/아티팩트 저장 0.
+- **공식 GitHub 출처 확인**: 저장소 `visibility=public`; [GitHub 표준 runner 공용 저장소 과금 규칙](https://docs.github.com/en/billing/concepts/product-billing/github-actions)은 무료, [브랜치·파일 경로 필터](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)는 AND 조건. 대형 runner 등 유료 리소스 없음.
+- **첫 GitHub 실실행**: 신규 workflow commit `5a851d978aa229787bfbead88b3359df2f6f30aa`, workflow blob `ffaf8063a1bdf3cc51c472a8e41c4edfa7f5a1aa` → 공식 Actions run **`39891401115`**, Check/job **`120211760208`**, `push`, `completed/success`, 원본 runner 로그 **`Ran 43 tests in 0.122s`**, `OK`. [첫 실행](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39891401115). 기존 Node20 action 경고 발견.
+- **경고 최소 수정/독립 재검증**: 같은 workflow의 `actions/checkout@v4`→`@v7`, `actions/setup-python@v5`→`@v7`, 인증자료 지속 저장 비활성 `persist-credentials: false` (오직 격리 workflow). 최신 소스 commit `9cdaffad73b083a00d577e8771e154a66f1af58e`, workflow blob **`dd9d1f192e65bc868552462d10384a114473e203`**. 새 공식 Actions run **`39891502065`**, job/check **`120212092643`**, `push`, `completed/success`, 공식 원본 GitHub job logs **`Ran 43 tests in 0.094s`**, `OK`, Node.js20 사용 중단 경고 **0건**. [최종 통과](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39891502065).
+- **증거 구분**: 이것은 GitHub 격리 코드의 자동 CI 성공이 **실제 검증된 것**이며, GitHub 공식 run ID·head SHA·Check ID·job logs 원본이 존재한다. 하지만 ChatGPT 정규 예약 AI의 native per-run ID/동일 회차 GitHub·Slack 호출 원본은 여전히 도구에 미제공 → **정규 예약 무인 성공 미검증**. GitHub Actions ID를 ChatGPT 공식 예약 ID로 오인하지 않는다.
+- **다음 목표**: 새 코드/테스트 변경 시에만 CI가 다시 도는 경로 유지. GitHub 기본 브랜치 및 운영·예약 보호, 이미 통과한 수동 테스트 재실행 금지. 공식 ChatGPT Scheduled → AI → Previous runs에서 개별 회차 로그가 접근 가능해질 때 동일 회차 원시 증거만 검증.
+
+
  
 ## 2026-10-23 — GitHub CI 빈 조회 결과의 범위 확인 (읽기 전용 원인 분석)
 - **기존 반복된 오해 교정**: `mcp__GitHub__fetch_commit_workflow_runs` 커넥터는 **pull_request로 트리거된 첫 페이지의 실행만** 반환한다. `workflow_runs=[]`는 `push`, 수동 실행 등 다른 이벤트에 대해 확인한 결과가 아님.
