@@ -1,6 +1,16 @@
 # R16 무인 예약 실행 증거 대조기 — 격리 개발 브랜치
 
 
+## 2026-10-23 15시대 후속 — 동시 기여 변경·URL 바이디 검사 재조회, Python 72/72 최종 성공
+- **신규 변경 충돌 감지·직접 대조**: 첫 OWASP URL 검증 변경은 코드 blob `de90d1460fc60c9e86d1852e8483802ed544f2b5`, 테스트 5건 blob `ac4571e96b9f30c70423987fbd84c6c50640624e`, GitHub run `39909757804`에서 Python 68/68 성공. 이후 **별도 기여의 변경**으로 최신 `bot_team_r16.py` blob `b3bc27702347029f8c28352b72917d5524baa977`에 `unicodedata.category(c).startswith('C')`를 이용한 bidi/숨은 제어문자 제목 차단이 추가됨. 같은 격리 브랜치에 `tests/test_bot_untrusted_references.py` 4건 추가, blob `2137942c4d282c685f0f38e258270a38a4663005`. 앞선 코드 SHA는 **패치 이력**이지 현행 최종 SHA가 아니므로 구분.
+- **최신 원격 CI 원본 재조회**: [Actions run `39910021477`](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39910021477), head SHA `97893289a61eb2c6e12fbe204ab1e834f5ceba2b`, 공식 Check/job `120270605065`, `completed/success`. 직접 조회한 원시 job log: Python 전체 **72/72 OK** (68 + 추가 4), Python 별도 다국어 2/2 OK, JavaScript 20/20 PASS, Java 공통 20/20 PASS, 추가 Java oracle 12/12 PASS, 경고 0. 직전 중간 커밋 run `39909896111`은 `failure`였으나 최종 성공으로 수정된 상태를 구분.
+- **실제 수행 범위**: 사용자 일반 ChatGPT 지시에 따른 GitHub 격리 코드·표준 CI 검증. Microsoft Agent Framework Go (MIT, 미성숙 public preview), Pydantic AI (MIT), OWASP의 URL parser 방어 지침을 참고했으나 새 유료 API/모델 실행, 외부 에이전트 프로세스·패키지 설치 없음. 본 R16 ResearchBot은 제공된 Github URL *메타데이터* 검사만 하고 외부 원본 진위 확인은 계속 별도 필요함.
+- **보호/미해결**: 기존 매시간 정각 예약 ID `6acb017062a08191a4136238b78b313a`, `is_enabled=true`, `paused_count=0`, 최근 `last_run_time=2026-10-23T06:07:08.222410Z` (=15:07:08 KST)는 트리거 메타. 예약 스케줄/알림·Activepieces 운영·GitHub main 불변. ChatGPT Scheduled **native per-run ID/같은 회차 GitHub·Slack 원본 호출이 제공되지 않아 무인 업무 성공 = 미검증**. 다음 목표는 공식 Previous runs 원본 접근을 확인하는 것뿐, 기실행 CI를 사용자 예약 성공으로 오인하지 않음.
+
+---
+
+
+
 ## 2026-10-23 15시대 — OWASP 참고 AI Bot GitHub 출처 URL 검증 강화
 - **새 외부 구현 조사**: [OWASP SSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html)에서는 입력 URL을 그대로 신뢰하지 말고 허용 대상과 파서 차이를 엄격히 점검하라고 권고. [Python urllib.parse 공식 문서](https://docs.python.org/3/library/urllib.parse.html#url-parsing-security)는 `urlsplit`이 입력을 검증하지 않는다고 명시. [Pydantic AI](https://github.com/pydantic/pydantic-ai) MIT는 durable execution과 일반 영속 저장을 구분하고, [Microsoft Agent Framework Go](https://github.com/microsoft/agent-framework-go) MIT는 공개 프리뷰. 패키지 설치·LLM API 호출 없이 기존 Python·JS·Java 오프라인 CI를 이용해 검증.
 - **실제 문제**: 기존 `bot_team_r16.py` ResearchBot이 사용자 제공 링크를 단지 `startswith('https://github.com/')`로 판정. URL의 host/username/query/fragment/경로 인코딩/역슬래시·제어문자 등을 정규화·재파싱하지 않고 참고 링크로 반영할 수 있는 *메타데이터 신뢰도 결함*. 이 코드는 네트워크 요청은 하지 않으므로 SSRF 실제 발생 증거는 아님.
