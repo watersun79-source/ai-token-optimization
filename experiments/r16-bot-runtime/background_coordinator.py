@@ -66,6 +66,10 @@ def run_loop(goal, state_dir, *, interval_seconds=3600, max_runs=None,
                 "started_at": started,
                 "completed_at": datetime.now(timezone.utc).isoformat(),
                 "official_unattended_app_call_success": "UNVERIFIED",
+                "executed_selected_rule_checks": receipt.get("executed_selected_rule_checks", 0),
+                "selected_statuses": receipt.get("selected_statuses", {}),
+                "selected_outcome": receipt.get("selected_outcome", "UNVERIFIED"),
+                "selected_evidence_scope": "OFFLINE_SNAPSHOT_NOT_PROVIDER_AUTHENTICATED",
             }
             # Replace atomically; never claim this is official platform telemetry.
             target = state_dir / "background_latest.json"
