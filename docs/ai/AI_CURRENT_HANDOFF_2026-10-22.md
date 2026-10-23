@@ -1,5 +1,18 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+
+## 2026-10-23 — R16 격리 원격 GitHub CI 실성공 43/43 × 2 (정규 ChatGPT 무인 성공과 별개)
+- **기존 CI 0건 원인 규명**: main `.github/workflows/validate.yml`은 main 푸시/PR만, 격리 branch `ai-memory-bridge.yml`은 기억 branch 특정 파일 변경만 실행. R16 별도 CI 트리거 없었음. GitHub API 원본에서 저장소 Actions 전체 **94건**, main **37건**, R16 **0건**(격리 CI 생성 전), 격리 커밋 `5c92a3f73d252871dcb51274a1f95f4242cbdd00`의 전체 이벤트 Actions/Checks 0건 확인. GitHub Actions 기능 전반 고장 아님.
+- **격리 브랜치 전용 CI 실제 생성**: `ai/r16-evidence-reconciler-2026-10-22` 의 `.github/workflows/r16-evidence-verifier.yml`. 정확히 해당 격리 branch push와 검증기 코드/테스트/워크플로 경로에만 트리거. `main` 무수정. 루트 테스트가 아닌 `experiments/r16-evidence-reconciler/tests` 기준으로 Python 3.12 표준 unittest 43건. 토큰 권한 `contents: read`, 무료 공개 저장소 + `ubuntu-latest` 표준 runner 사용, 외부 유료 API/비밀/AI 호출 0.
+- **GitHub 원격 CI 첫 통과**: 생성 commit `5a851d978aa229787bfbead88b3359df2f6f30aa`; Actions 공식 run **`39891401115`**; Check/job ID `120211760208`; event push; status `completed/success`; 직접 재조회된 job logs `Ran 43 tests in 0.122s`, `OK`. 최초 Node.js20 deprecation 경고 확인.
+- **최신 Action으로 경고 수정하고 다시 통과**: checkout/setup-python `@v7`, checkout `persist-credentials: false`; 소스 commit **`9cdaffad73b083a00d577e8771e154a66f1af58e`**, workflow blob **`dd9d1f192e65bc868552462d10384a114473e203`**. 공식 GitHub Actions run **`39891502065`**, Check/job **`120212092643`**, `completed/success`. 원시 로그 `Ran 43 tests in 0.094s`, `OK`, Node.js20 경고 **0건**. [실제 최종 CI 성공 링크](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39891502065). 이력과 원본 SHA: [격리 README](https://github.com/watersun79-source/ai-token-optimization/blob/ai/r16-evidence-reconciler-2026-10-22/experiments/r16-evidence-reconciler/README_KO.md) blob `ca1173974fbff8609fcf1da586eb17e0919fec08`.
+- **구분**: GitHub 공식 CI 성공 **완료·독립 검증**. ChatGPT Scheduled의 공식 per-run ID·같은 실행 네이티브 GitHub/Slack 호출 ledger는 현재 이 대화 API에서 제공되지 않아 **ChatGPT 정규 예약의 무인 복원·업무 성공은 여전히 미검증**. Actions run ID를 ChatGPT 예약 ID로 대체 금지.
+- 보호: 기존 단일 예약 `6acb017062a08191a4136238b78b313a` 활성·정각·제목/프롬프트/알림 불변. 운영 Activepieces와 GitHub `main` 불변, 무료 우선 유지. 코드/테스트가 변경될 때만 자동 CI 재실행, 통과한 테스트를 무의미하게 수동 반복하지 않음.
+- **다음 목표**: 공식 ChatGPT `Scheduled → AI → Previous runs`의 해당 회차 원시 로그/앱 사용 승인 상태 실제 제공 시 같은 회차 앱 호출을 검증, 제공 없으면 미검증 유지.
+
+---
+
+
 ## 2026-10-23 11:43 KST — 모든 이벤트 GitHub Actions·Checks 실제 재대조
 - **이 항목은 일반 ChatGPT 채팅 수동 읽기 전용 대조**. ChatGPT 기존 정규 예약이 자체 실행한 원본 증거가 아니다.
 - 기존 R16 `6acb017062a08191a4136238b78b313a`: `automations.peek` 원본 `is_enabled=true`, `paused_count=0`, 매시간 정각(Asia/Seoul), `last_run_time=2026-10-23T02:06:18.531665Z` (= **11:06:18 KST**), schedule/title/prompt/alerts/email 설정 변경하지 않음. 이 값만으로 실제 run 완료 시각·도구 실행 결과를 주장할 수 없음.
