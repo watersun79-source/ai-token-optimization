@@ -1,5 +1,16 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-24 03:53 KST — 봇 협업 OTLP 입력 누락·잘못된 legacy fallback 수정
+- **실제 결함**: `bot_team_r16.collaborate`가 evidence의 schedule/slot/native_run/tool_calls만 전달하고 `otel` 키를 버림. 직접 audit_v2.check는 정상 OTLP 2개 target을 형식 통과시키지만 봇 경로는 missing 처리; 반대로 잘못된 OTLP({}, null)와 정상 형식의 legacy tool_calls가 함께 오면 봇 경로만 legacy로 형식 통과. 원본 진위를 인증한 사례는 아님.
+- **선행 구현 참고**: OpenTelemetry Apache-2.0 upstream [trace_service.proto](https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/collector/trace/v1/trace_service.proto) blob efbbedbe4545a6f809e8cdbd699379cbc16e1a1f의 ExportTraceServiceRequest/ResourceSpans 구조를 실제 조회. 기존 adapter와 checker를 재사용하며 SDK/외부 패키지/모델 호출 없음.
+- **최소 수정**: `otel` 키가 입력에 있을 때만 값을 그대로 audit_input으로 전달. null/잘못된 값의 존재도 보존해 checker의 OTLP 우선·legacy fallback 금지 정책을 유지. 키가 없는 기존 legacy 경로도 보존.
+- **TDD/봇 실실행**: 회귀 2개 추가 후 수정 전 failures=3(정상 경로 1, invalid {}, null 2개 subTest) 재현. 수정 후 전체 로컬 Python 104/104. 실제 BOT CLI에서도 synthetic OTLP 2개 target 형식 통과, 종료2/official_success_verified=false/provider_calls=0 확인. 단순 역할 지침이나 외부 모델 실행과 구별.
+- **격리 코드/원격 검증**: commit [7dd30dc50318a81841c9edeba5d1e0eb6334ad73](https://github.com/watersun79-source/ai-token-optimization/commit/7dd30dc50318a81841c9edeba5d1e0eb6334ad73). bot blob 3e3db965447abd050babef7a231af1b05523fb29, test blob 185aee2a324185acc260560074c908250ea840df. 두 파일 원격 blob SHA와 전체 문자열 일치. [Actions 40006866278](https://github.com/watersun79-source/ai-token-optimization/actions/runs/40006866278) / job 120596889532 / head 동일 / attempt 1 / completed success. 원시 로그 Python 104/104+2/2, JS 12/12+20/20, Java 12/12+20/20.
+- **보호/미검증**: 기존 예약 활성·Asia/Seoul 정각을 읽기 전용 조회. 공식 03시 회차와 결과 귀속은 제공되지만 동일 회차 원시 GitHub/Slack tool-call ledger는 여전히 미제공 → 정규 무인 성공 미검증. main·예약 설정/활성/프롬프트/알림·운영 Activepieces·비밀/결제/유료 API 변경 없음. 다음 목표는 지원되는 공식 원시 ledger 제공 시 독립 대조; 불변 합격 CI 반복 금지.
+
+---
+
+
 ## 2026-10-24 03:49 KST — OTLP root parentSpanId 잘못된 타입 추가 차단
 - **새 결함 재현**: 직전 dce944c 변경으로 자식 parentSpanId의 list/dict 예외는 방어되었으나 root 판별은 여전히 `not span.get("parentSpanId")`여서 [], {}, false, 0, null을 빈 root ID로 채택. 직전 최신 코드 기준 회귀 실행에서 5개 subTest 실패를 실제 확인. 실제 예약 인증 성공이나 침해 증거가 아닌 격리 파서 결함.
 - **선행 구현/라이선스**: OpenTelemetry upstream [trace.proto](https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/trace/v1/trace.proto), blob 235b54e8e78b55f0bb4f3f1f43fc89bdda28b04c, root parent ID empty/8-byte ID 규약 참조. Apache-2.0 LICENSE blob 261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64 확인. 이 검증기의 fail-closed 입력 정책으로 비문자열/null을 거부하며 누락된 root parent는 허용. SDK 복제/패키지 설치/유료 모델 호출 없음.
