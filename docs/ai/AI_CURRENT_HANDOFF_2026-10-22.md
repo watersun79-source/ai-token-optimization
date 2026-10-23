@@ -1,5 +1,15 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-24 05:03 KST — 최댓값 정각 슬롯 OverflowError 보강 완료
+- **실제 재현/공식 근거**: target_slot와 last_run_time이 9999-12-31T23:00:00Z이면 next-hour 덧셈이 검사기와 offline bot에서 OverflowError. Python 공식 datetime 문서의 지원 연도 범위/덧셈 overflow 규칙과 대조: https://docs.python.org/3/library/datetime.html . 신규 검사3개 중2개 수정 전 ERROR, 마지막 지원 가능22시 슬롯은 정상 증거 gate 도달.
+- **최소 변경**: 정각/시간대 검증 뒤 slot_end를 한 번 계산. OverflowError는 구조화된 미검증 결과로 반환하고, 정상 slot_end를 metadata/native window 양쪽에 재사용. 기존 시간창 검증 약화 없음. commit40b5746aa4d286b056e7e463d53949e1ae4bb433, compare1commit/2files만. audit_v2.py blob e1ab741920f8c1a90b5d5293dd8415f4c0ce2ef5 / tests/test_slot_overflow.py blob44d1658f5e33a5ed6b317a71c9c59d589794aa78. 원격 전체 소스 문자열과 SHA 재조회 일치.
+- **검증**: 로컬 Python124/124. Actions40015863390 job120627629290 head동일 attempt1 completed/success. 원시 로그 Python124+2, JS12+20, Java12+20 모두 PASS. 기존 격리 CI 자동 실행이며 합격 불변 CI 수동 반복0. https://github.com/watersun79-source/ai-token-optimization/actions/runs/40015863390
+- **독립 AI 검토**: 기존 review_run_binding 검토자가 좁은 후속 재현으로 최대 UTC시간/offset동치의 미검증 반환, 마지막 지원 hour/최소 날짜의 정상 gate 유지, bot 성공 승격 없음 확인. 추가 회귀 없음. 전체 suite 중복 실행·외부 모델·유료 API 없음.
+- **예약 실제 상태**: read-only peek에서 활성/Asia/Seoul/매시간 유지. 공식 최신 회차0069f41c-aa14-8326-bc52-072b94e7ef56, scheduled_for2026-10-23T19:00Z, recorded_status completed, latest_result.run_id일치. 기록상 시작/완료는 예정시각보다 빠름; 정상 정시 수행으로 단정하지 않음. 같은 회차 raw 앱 호출 원장 미제공이므로 무인 앱 호출 성공은 여전히 미검증.
+- **보호/다음**: main·예약 설정·운영 AP·감사 원본 불변. 후순위2범주 중 overflow 해결. 남은 OTLP 전체 비소비 AnyValue/falsey Status.message 타입 스키마 보강은 별도 후보이며 현재 도구를 전체 schema validator로 주장하지 않음. 최우선은 공식 같은회차 원시 도구 원장 확보 시 GitHub/Slack 독립 대조. 이번 수동 결과는 검색 기억만 기록하며 정규 예약 체크포인트 생성0.
+
+---
+
 ## 2026-10-24 04:51 KST — 독립 검토2개로 발견한 OTLP 후보 선택 회귀 수정
 - **실제 AI 검토 실행**: ChatGPT 내부 독립 하위 에이전트2개를 별도 제한 맥락으로 실행. review_run_binding은 회차·시간·봇 소비, review_otlp_parser는 파서·ID·중복·입력형식을 읽기 전용 검토. 외부 Gemini/Claude 호출로 표현하지 않음. 두 검토자는 코드 변경·패키지 설치·불변 합격 전체 테스트 재실행을 하지 않았고 새 소규모 재현만 수행.
 - **Important 후속 회귀**: 앞선 native 시작 시각 검사 추가 뒤, adapter가 같은 target의 첫 structurally-valid span만 남기고 후속 후보를 버림. 첫 호출이 native시작-1ns이고 뒤 호출은 정상일 때 인계가 누락되며, 입력 순서만 바꾸면 형식 통과. 파서 검토자가 발견하고 회차 검토자·root가 각각 독립 재현. 잘못된 성공 승격이 아니라 정상 증거 누락/불필요한 재조회라는 실제 false-negative.
