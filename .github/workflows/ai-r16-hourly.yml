@@ -1,0 +1,63 @@
+name: AI R16 hourly offline BOT audit
+
+# Independent from the existing ChatGPT hourly task.
+# GitHub's UTC cron runs at minute 17 of every hour, including in Asia/Seoul.
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/ai-r16-hourly.yml
+
+# Public repo, standard ubuntu-latest runner. No paid LLMs or remote writes.
+permissions:
+  contents: read
+
+# A second manual or scheduled invocation must not interrupt an active audit.
+concurrency:
+  group: ai-r16-hourly-offline-bot-audit
+  cancel-in-progress: false
+
+jobs:
+  hourly-offline-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: experiments/r16-bot-runtime
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONUNBUFFERED: '1'
+    steps:
+      - name: Fetch CI-verified R16 sources (pinned SHA)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: 0631516e491429228e43b2b81cb1960b5b5895f2
+          persist-credentials: false
+      - name: Setup Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: '3.12'
+      - name: Setup Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Setup Java 21
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Bind current local source inputs to runtime receipt
+        run: python measure_runtime.py
+      - name: Install offline role wrappers and validate all 100 rules
+        run: |
+          python install_local.py
+          python batch_validate_100.py
+      - name: Execute one offline audit cycle
+        run: python background_coordinator.py --goal audit --state-dir .hourly_audit_state
+      - name: Verify receipt and never claim native ChatGPT automation proof
+        run: |
+          python -c 'import json; from pathlib import Path; p=Path(".hourly_audit_state/background_latest.json"); d=json.loads(p.read_text()); assert d["status"] == "PASS"; assert d["cycle"] == 1; assert d["kind"] == "OFFLINE_BACKGROUND_LOOP_NOT_NATIVE_RESERVATION"; assert d["official_unattended_app_call_success"] == "UNVERIFIED"; print("R16_HOURLY_OFFLINE_RECEIPT_VALIDATED")'
