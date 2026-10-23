@@ -24,7 +24,8 @@ export const code = async (inputs) => {
         hour > 23 || minute > 59 || second > 59) return null;
     const zoneHour = m[10] === undefined ? 0 : +m[10];
     const zoneMinute = m[11] === undefined ? 0 : +m[11];
-    if (zoneHour > 23 || zoneMinute > 59) return null;
+    // Canonical fail-closed bound agreed with Python and java.time: +/-18:00.
+    if (zoneHour > 18 || (zoneHour === 18 && zoneMinute !== 0) || zoneMinute > 59) return null;
     const offset = m[8] === 'Z' ? 0 : (m[9] === '+' ? 1 : -1) * (zoneHour * 60 + zoneMinute);
     // BigInt nanoseconds preserve exact ordering for 1–9 digit fractions.
     // This result is used only for comparisons; it is never JSON-serialized.
