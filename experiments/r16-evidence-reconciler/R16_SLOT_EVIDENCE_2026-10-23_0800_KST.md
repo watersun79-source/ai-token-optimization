@@ -27,3 +27,14 @@
 1. ChatGPT `Scheduled → AI → Previous runs`에서 실제 08:00 회차 상태/승인 대기 또는 앱 연결 오류를 확인한다.
 2. 공식 원본 호출 증거가 앱을 통해 제공된다면 같은 native per-run ID, 호출 timestamp, GitHub blob SHA와 Slack ts를 교차 대조한다. 제공되지 않으면 계속 미검증으로 보고.
 3. 예약 설정(제목·ID·프롬프트·주기·알림), GitHub main, Activepieces 운영 플로우·연결은 사용자 재지시 없이 변경하지 않는다.
+
+
+## 5. 09:00 KST 추가 슬롯 읽기 전용 대조 — 수동 채팅
+- `automations.peek` 공식 예약 메타: 같은 보호 ID `6acb017062a08191a4136238b78b313a`, `is_enabled=true`, `paused_count=0`, Asia/Seoul 매시간 정각 및 기존 프롬프트/알림 유지.
+- `last_run_time=2026-10-23T00:00:35.077362Z` = **2026-10-23 09:00:35.077362 KST**. `updated_at=2026-10-23T00:00:58.986541Z` = **09:00:58.986541 KST**. 두 값은 성공/원본 개별 실행 ID 자체가 아님.
+- GitHub 원본 인계 `docs/ai/AI_CURRENT_HANDOFF_2026-10-22.md` SHA `5c1c74471346de1e29d62680a0f6798fc82ac20f` 재조회. 08시대 이 문서 커밋 `06ea108b7c8bb3b7b98b2813d68079f50ab73226`와 격리 브랜치 HEAD 비교 결과 `status=identical`, `ahead_by=0`, 새 커밋 0건(본 보고서 갱신 전).
+- Slack 기존 부모 스레드 `C0C9649RQAZ/1792416391.631669` 읽기 및 채널 R16 검색: 마지막 관련 기록 08:45:40 KST **수동** 08시대 점검 회신. 09시 무인 원시 호출 증거 확인되지 않음.
+- Activepieces 감사 테이블 `bYxKH9XvAf27ODJ6GrC1U`의 `scheduledSlotKst` `co 2026-10-23` 검색 `count=0`.
+- **09시 슬롯 판정: 예약 트리거 메타만 확인 · GitHub/Slack 무인 성공 미검증.** 공식 native per-run ID·완료 상태·해당 실행 원시 tool-call ledger는 현재 제공 도구 미노출. 기록 부재가 실행 실패를 확정하는 것은 아님.
+- 단일 기존 예약·프롬프트·주기·알림, 운영 Activepieces, GitHub main 불변. 새 유료 API 호출 0. 변경 없는 기존 수동 34/34 회귀는 재실행하지 않음.
+- 다음 최우선: 공식 ChatGPT Scheduled → AI → Previous runs / 승인 대기에서 개별 09시 회차 결과와 07:11 일시정지 원인을 확인. 해당 정보 접근이 허가된 실행 환경에서 실제 제공될 때만 원본 교차 대조.
