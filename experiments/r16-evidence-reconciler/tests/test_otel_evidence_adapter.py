@@ -2,6 +2,7 @@ import copy
 import re
 import unittest
 
+from audit_v2 import AUTOMATION_ID, check
 from otel_evidence_adapter import adapt_otlp
 
 RUN = "native-run-1"
@@ -50,6 +51,24 @@ class TestOtelAdapter(unittest.TestCase):
         self.assertEqual(2, len(out["tool_calls"]))
         self.assertEqual(TRACE, out["trace_id"])
         self.assertTrue(all(c["run_id"] == RUN and c["invocation_id"].startswith("otel-span:") for c in out["tool_calls"]))
+
+    def test_audit_checker_consumes_otlp_but_keeps_authenticity_unverified(self):
+        payload = {
+            "target_slot": "2026-10-23T06:00:00Z",
+            "schedule": {"id": AUTOMATION_ID, "is_enabled": True,
+                         "last_run_time": "2026-10-23T06:00:10Z"},
+            "native_run": {"origin": "official_task_run_details", "run_id": RUN,
+                           "automation_id": AUTOMATION_ID, "scheduled_for": "2026-10-23T06:00:00Z",
+                           "started_at": "2026-10-23T06:00:00Z", "completed_at": "2026-10-23T06:00:05Z",
+                           "status": "completed"},
+            "otel": fixture(),
+            "tool_calls": [{"target": "current_handoff", "success": True}],
+        }
+        out = check(payload)
+        self.assertEqual("형식 통과 · 진위 미검증", out["status"])
+        self.assertFalse(out["official_success_verified"])
+        self.assertEqual(TRACE, out["otel_trace_id"])
+        self.assertCountEqual(TARGETS, out["verified_targets"])
 
     def test_rejects_cross_trace_child(self):
         data = fixture(); data["resourceSpans"][0]["scopeSpans"][0]["spans"][1]["traceId"] = "5" * 32
