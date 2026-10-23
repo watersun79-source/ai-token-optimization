@@ -10,6 +10,17 @@ function strictUtc(s){
   const d=new Date(0);d.setUTCFullYear(year,mon-1,day);d.setUTCHours(hh,mm,ss,0);
   return d.getUTCFullYear()===year&&d.getUTCMonth()===mon-1&&d.getUTCDate()===day&&d.getUTCHours()===hh&&d.getUTCMinutes()===mm&&d.getUTCSeconds()===ss;
 }
-const rows=fs.readFileSync('utc_strict_oracle_cases.tsv','utf8').trimEnd().split(/\r?\n/).slice(1);
-let count=0;for (const row of rows){let [s,expected]=row.split('\t');let got=strictUtc(s)?'PASS':'FAIL';if(got!==expected)throw Error('case '+(count+1)+' '+s+' got '+got+' expected '+expected);count++;}
+const raw=fs.readFileSync('utc_strict_oracle_cases.tsv','utf8');
+const lines=raw.replace(/\r?\n$/, '').split(/\r?\n/);
+if(lines.length<2 || lines[0]!=='value\texpected')throw Error('invalid or empty fixture');
+const rows=lines.slice(1);
+let count=0;
+for (const row of rows){
+  const fields=row.split('\t');
+  if(fields.length!==2 || !['PASS','FAIL'].includes(fields[1]))throw Error('malformed case '+(count+1));
+  const [s,expected]=fields;
+  const got=strictUtc(s)?'PASS':'FAIL';
+  if(got!==expected)throw Error('case '+(count+1)+' '+s+' got '+got+' expected '+expected);
+  count++;
+}
 console.log(`JavaScript strict timestamp oracle: PASS ${count}/${count}`);
