@@ -187,11 +187,13 @@ def adapt_otlp(payload, *, expected_run_id, expected_targets):
     root_trace = root["traceId"]
     result["trace_id"] = root_trace
 
-    seen_targets, seen_span_ids = set(), set()
+    # Keep structurally valid candidates until audit_v2 applies native bounds.
+    # Deduplicating a target here can hide a later in-window read.
+    seen_span_ids = set()
     calls = []
     for span, attrs, start, end in by_id.values():
         target = attrs.get("ai.evidence.target")
-        if target not in expected_targets or target in seen_targets:
+        if target not in expected_targets:
             continue
         aliases, locator, version_pattern = expected_targets[target]
         tool_name = attrs.get("gen_ai.tool.name")
@@ -222,7 +224,6 @@ def adapt_otlp(payload, *, expected_run_id, expected_targets):
             "span_id": span["spanId"],
             "provider_tool_call_id": attrs.get("gen_ai.tool.call.id"),
         })
-        seen_targets.add(target)
         seen_span_ids.add(span["spanId"])
     result["tool_calls"] = calls
     result["reason"] = "OTLP span 형식·인과 연결 통과 · 원본 진위 미검증" if calls else result["reason"]

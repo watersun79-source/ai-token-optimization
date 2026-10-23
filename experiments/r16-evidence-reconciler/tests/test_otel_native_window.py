@@ -1,4 +1,5 @@
 """An OTLP tool must start as well as finish within its supplied native run."""
+import copy
 import unittest
 
 from audit_v2 import check
@@ -7,6 +8,34 @@ import test_bot_team_r16 as bot_tests
 
 
 class TestOtelNativeWindow(unittest.TestCase):
+    def repeated_reads(self, early_first):
+        payload = bot_tests.BotTeamR16Tests().otel_sample()
+        spans = payload["evidence"]["otel"]["resourceSpans"][0]["scopeSpans"][0]["spans"]
+        early = copy.deepcopy(spans[1])
+        early["spanId"] = "7" * 16
+        early["startTimeUnixNano"] = "1792735199999999999"
+        spans.insert(1 if early_first else len(spans), early)
+        return payload
+
+    def test_later_valid_read_survives_early_candidate_in_either_order(self):
+        for early_first in (True, False):
+            with self.subTest(early_first=early_first):
+                result = check(self.repeated_reads(early_first)["evidence"])
+                self.assertCountEqual(["current_handoff", "slack_thread"],
+                                      result["verified_targets"])
+                self.assertFalse(result["official_success_verified"])
+
+    def test_bot_next_action_uses_valid_read_after_rejected_candidate(self):
+        for early_first in (True, False):
+            with self.subTest(early_first=early_first):
+                result = collaborate(self.repeated_reads(early_first))
+                self.assertCountEqual(["current_handoff", "slack_thread"],
+                                      result["audit"]["verified_targets"])
+                self.assertEqual("COMPARE_INDEPENDENT_GITHUB_SLACK_READBACK",
+                                 result["builder"]["next_action"])
+                self.assertFalse(result["official_success_verified"])
+                self.assertEqual(0, result["provider_calls"])
+
     def test_tool_start_cannot_precede_native_run_even_by_one_nanosecond(self):
         for start, expected in (("1792735199999999999", ["slack_thread"]),
                                 ("1792735200000000000", ["current_handoff", "slack_thread"])):
