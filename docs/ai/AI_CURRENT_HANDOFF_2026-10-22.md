@@ -1,5 +1,16 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-24 04:24 KST — OTLP 대소문자 ID 호환성·중복 우회 결함 수정
+- **공식/선행 구현 조사**: [OTLP JSON 규칙](https://opentelemetry.io/docs/specs/otlp/#json-protobuf-encoding)은 traceId/spanId를 대소문자 무관한 hex로 정의. 기존 OpenTelemetry Apache-2.0 소스·격리 Python adapter 재사용; 외부 소스 복제·새 패키지/서버/유료 모델 설치·호출 없음.
+- **실제 새 결함/TDD**: 기존 소문자 정규식 때문에 정상 대문자·혼합 ID의 root/tool/parent가 누락. 동일한 trace/span을 대문자로 다시 넣으면 중복 항목을 무시해 기존 전체 입력 거부 규칙에서 빠짐. 신규 회귀4개에서 수정 전 실패 subcase14개 확인. 실제 침해나 정규 예약 인증 성공의 증거는 아님.
+- **최소 수정**: span의 얕은 복사본에서 traceId/spanId/parentSpanId 문자열만 소문자로 정규화하고 기존 유효성 검사·중복 탐지·부모 조회 적용. 원본 export와 case-sensitive private evidence 속성은 변경하지 않음. 앞선 OK=1/ERROR=2 및 bool/float 차단·trace/span 튜플 색인은 보존.
+- **격리 원격 SHA**: [commit58cd4e71c464a7b6807fbb34f223a1b1dd099b0e](https://github.com/watersun79-source/ai-token-optimization/commit/58cd4e71c464a7b6807fbb34f223a1b1dd099b0e). adapter blob `0c1558cb48062c31d166fd684f3f9a06adc2a4d4`, 신규 tests/test_otel_hex_case.py blob `ed98dfa36d5ec8d871543a070a91930f4676f337`. 두 파일 전체 문자열·Git blob 독립 재조회 일치; compare는1commit/2files(코드7줄 추가·새회귀75줄)만 확인. expected head lease 사용.
+- **검증 원본**: 로컬 Python116/116. [Actions40010996923](https://github.com/watersun79-source/ai-token-optimization/actions/runs/40010996923), job120611036748, head동일, attempt1, completed/success. 원시 로그 Python116/116+2/2, JS12/12+20/20, Java12/12+20/20 PASS. 이번 새 코드의 자동 CI이며 불변 합격 재실행 아님. 로컬 javac없음; Java는 원격실행으로 확인.
+- **봇 실제 실행**: Python ResearchBot→BuilderBot→VerifierBot 경로에서 합성 uppercase OTLP는 target2, 대소문자만 다른 duplicate는 target0. 둘 다 SAFE_UNVERIFIED, provider_calls0, official_success_verified=false. 외부 Gemini/Claude 또는 독립 LLM3개 실행 아님.
+- **현재 범위/다음**: 기존 예약 활성·동일04시 공식 회차/결과 유지, 새 원시 앱 호출 ledger 미제공→무인 성공 미검증. UI접근 감사는 직전04:12기록을 재사용해 반복하지 않음. main/예약 설정·활성·일정·프롬프트·알림/운영 Activepieces/감사 원본 변경 없음. 공식 공급자 호출 원장이 제공될 때만 동일회차 진위 대조; 새 입력·결함 없는 합격검사 반복 금지.
+
+---
+
 ## 2026-10-24 04:12 KST — 공식 Scheduled 화면·회차 원본 대화 읽기 전용 접근 확인
 - **다음 목표 실제 실행**: 연결 예약 도구는 공식 last_run/result만 제공하고 원시 tool-call ledger 조회 필드/별도 도구는 노출하지 않음을 확인. 공식 [Scheduled 안내](https://learn.chatgpt.com/training/walkthroughs/scheduled-tasks)를 읽은 뒤, 해당 부족 기능에 한해 인증된 공식 UI로 읽기 전용 대조. 로그인 요청 없이 현재 계정의 예약 화면과 원본 대화 접근 성공. 과거 로그인 불가 상태를 현재 상태로 재사용하지 않음.
 - **UI 직접 관찰**: https://chatgpt.com/scheduled 에 기존 AI 활성·매시간 표시. 대상 선택 후 automationId=6acb017062a08191a4136238b78b313a 일치. 상세 최신 결과와 '채팅 열기'로 이동한 원본 대화에서 03:57 KST 결과의 commit7dd30dc5/CI40006866278/Slack1792781617.198169가 peek.latest_result 본문과 일치. 공식04시 예정 회차0069f41c-aa14-8326-bc52-072b94e7ef56의 상태는 peek에서 completed·결과ID 일치; 본문 속 '진행 중'은 작성 당시 서술이며 현재 상태를 덮어쓰지 않음.
