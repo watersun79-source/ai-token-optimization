@@ -69,7 +69,8 @@ class ResearchBot:
             url = ref.get("url")
             if (isinstance(name, str) and 1 <= len(name) <= 100
                     and name == name.strip()
-                    and not any(unicodedata.category(c).startswith('C') for c in name)
+                    and not any(unicodedata.category(c).startswith('C') or
+                            unicodedata.category(c) in ('Zl', 'Zp') for c in name)
                     and _safe_reference_url(url) and url not in seen):
                 accepted.append({"name": name, "url": url})
                 seen.add(url)
