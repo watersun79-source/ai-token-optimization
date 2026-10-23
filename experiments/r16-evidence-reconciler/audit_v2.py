@@ -111,10 +111,15 @@ def check(payload: dict) -> dict:
             or target.minute != 0 or target.second != 0 or target.microsecond != 0):
         outcome['reason'] = '정각 슬롯/시간대가 확인되지 않음'
         return outcome
+    try:
+        slot_end = target + timedelta(hours=1)
+    except OverflowError:
+        outcome['reason'] = '슬롯 종료 시각이 지원 날짜 범위를 벗어남'
+        return outcome
     last_run = parsed_time(task.get('last_run_time'))
     # last_run_time is latest-task metadata, not an individual historical run.
     # A later hourly run must never invalidate official evidence for an older slot.
-    metadata_matches_slot = bool(last_run and target <= last_run < target + timedelta(hours=1))
+    metadata_matches_slot = bool(last_run and target <= last_run < slot_end)
     outcome['trigger'] = ('예약 실행 시각 메타 확인 (완료/성공 증거 아님)'
                           if metadata_matches_slot else
                           '마지막 실행 메타데이터만으로 이 회차 실행 여부 확인 불가')
@@ -133,7 +138,7 @@ def check(payload: dict) -> dict:
         outcome['reason'] = '공식 개별 회차의 예약 ID 또는 슬롯 불일치'
         return outcome
     start, end = parsed_time_ns(native.get('started_at')), parsed_time_ns(native.get('completed_at'))
-    if start is None or end is None or not (target, 0) <= start <= end <= (target + timedelta(hours=1), 0):
+    if start is None or end is None or not (target, 0) <= start <= end <= (slot_end, 0):
         outcome['reason'] = '공식 실행 시작·종료 시각 불일치'
         return outcome
     if native.get('status') not in ('completed', 'no_update'):
