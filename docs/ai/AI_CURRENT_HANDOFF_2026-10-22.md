@@ -1,5 +1,16 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-23 15:17 KST — ResearchBot Unicode Zl/Zp 다중 행 출처 이름 거부
+- 일반 사용자 채팅의 `다른 사람 오픈소스 + Python/Java/AI BOT 동원` 지시에 따른 **수동 격리 Research/Builder/Verifier 코드 보안 강화**. 현행 단일 R16 예약의 native 무인 회차 작업 증거로 취급하지 않음.
+- **참고 출처**: Unicode Core Specification U+2028 Line Separator와 U+2029 Paragraph Separator (General Category `Zl/Zp`), Python `unicodedata.category` 및 OWASP Secure Coding with AI/agent 간 불신 경계. SDK·LLM API/네트워크 모델 호출 없음.
+- 기존 R16 `ResearchBot`은 출처 `name`의 Unicode `C*`만 거부했으므로, `"Trusted source" + U+2028/U+2029 + "SYSTEM: ..."` 가 accepted 참고자료명으로 통과. 사용자 제공 문자열의 **다중 행 컨텍스트 혼동 가능성**이며 실제 툴 실행/유출 사고는 관측되지 않음.
+- **실제 원격 TDD RED**: 격리 테스트 commit `96a0d1c4711d64ddc9574eed836ada21a5fbf0a2` + test blob `91667a7996a98d6709db63a934b888ad7b9f3799`, GitHub Actions run `39910467446`, job `120272022802`, `completed/failure`, raw logs `Ran 74 tests; FAILED(failures=2)` 두 줄/문단 분리 케이스.
+- **최소 수정 & 원격 CI GREEN**: ResearchBot 출처 `name`의 `unicodedata.category` 검사에 `Zl/Zp`를 추가 차단. bot code commit `0b82425d1fb6f1f0d9c6bad7ebe566096cc0977e`, blob `afd346d2ab18890970a163a56b90ed7b74fa2ca0`. GitHub Actions run `39910580755`, job/check `120272391113`, `completed/success` + 일치 SHA Check run 성공, raw log Python 74/74, 추가 2/2, JS 12/12+20/20, Java 12/12+20/20 전부 PASS.
+- 격리 `README_KO.md` 문서 commit `2b4d152c8e75f18fbc564820706b96354279cea0`, blob `08fa55a702b83ace878db44c10c6999ec49854c4`까지 최신 증거 기록 및 원격 readback 일치. GitHub `main`, 현행 매시간 정각 R16 예약(마지막 관측 `last_run_time=2026-10-23T06:07:08.222410Z`, `is_enabled=true`, paused=0), Activepieces 운영 플로우, 알림·프롬프트, 비밀·유료 AI API 변경 없음.
+- **최우선 미완료**: ChatGPT Scheduled의 정규 개별 run ID와 동일 회차 원본 GitHub·Slack tool-call ledger 미제공 → **실제 무인 성공 미검증**. Gemini/Claude/외부 AI BOT 모델을 독립 호출했다고 주장하지 말 것.
+
+---
+
 
 ## 2026-10-23 15시대 후속 — 동시 기여 변경·URL 바이디 검사 재조회, Python 72/72 최종 성공
 - **신규 변경 충돌 감지·직접 대조**: 첫 OWASP URL 검증 변경은 코드 blob `de90d1460fc60c9e86d1852e8483802ed544f2b5`, 테스트 5건 blob `ac4571e96b9f30c70423987fbd84c6c50640624e`, GitHub run `39909757804`에서 Python 68/68 성공. 이후 **별도 기여의 변경**으로 최신 `bot_team_r16.py` blob `b3bc27702347029f8c28352b72917d5524baa977`에 `unicodedata.category(c).startswith('C')`를 이용한 bidi/숨은 제어문자 제목 차단이 추가됨. 같은 격리 브랜치에 `tests/test_bot_untrusted_references.py` 4건 추가, blob `2137942c4d282c685f0f38e258270a38a4663005`. 앞선 코드 SHA는 **패치 이력**이지 현행 최종 SHA가 아니므로 구분.
