@@ -1,5 +1,17 @@
 # R16 무인 예약 실행 증거 대조기 — 격리 개발 브랜치
 
+
+## 2026-10-24 03:45 KST — OTLP 중복 span ID·비정상 parentSpanId 방어 및 Python 100/100
+- **실제 결함**: 현행 R16 `otel_evidence_adapter.py`가 동일 trace에서 동일 `spanId`가 재등장해도 첫 항목만 채택하므로 상충하는 모의 실행 기록을 조용히 무시할 수 있었다. 또한 자식 `parentSpanId`가 문자열 대신 nonempty array/object라면 `_descends_from`의 set/dict membership이 `TypeError: unhashable type`으로 중단될 수 있었다. 실제 침해·ChatGPT 공식 예약 실행 성공 증거가 아니라 **OTLP 사용자 입력 파서의 오류**.
+- **다른 사람 공개 구현 조사**: [OpenTelemetry opentelemetry-proto `trace.proto`](https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/trace/v1/trace.proto) (upstream blob `235b54e8e78b55f0bb4f3f1f43fc89bdda28b04c`, LICENSE Apache-2.0 blob `261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64`) 및 [OpenTelemetry GenAI execute_tool 규약](https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-spans.md) 참조. 라이브러리 코드 복제/설치, 외부 모델·유료 API 호출 없음.
+- **최소 수정(격리 only)**: trace/span 튜플 `(traceId, spanId)`를 timestamp 검사 이전에 중복 감지하여 전체 입력을 미검증으로 거부. 서로 다른 trace에서 우연히 동일 spanId를 갖는 경우는 기존 정책 유지. 부모 체인 판별 전 `parentSpanId`의 문자열 유형 검사로 malformed list/dict 안전 거부. `ai/r16-evidence-reconciler-2026-10-22`의 `otel_evidence_adapter.py` commit **`dce944c871de5b0183119ed562137c4620358b7e`**, 원격 blob **`d7fe883f06abe10a2e22ef4015078cf0cee65ae9`**; 신규 `tests/test_otel_trace_identity.py` 테스트 **5건**, commit **`ee6a6a423c46a33388f4659f059240b323731dd4`**, blob **`dd0b1d6cfa55731d6c286e9dcde9a6d611f23b96`**.
+- **공식 CI 원본 검증**: GitHub Actions [run **`40005917678`**](https://github.com/watersun79-source/ai-token-optimization/actions/runs/40005917678) `completed/success`, head **`dce944c871de5b0183119ed562137c4620358b7e`**, job/check **`120593644185`**. 해당 실제 job log: Python 전체 **100/100 OK** (기존 95+신규 5), polyglot Python **2/2 OK**, JavaScript **20/20 PASS**, Java **20/20 PASS**, 별도 Java oracle **12/12 PASS**; warnings=0, errors=0. GitHub 원격 `fetch_file`에서 두 변경 파일 blob SHA 직접 재조회 일치.
+- **보호 및 한계**: ChatGPT 기존 단일 예약·매시간 정각 일정·알림/프롬프트, Activepieces 운영, GitHub `main`, API 비밀·결제·유료 모델 변경 없음. 이번 독립 코드 CI **성공은 정규 예약 ChatGPT per-run의 GitHub·Slack 실제 호출 성공이 아님**. 공식 동일 회차 tool-call 원시 ledger가 없으면 무인 업무 완수는 **미검증**으로 유지.
+- **다음 목표**: 공식 ChatGPT Scheduled 개별 회차의 동일 실행 ID에 귀속되는 원본 GitHub/Slack tool-call ledger 접근이 인증된 도구에서 실제 제공되는지 확인. 제공되지 않으면 우회/추정 ID 금지; 이미 통과한 불변 CI 중복 실행 금지.
+
+---
+
+
 ## 2026-10-23 16:09 KST — OpenTelemetry OTLP 호출 증거 연결 구현·83/83
 - 새 결함: 기존 `audit_v2.py`는 OpenTelemetry를 참고했다고 설명했지만 실제 OTLP span→`tool_calls` 연결기가 없었고, 격리 CI path filter도 `triage_bot.py`와 향후 adapter를 누락했다.
 - 공식 OpenTelemetry GenAI Development 규약의 `invoke_agent` / `execute_tool`, `gen_ai.operation.name`, `gen_ai.tool.name`, span status와 trace/span ID 규칙을 참고했다. OTel trace/span/tool-call ID는 ChatGPT 공식 예약 run ID가 아니며, arguments/result 원문은 민감 가능해 저장하지 않는다.
