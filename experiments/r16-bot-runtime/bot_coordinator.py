@@ -26,8 +26,23 @@ def select_roles(goal: str):
     return GOALS[goal]
 
 
+def verify_role_catalog(catalog_path: Path):
+    """Reject missing, duplicated or changed role IDs before dispatch."""
+    catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+    if not isinstance(catalog, list):
+        raise ValueError("catalog must be a list")
+    ids = [row["id"] for row in catalog]
+    if len(ids) != len(set(ids)):
+        raise ValueError("duplicate catalog role ID")
+    missing = sorted({item for group in ROLES.values() for item in group} - set(ids))
+    if missing:
+        raise ValueError("missing catalog role IDs: " + ", ".join(missing))
+    return True
+
+
 def dispatch(goal: str, state_dir: Path, *, script=None):
     roles = select_roles(goal)
+    verify_role_catalog(Path(__file__).resolve().parent / "catalog.json")
     # Offline rules are categorized, not independently invoked AI agents.
     receipt = run_once(state_dir, **({"script": script} if script else {}))
     return {
