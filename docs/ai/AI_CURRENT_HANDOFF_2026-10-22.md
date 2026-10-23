@@ -1,5 +1,17 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-24 04:06 KST — OTLP 숫자 상태 OK/ERROR 역전·enum 타입 혼동 수정
+- **공식 선행 구현/비용**: OpenTelemetry upstream [trace.proto](https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/trace/v1/trace.proto) blob `235b54e8e78b55f0bb4f3f1f43fc89bdda28b04c`와 Apache-2.0 LICENSE blob `261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64` 직접 조회. wire StatusCode는 OK=1 / ERROR=2. 외부 패키지 복제·설치/LLM·유료 API 호출 없음.
+- **새 결함 재현**: 기존 _ok_status가 (2, "2", "STATUS_CODE_OK")를 허용하여 정상 숫자 OK를 거부하고 숫자 ERROR root/tool을 형식상 성공으로 처리. Python의 True==1, 1.0==1, 2.0==2 때문에 enum 타입도 혼동. 5개 신규 회귀에서 수정 전 9개 실패 subcase 실제 확인. 실제 침해·정규 무인 성공 사례는 아님.
+- **최소 격리 수정**: _enum_is로 정확한 int 또는 기존 문자열 별칭만 허용. OK를 1로 교정하고 INTERNAL kind도 동일한 엄격 타입 검사 적용. legacy 문자열 별칭, trace/span 튜플 색인·중복/부모/시간/OTLP 우선 검증은 보존.
+- **원격 코드·SHA**: [commit 88fb18bcba4eb8ffbbd681dd6f2100f9034fe657](https://github.com/watersun79-source/ai-token-optimization/commit/88fb18bcba4eb8ffbbd681dd6f2100f9034fe657). adapter blob `d83c045010b9e31665968172a58388ffb3a16445`; tests/test_otel_enum_status.py blob `1d0742ddeda5050fa3de445315f29dc8b89f34d5`. 한 커밋에 코드·테스트 2파일만 저장, expected head lease 사용. 두 원본의 전체 문자열과 blob 재조회 일치.
+- **실제 검증**: 로컬 Python 112/112. [Actions 40008614012](https://github.com/watersun79-source/ai-token-optimization/actions/runs/40008614012) / job `120602852780` / head 동일 / attempt 1 / completed success. 원시 로그 Python112/112+2/2, JS12/12+20/20, Java12/12+20/20 PASS. 기존 합격 CI 재실행 없음; 이번 새 코드 커밋의 자동 CI만 확인. 로컬 javac 없음, Java는 원격 실실행 근거.
+- **봇 실실행**: Python ResearchBot→BuilderBot→VerifierBot 프로그램에 합성 numeric OK/ERROR 입력 각각 실제 실행. OK target2, ERROR target0; 둘 다 SAFE_UNVERIFIED, provider_calls=0, official_success_verified=false. 외부 Gemini·Claude 또는 독립 LLM 3개 실행 아님.
+- **예약/교차기억**: 읽기 전용 peek에서 기존 AI 활성·Asia/Seoul 정각 유지. 공식 04시 예정 회차 `0069f41c-aa14-8326-bc52-072b94e7ef56` completed, latest_result.run_id 일치 확인. 실제 시작·종료는 예정 슬롯보다 빠른 메타데이터로 관찰됐으며 성공으로 보정/추정하지 않음. 동일 회차 원시 앱 tool-call ledger 미제공 → 무인 GitHub·Slack 호출 성공 미검증. 지정 Slack 원본 및 Activepieces 인증 기억 인덱스 교차 조회 완료.
+- **보호/다음 목표**: main·기존 예약 설정/활성/일정/프롬프트/알림·운영 Activepieces 흐름/연결·감사 원본 불변. 이 수동 결과는 기억 검색 인덱스에만 기록하며 정규 감사 체크포인트를 추가하지 않음. 공식 동일 회차 원시 앱 호출 ledger가 지원 도구에서 제공될 때만 독립 대조; 형식 통과를 진위 인증으로 승격 금지.
+
+---
+
 ## 2026-10-24 03:57 KST — OTLP 다중 trace span ID 충돌 순서 의존 결함 수정
 - **공식 구현 조사**: Apache-2.0 OpenTelemetry upstream trace.proto는 span_id가 trace 내부에서 unique임을 명시. https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/trace/v1/trace.proto . 이전 동일-trace 중복 검출은 (traceId,spanId)를 썼지만 실제 ancestry by_id는 spanId 단일 키여서 불일치.
 - **실제 재현/TDD**: 다른 trace의 같은 ID가 먼저 나오면 정상 root/tool/intermediate가 색인에서 사라짐. 새 회귀 3개에서 수정 전 failures=3, 뒤에 나온 경우는 통과하는 입력 순서 의존을 확인. 진위 인증/운영 침해 증거 아님.
