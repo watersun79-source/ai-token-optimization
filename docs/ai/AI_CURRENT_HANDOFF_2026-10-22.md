@@ -1,5 +1,16 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-23 18:00 KST — 공식 회차 ID 필드 제공 확인 + OTLP 중복키 회귀 보완
+- **공식 회차 식별자 경계 개선**: 인증된 `automations.peek`가 이제 `run_details`를 실제 반환한다. 직전 완료 결과는 `latest_result.run_id=fb16cf89-ccf0-832c-8937-e9060a59d434`(scheduled 16:00 KST, completed), 이번 관찰 시점의 현재 회차는 `last_run.id=3381bc18-d844-832e-b64a-61c29bb8598a`(scheduled 18:00 KST, 조회 당시 `in_progress`). 이 값은 예약 ID·`last_run_time`·GitHub Actions ID와 다른 **플랫폼 회차별 필드**이므로 향후 공식 run ID 출처로 사용할 수 있다. 단, 현재 회차는 완료로 승격하지 않는다.
+- **독립 증거 한계 유지**: 동일 응답은 회차별 GitHub·Slack 원시 tool-call ledger를 제공하지 않는다. 직전 완료 결과 본문의 GitHub SHA/Actions와 Slack ts는 외부 원본과 일치하지만, 그 회차가 실제로 앱을 호출했다는 독립 원시 장부는 미제공 → **정규 무인 앱 호출 성공 미검증**.
+- **새 코드 결함**: 격리 브랜치의 선행 commit `17041863b05c6ed9d8c57deae1afd81d31710c9e`는 OTLP 중복 속성 키를 거부했지만, 첫 값이 미지원 value 형식이면 키를 기록하지 않아 같은 키의 두 번째 값을 받아들일 수 있었고 회귀 테스트도 없었다.
+- **격리 최소 수정**: 모든 관찰 키를 value 디코딩 전에 추적하고, 미지원 첫 값 뒤의 중복도 실패 폐쇄. commit `493ea72de030f2e402d3db34959fea6462bb8fa7`; adapter blob `a23cb538ffe7e4aab6771302c7c9c67e3506c057`; regression test blob `d2cdb34a802ee5bbec58ba49f3eaba938b1f6f02`.
+- **원격 검증**: GitHub Actions [run 39928466966](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39928466966), job `120330570234`, matching head, `completed/success`; Python·JS·Java 모든 단계 success. 현재 GitHub 연결은 원시 logs download endpoint를 허용하지 않아 정확한 test count는 **미확인**으로 유지.
+- **Slack 기록**: 지정 부모 스레드에 ts `1792745941.496949` 기록 성공. 검색 인덱스/스레드 reply read-back은 즉시 반영되지 않아 독립 재조회는 다음 회차로 이월. GitHub main·예약 설정·운영 Activepieces·유료 API 변경 없음.
+
+---
+
+
 ## 2026-10-23 16:09 KST — R16 OpenTelemetry OTLP 호출 증거 연결 실제 구현
 - **새 결함 확인**: 격리 `audit_v2.py`는 OpenTelemetry tool span을 설계 근거로만 언급했고 실제 OTLP→검증기 `tool_calls` 어댑터가 없었다. 기존 CI path filter도 `triage_bot.py` 및 새 adapter 경로를 누락해 source-only 변경이 CI를 건너뛸 수 있었다.
 - **공식 규약 대조**: OpenTelemetry GenAI agent/tool span 규약(Development)의 `invoke_agent`, `execute_tool`, `gen_ai.operation.name`, `gen_ai.tool.name` 및 OTel trace/span ID·status 규칙을 사용. trace ID/span ID/`gen_ai.tool.call.id`를 ChatGPT 공식 scheduled run ID로 승격하지 않으며, arguments/result 원문은 민감 가능해 수집하지 않음.
