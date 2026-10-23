@@ -1,5 +1,18 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-24 02:54 KST — R16 OTLP fixed64 timestamp 예외·범위 결함 수정
+- **공식 조사**: OpenTelemetry OTLP/JSON 규약의 fixed64 timestamp decimal-string/JSON integer 처리와 upstream opentelemetry-proto(실제 LICENSE Apache-2.0, blob 261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64)를 확인. 새 SDK 설치나 외부 LLM 호출 없음. https://opentelemetry.io/docs/specs/otlp/#json-protobuf-encoding
+- **실제 재현**: 기존 _time_ns는 superscript ² 및 5000자리 숫자 문자열에서 ValueError, uint64 초과값 허용, 정상 JSON 정수 시간값 거부. 기존 12개 adapter 검사에 회귀 4개 추가 후 로컬 RED(2 failures, 2 errors) 확인.
+- **격리 최소 수정**: 시간값 변환 전에 ASCII/길이/타입 검사, 양수 uint64 범위 제한, bool/float 거부, JSON int 허용. 코드 commit b2520b80564075b408bbff80dd8d789be3ef90c2 / blob d092a581755e25d9d86575893486d521156e806e. 테스트 commit bc29c56f6f0bb3509ef13dd77ac226e0192a399c / blob 4bf511f134d40b185e4b2be5c9ef77e5f228c303. 두 파일 원격 재조회·로컬 Git blob 일치.
+- **검증**: 로컬 Python 90/90 + 2/2, JavaScript 12/12 + 20/20 통과. 로컬 javac 미설치로 Java는 실행 불가; 원격 로그로 검증. Actions https://github.com/watersun79-source/ai-token-optimization/actions/runs/39998755200 의 첫 attempt는 최종 cancelled였으므로 성공으로 간주하지 않고 취소된 job만 1회 rerun. attempt 2 / job 120569514148 / 같은 head / completed/success 독립 조회; 원시 로그 Python 90/90 + 2/2, JS 12/12 + 20/20, Java 12/12 + 20/20.
+- **실제 봇 실행 경계**: bot_team_r16.collaborate의 ResearchBot→BuilderBot→VerifierBot Python 결정론적 오프라인 파이프라인 실제 실행. live_llm_bots=0, provider_calls=0, official_success_verified=false 유지. 외부 Gemini/Claude 모델 실행 아님.
+- **독립 리뷰**: 별도 코드 리뷰 에이전트가 변경 함수/회귀 4개를 읽고 차단급 결함 없음 판정. 리뷰어는 테스트/원격 SHA를 재실행하지 않았으며 원격 SHA·CI는 root가 앱 재조회로 검증.
+- **예약 읽기 전용**: 기존 ID 6acb017062a08191a4136238b78b313a 활성. 최근 공식 last_run.id bb3a6feb-ee2c-8324-8ca0-a93800c50bf4 / 2026-10-24 02:00 KST / no_update. latest_result는 이전 19시 회차 자료이며 최신 회차와 혼합하지 않음. 원시 per-run 앱 호출 ledger 미제공 → 무인 성공 미검증 유지.
+- **교차 기록**: 인증 Activepieces 기억 인덱스 4건 직접 읽음(일부 R13/R15 역사 메타는 현행 R16보다 오래됨); 감사 테이블 rowCount 21, 자체 기록 개수는 성공 증명 아님. 본 수동 점검에서 정규 체크포인트 삽입 없음.
+- **보호/다음 목표**: GitHub main·예약 설정/주기/알림/프롬프트·Activepieces 운영 및 원본 감사 기록 변경 없음. 유료 API/비밀/결제 변경 없음. 다음은 같은 공식 정규 회차 GitHub/Slack 원시 호출 ledger가 실제 제공되는 경우에만 독립 검증.
+
+---
+
 ## 2026-10-24 02시대 KST — R16 OTLP 중간 조상 cross-trace 연결 결함 수정 · 3언어 CI 성공
 - **조사/재현**: OpenTelemetry Trace API의 "child TraceId MUST match parent" 공식 규약과 격리 `otel_evidence_adapter.py`를 대조. `_descends_from`이 루트 연결·순환만 검사하고 **중간 부모 span의 traceId**는 검사하지 않아, 서로 다른 trace에 속한 중간 부모를 통과시키는 결함을 로컬 Python 재현함. 실제 운영 침해 또는 공식 예약 호출 진위 인증은 아님.
 - **격리 TDD 회귀**: `tests/test_otel_evidence_adapter.py`에 cross-trace 중간 부모 거부 및 동일 trace 중간 부모 허용 2건 추가. test commit `6a6835c90feacc726e70aca0779a8a388cb67ee0`, blob `519c5eacfa4f8e1a3eced6668c621f046fdf092c`.
