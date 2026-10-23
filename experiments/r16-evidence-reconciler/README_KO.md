@@ -1,5 +1,15 @@
 # R16 무인 예약 실행 증거 대조기 — 격리 개발 브랜치
 
+ 
+## 2026-10-23 — GitHub CI 빈 조회 결과의 범위 확인 (읽기 전용 원인 분석)
+- **기존 반복된 오해 교정**: `mcp__GitHub__fetch_commit_workflow_runs` 커넥터는 **pull_request로 트리거된 첫 페이지의 실행만** 반환한다. `workflow_runs=[]`는 `push`, 수동 실행 등 다른 이벤트에 대해 확인한 결과가 아님.
+- `mcp__GitHub__get_commit_combined_status`의 `statuses=[]`는 GitHub [Commit Statuses REST API](https://docs.github.com/en/rest/commits/statuses)의 커밋 상태 목록이다. GitHub Actions의 **Check runs/check suites**와 같은 API가 아니므로, 체크 미실행·실패·성공을 증명하지 못함.
+- 실제 테스트 커밋 `5c92a3f73d252871dcb51274a1f95f4242cbdd00`에 대한 두 커넥터 조회는 모두 빈 목록. 기본 브랜치 Github 코드 검색에서도 `runs-on` 및 `workflow_dispatch`에 해당하는 파일 결과를 찾지 못했으나 검색 누락 가능성이 있어 **워크플로 자체가 없다고 단정하지 않음**.
+- 정확한 결론: **로컬 Python 회귀 43/43 PASS는 증거로 완료**, **GitHub 원격 전체 CI(모든 이벤트 유형 및 Checks)는 조회 범위 미충족으로 미검증**. 사용자 결제/Actions 실행 요구 없이 임의의 원격 워크플로를 만들어 비용·운영에 영향을 주지 않음.
+- **정규 ChatGPT 예약 11:00 회차**: `automations.peek`의 기존 단일 R16 예약 `is_enabled=true`, `paused_count=0`, `last_run_time=2026-10-23T02:06:18.531665Z` (=11:06:18 KST). 시각 메타만 확인; 공식 개별 per-run ID 및 동일 회차 도구 호출 원본은 미제공이므로 **무인 성공 미검증**. Activepieces 2026-10-23 감사 테이블 `count=0`이며 해당 테이블이 모든 실행을 포괄한다고 보장할 수 없음.
+- 다음 작업은 실제 지원되는 GitHub **all-events workflow runs + Checks** 및 ChatGPT **Scheduled Previous runs** 접근이 생겼을 때 그 공식 ID로 재검증. 접근 권한 제한을 우회하지 않고, 기존 예약·main·운영 Activepieces·알림은 변경하지 않음.
+
+
 ## 2026-10-23 후속 — 최신 GitHub 원본 4/4 SHA 독립 대조 및 전체 회귀 43/43 PASS
 - 사용자 **수동 '실행' 명령**으로 원본 GitHub 브랜치 `ai/r16-evidence-reconciler-2026-10-22`에서 Python 소스와 테스트 3개를 실제 읽어 로컬 `/mnt/data/r16_test/`에 복원. 직접 `git hash-object` 해시를 각각 계산해 다음 GitHub blob SHA와 **4/4 완전 일치** 확인:
   - `audit_v2.py`: `05fcfd2eac1b76d2e2f351e749a90647347a88aa`
