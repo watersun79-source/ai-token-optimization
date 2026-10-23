@@ -34,7 +34,7 @@ jobs:
       - name: Fetch CI-verified R16 sources (pinned SHA)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: 0631516e491429228e43b2b81cb1960b5b5895f2
+          ref: a551e6ecc290f625432aba7ce2f7c23cc6117a30
           persist-credentials: false
       - name: Setup Python 3.12
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
@@ -60,7 +60,7 @@ jobs:
         run: python background_coordinator.py --goal audit --state-dir .hourly_audit_state
       - name: Verify receipt and never claim native ChatGPT automation proof
         run: |
-          python -c 'import json; from pathlib import Path; p=Path(".hourly_audit_state/background_latest.json"); d=json.loads(p.read_text()); assert d["status"] == "PASS"; assert d["cycle"] == 1; assert d["kind"] == "OFFLINE_BACKGROUND_LOOP_NOT_NATIVE_RESERVATION"; assert d["official_unattended_app_call_success"] == "UNVERIFIED"; print("R16_HOURLY_OFFLINE_RECEIPT_VALIDATED")'
+          python -c 'import json; from pathlib import Path; p=Path(".hourly_audit_state/background_latest.json"); d=json.loads(p.read_text()); assert d["status"] == "PASS"; assert d["cycle"] == 1; assert d["kind"] == "OFFLINE_BACKGROUND_LOOP_NOT_NATIVE_RESERVATION"; assert d["official_unattended_app_call_success"] == "UNVERIFIED"; assert d["executed_selected_rule_checks"] == 20; assert sum(d["selected_statuses"].values()) == 20; assert d["selected_statuses"].get("FAIL", 0) == 0; assert d["selected_outcome"] in ("PASS", "UNVERIFIED"); print("R16_HOURLY_OFFLINE_RECEIPT_VALIDATED")'
 
       - name: Report audit provenance in GitHub summary
         if: always()
@@ -96,6 +96,8 @@ jobs:
               f"| 검사한 코드 커밋 | `{checked_sha}` |",
               f"| 규칙 100개 | PASS {statuses.get('PASS', '미확인')}, UNVERIFIED {statuses.get('UNVERIFIED', '미확인')} |",
               f"| 오프라인 감사 실행 | `{audit.get('status', '미확인')}` / {audit.get('cycle', '미확인')}회 |",
+              f"| 필요한 BOT 규칙 실제 검사 | {audit.get('executed_selected_rule_checks', '미확인')}개 / {audit.get('selected_statuses', {})} |",
+              f"| 필요한 역할 증거 판정 | `{audit.get('selected_outcome', '미확인')}` (오프라인 스냅샷) |",
               "| ChatGPT 원본 예약 앱 호출 증명 | 미검증 (이 작업은 GitHub 오프라인 감사) |",
               "",
               "정기 예약은 매시간 15분으로 등록돼 있지만 실행 시각은 GitHub 사정에 따라 달라질 수 있어.",
