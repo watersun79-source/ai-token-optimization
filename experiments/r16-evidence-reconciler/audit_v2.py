@@ -43,6 +43,8 @@ OPTIONAL = {
 
 SHA = re.compile(r'^[a-f0-9]{40}$')
 SLACK_TS = re.compile(r'^\d{10}\.\d{6}$')
+# Preserve native timestamps at up to nine fractional digits for ordering.
+AUDIT_TIME = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.(\d{1,9}))?(?:Z|[+-]\d{2}:\d{2})$')
 # Do not let datetime.fromisoformat() silently truncate nonzero nanoseconds.
 EXACT_HOUR = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:00:00(?:\.0+)?(?:Z|[+-]\d{2}:\d{2})$')
 
@@ -55,6 +57,24 @@ def parsed_time(value):
         return dt.astimezone(timezone.utc) if dt.tzinfo is not None and dt.utcoffset() is not None else None
     except (ValueError, TypeError, OverflowError):
         return None
+
+
+
+def parsed_time_ns(value):
+    """UTC datetime plus 0..999 nanoseconds beyond its microsecond field.
+
+    Tuple ordering preserves 9-digit fractional seconds without float errors.
+    """
+    if not isinstance(value, str):
+        return None
+    match = AUDIT_TIME.fullmatch(value)
+    if match is None:
+        return None
+    dt = parsed_time(value)
+    if dt is None:
+        return None
+    sub_micro_ns = int((match.group(1) or '').ljust(9, '0')[6:])
+    return (dt, sub_micro_ns)
 
 
 def check(payload: dict) -> dict:
@@ -104,8 +124,8 @@ def check(payload: dict) -> dict:
             or not EXACT_HOUR.fullmatch(native_slot) or parsed_time(native_slot) != target):
         outcome['reason'] = '공식 개별 회차의 예약 ID 또는 슬롯 불일치'
         return outcome
-    start, end = parsed_time(native.get('started_at')), parsed_time(native.get('completed_at'))
-    if not start or not end or not target <= start <= end <= target + timedelta(hours=1):
+    start, end = parsed_time_ns(native.get('started_at')), parsed_time_ns(native.get('completed_at'))
+    if start is None or end is None or not (target, 0) <= start <= end <= (target + timedelta(hours=1), 0):
         outcome['reason'] = '공식 실행 시작·종료 시각 불일치'
         return outcome
     if native.get('status') not in ('completed', 'no_update'):
@@ -129,7 +149,7 @@ def check(payload: dict) -> dict:
             continue
         tool, locator, version_type = REQUIRED[t]
         invocation = c.get('invocation_id')
-        observed = parsed_time(c.get('observed_at'))
+        observed = parsed_time_ns(c.get('observed_at'))
         version = c.get('version')
         is_valid_version = isinstance(version, str) and bool((SHA if version_type == 'sha' else SLACK_TS).fullmatch(version))
         if (c.get('origin') != 'official_task_tool_call' or c.get('run_id') != run_id
