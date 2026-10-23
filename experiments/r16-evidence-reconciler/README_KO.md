@@ -72,3 +72,13 @@ ChatGPT Scheduled → AI → Previous runs에서 정확한 22:00 회차를 열�
 - 확인한 현재 원격 SHA: `audit_v2.py` **`07433beddad31fd72b5a8c66eae3e5f0e58d053f`**, `tests/test_audit_v2.py` `f174eea913c1484884aaba8124a02d80311d0dff`, `tests/test_connected_tool_names.py` `6e1623d0797473a34cdd21b0292095c40d45cb09`, `tests/test_cli_exit_codes.py` **`e417f706e9b8f760987d17de72708ad4863047f0`**. 네 파일 모두 실제 로컬 git blob hash 와 GitHub 원격 read-back 정확히 일치.
 - **동시 변경 보존**: 이 작업 중 다른 개발 이력에서 발견된 `0eefa7e7434f046350b2ee8de5367aed4e7f352d` (날짜 소수부/잘못된 tool-call 타입/과다 로그 차단)와 관련 테스트 `5195114d4ca408cef8c43e617f8dede5ed670b12`를 확인·보존하고 통합 테스트에 포함했다.
 - 유료 API·운영 Activepieces·기존 R16 예약 ID/일정/활성/프롬프트·GitHub main 변경 없음. R16 00:00 및 최신 회차 공식 개별 실행 ID와 플랫폼 원본 호출 로그는 여전히 현재 도구에서 미제공. **무인 성공 미검증**.
+
+
+## 2026-10-23 10:56 KST — 최신 원격 43/43 전체 Python 회귀 독립 완료
+- **이 검증은 사용자가 일반 채팅에서 '실행'을 지시해 수동으로 수행한 Python 오프라인 검사**이며, ChatGPT 기존 매시간 정각 예약이 무인으로 GitHub/Slack 업무를 수행했다는 증거가 아니다.
+- 10:26 KST 무렵 격리 브랜치에 수정된 나노초 처리 코드를 실제 GitHub에서 조회: `audit_v2.py` blob `05fcfd2eac1b76d2e2f351e749a90647347a88aa` (commit `7b157aaaa2e8c5812181cd957a9bc2e5b3530b0c`), 신규 4개 나노초 순서 테스트를 포함한 `tests/test_audit_v2.py` blob `a1d68fbfad6c39218211f19a869c0f6f933726b6` (commit `5c92a3f73d252871dcb51274a1f95f4242cbdd00`).
+- 기존 로컬 확인본(`audit_v2.py` SHA `70683e029c525462a55f013701be1e806e6b1e2d`)에 **위 두 실제 GitHub 커밋의 원본 patch만 적용**. 나머지 두 테스트 파일 `tests/test_cli_exit_codes.py` SHA `e417f706e9b8f760987d17de72708ad4863047f0`와 `tests/test_connected_tool_names.py` SHA `6e1623d0797473a34cdd21b0292095c40d45cb09` 그대로 유지.
+- 최신 GitHub 원격 read-back SHA와 로컬 `git hash-object` 방식 SHA1 blob 해시 **네 파일 모두 4/4 정확히 일치**(파일명/내용이 다르면 전체 실행을 중단하도록 사전 검사).
+- `python -m unittest discover -s tests -v`를 격리 로컬 Python으로 직접 실행: **Ran 43 tests / OK / exit 0 / failures 0**, 전체 실행 로그 보존. 나노초 역전·종료 후 호출·10자리 소수부 거부 테스트 4개 포함.
+- **통과 의미 구분**: 이 `exit 0`은 `unittest` 코드 품질 검사 성공이지, `audit_v2.py --input`로 판단하는 *공식 ChatGPT 예약 무인 성공*이 아니다. 후자는 별도 공식 per-run ID/원본 호출 없이 항상 `official_success_verified=false`.
+- 기존 ChatGPT R16 예약 ID `6acb017062a08191a4136238b78b313a`, 한국시간 매시간 정각, 활성화/알림/프롬프트 및 GitHub main·Activepieces 운영 플로우·유료 API 변경 없음.
