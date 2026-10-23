@@ -1,10 +1,10 @@
 name: AI R16 hourly offline BOT audit
 
 # Independent from the existing ChatGPT hourly task.
-# GitHub's UTC cron runs at minute 17 of every hour, including in Asia/Seoul.
+# GitHub's UTC cron runs at minute 15 of every hour, including in Asia/Seoul.
 on:
   schedule:
-    - cron: '17 * * * *'
+    - cron: '15 * * * *'
   workflow_dispatch:
   push:
     branches: [main]
