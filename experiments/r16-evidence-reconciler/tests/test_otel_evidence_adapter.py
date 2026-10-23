@@ -46,6 +46,18 @@ def fixture():
 
 
 class TestOtelAdapter(unittest.TestCase):
+    def test_absent_root_parent_id_preserves_valid_calls(self):
+        data = fixture()
+        del data["resourceSpans"][0]["scopeSpans"][0]["spans"][0]["parentSpanId"]
+        self.assertEqual(2, len(adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)["tool_calls"]))
+
+    def test_rejects_malformed_root_parent_ids(self):
+        for value in ([], {}, False, 0, None):
+            with self.subTest(parent=value):
+                data = fixture()
+                data["resourceSpans"][0]["scopeSpans"][0]["spans"][0]["parentSpanId"] = value
+                self.assertEqual([], adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)["tool_calls"])
+
     def test_rejects_wrong_anyvalue_types_without_crashing(self):
         for value in ({"stringValue": []}, {"stringValue": {}},
                       {"boolValue": "current_handoff"}, {"intValue": "current_handoff"},
@@ -209,4 +221,5 @@ class TestOtelAdapter(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
 

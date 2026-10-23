@@ -148,6 +148,11 @@ def adapt_otlp(payload, *, expected_run_id, expected_targets):
             result["reason"] = "동일 trace 내 중복 span ID · 원본 진위 미검증"
             return result
         seen_trace_span_ids.add(identity)
+        # Check the type before root detection: falsey containers/scalars must
+        # not be mistaken for the empty parent ID of a root span.
+        parent_id = span.get("parentSpanId", "")
+        if not isinstance(parent_id, str) or (parent_id and not _valid_id(parent_id, SPAN_ID)):
+            continue
         # Existing R16 by_id ancestry index has a single trace-scoped slot.
         # Unrelated traces cannot supply evidence for the selected root.
         if span_id in by_id:
@@ -209,4 +214,5 @@ def adapt_otlp(payload, *, expected_run_id, expected_targets):
     result["tool_calls"] = calls
     result["reason"] = "OTLP span 형식·인과 연결 통과 · 원본 진위 미검증" if calls else result["reason"]
     return result
+
 
