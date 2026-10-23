@@ -27,7 +27,7 @@ class BotTeamR16Tests(unittest.TestCase):
     def test_without_native_log_requests_authoritative_run(self):
         report = collaborate(self.sample())
         self.assertEqual(report["builder"]["next_action"], "READ_OFFICIAL_SCHEDULED_RUN")
-        self.assertEqual(report["verifier"]["policy_checks"], "PASS")
+        self.assertEqual(report["verifier"]["policy_checks"], "SAFE_UNVERIFIED")
         self.assertFalse(report["official_success_verified"])
         self.assertEqual(report["live_llm_bots"], 0)
         self.assertEqual(report["production_mutations"], 0)
