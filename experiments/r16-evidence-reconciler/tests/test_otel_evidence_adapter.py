@@ -1,0 +1,94 @@
+import copy
+import re
+import unittest
+
+from otel_evidence_adapter import adapt_otlp
+
+RUN = "native-run-1"
+TRACE = "1" * 32
+ROOT = "2" * 16
+GITHUB = "3" * 16
+SLACK = "4" * 16
+SHA = re.compile(r"^[a-f0-9]{40}$")
+TS = re.compile(r"^\d{10}\.\d{6}$")
+TARGETS = {
+    "current_handoff": ({"mcp__codex_apps__github_fetch_file"}, "docs/ai/AI_CURRENT_HANDOFF_2026-10-22.md", SHA),
+    "slack_thread": ({"mcp__codex_apps__slack_slack_read_thread"}, "C0C9649RQAZ/1792416391.631669", TS),
+}
+
+
+def attr(key, value):
+    return {"key": key, "value": {"stringValue": value}}
+
+
+def span(span_id, name, operation, tool=None, target=None, locator=None, version=None):
+    attrs = [attr("ai.scheduler.run.id", RUN), attr("gen_ai.operation.name", operation)]
+    if tool:
+        attrs += [attr("gen_ai.tool.name", tool), attr("ai.evidence.target", target),
+                  attr("ai.evidence.locator", locator), attr("ai.evidence.version", version)]
+    return {"traceId": TRACE, "spanId": span_id, "parentSpanId": "" if operation == "invoke_agent" else ROOT,
+            "name": name, "kind": "SPAN_KIND_INTERNAL", "startTimeUnixNano": "1792735200000000000",
+            "endTimeUnixNano": "1792735201000000000", "status": {"code": "STATUS_CODE_OK"}, "attributes": attrs}
+
+
+def fixture():
+    root = span(ROOT, "invoke_agent R16", "invoke_agent")
+    root["startTimeUnixNano"] = "1792735199000000000"
+    root["endTimeUnixNano"] = "1792735205000000000"
+    github = span(GITHUB, "execute_tool mcp__codex_apps__github_fetch_file", "execute_tool",
+                  "mcp__codex_apps__github_fetch_file", "current_handoff",
+                  "docs/ai/AI_CURRENT_HANDOFF_2026-10-22.md", "a" * 40)
+    slack = span(SLACK, "execute_tool mcp__codex_apps__slack_slack_read_thread", "execute_tool",
+                 "mcp__codex_apps__slack_slack_read_thread", "slack_thread",
+                 "C0C9649RQAZ/1792416391.631669", "1792735600.070409")
+    return {"resourceSpans": [{"scopeSpans": [{"spans": [root, github, slack]}]}]}
+
+
+class TestOtelAdapter(unittest.TestCase):
+    def test_valid_trace_maps_two_calls_without_promoting_trace_to_run_id(self):
+        out = adapt_otlp(fixture(), expected_run_id=RUN, expected_targets=TARGETS)
+        self.assertEqual(2, len(out["tool_calls"]))
+        self.assertEqual(TRACE, out["trace_id"])
+        self.assertTrue(all(c["run_id"] == RUN and c["invocation_id"].startswith("otel-span:") for c in out["tool_calls"]))
+
+    def test_rejects_cross_trace_child(self):
+        data = fixture(); data["resourceSpans"][0]["scopeSpans"][0]["spans"][1]["traceId"] = "5" * 32
+        self.assertEqual(1, len(adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)["tool_calls"]))
+
+    def test_rejects_orphan_parent(self):
+        data = fixture(); data["resourceSpans"][0]["scopeSpans"][0]["spans"][1]["parentSpanId"] = "9" * 16
+        self.assertEqual(1, len(adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)["tool_calls"]))
+
+    def test_rejects_parent_chain_not_connected_to_root(self):
+        data = fixture(); spans = data["resourceSpans"][0]["scopeSpans"][0]["spans"]
+        fake_parent = span("7" * 16, "chat", "chat")
+        fake_parent["parentSpanId"] = "8" * 16
+        spans.append(fake_parent)
+        spans[1]["parentSpanId"] = fake_parent["spanId"]
+        self.assertEqual(1, len(adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)["tool_calls"]))
+
+    def test_rejects_error_status_and_forged_success_attribute(self):
+        data = fixture(); call = data["resourceSpans"][0]["scopeSpans"][0]["spans"][1]
+        call["status"] = {"code": "STATUS_CODE_ERROR"}; call["attributes"].append(attr("success", "true"))
+        self.assertEqual(1, len(adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)["tool_calls"]))
+
+    def test_rejects_child_outside_root_time(self):
+        data = fixture(); data["resourceSpans"][0]["scopeSpans"][0]["spans"][1]["endTimeUnixNano"] = "1792735210000000000"
+        self.assertEqual(1, len(adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)["tool_calls"]))
+
+    def test_rejects_missing_version_and_bad_span_name(self):
+        data = fixture(); call = data["resourceSpans"][0]["scopeSpans"][0]["spans"][1]
+        call["attributes"] = [a for a in call["attributes"] if a["key"] != "ai.evidence.version"]
+        data["resourceSpans"][0]["scopeSpans"][0]["spans"][2]["name"] = "execute_tool forged"
+        self.assertEqual([], adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)["tool_calls"])
+
+    def test_rejects_zero_ids_duplicate_root_and_excess_spans(self):
+        data = fixture(); data["resourceSpans"][0]["scopeSpans"][0]["spans"][0]["traceId"] = "0" * 32
+        self.assertEqual([], adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)["tool_calls"])
+        data = fixture(); data["resourceSpans"][0]["scopeSpans"][0]["spans"].append(copy.deepcopy(data["resourceSpans"][0]["scopeSpans"][0]["spans"][0]))
+        data["resourceSpans"][0]["scopeSpans"][0]["spans"][-1]["spanId"] = "6" * 16
+        self.assertEqual([], adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)["tool_calls"])
+
+
+if __name__ == "__main__":
+    unittest.main()
