@@ -12,6 +12,45 @@ from test_otel_evidence_adapter import fixture, TARGETS, RUN, TRACE, ROOT
 
 
 class TestTraceIdentity(unittest.TestCase):
+    def test_other_trace_root_collision_is_order_independent(self):
+        for first in (True, False):
+            with self.subTest(other_trace_first=first):
+                data = fixture()
+                spans = data["resourceSpans"][0]["scopeSpans"][0]["spans"]
+                other = copy.deepcopy(spans[0])
+                other["traceId"] = "9" * 32
+                other["attributes"][0]["value"]["stringValue"] = "other-run"
+                spans.insert(0 if first else len(spans), other)
+                out = adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)
+                self.assertCountEqual(TARGETS, [c["target"] for c in out["tool_calls"]])
+                self.assertTrue(all(c["trace_id"] == TRACE for c in out["tool_calls"]))
+
+    def test_other_trace_tool_collision_is_order_independent(self):
+        for first in (True, False):
+            with self.subTest(other_trace_first=first):
+                data = fixture()
+                spans = data["resourceSpans"][0]["scopeSpans"][0]["spans"]
+                other = copy.deepcopy(spans[1])
+                other["traceId"] = "9" * 32
+                other["attributes"][0]["value"]["stringValue"] = "other-run"
+                spans.insert(0 if first else len(spans), other)
+                out = adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)
+                self.assertCountEqual(TARGETS, [c["target"] for c in out["tool_calls"]])
+
+    def test_other_trace_intermediate_collision_cannot_hide_parent(self):
+        data = fixture()
+        spans = data["resourceSpans"][0]["scopeSpans"][0]["spans"]
+        middle = copy.deepcopy(spans[1])
+        middle["spanId"] = "7" * 16
+        middle["attributes"] = []
+        spans[1]["parentSpanId"] = middle["spanId"]
+        other = copy.deepcopy(middle)
+        other["traceId"] = "9" * 32
+        spans.insert(0, other)
+        spans.append(middle)
+        out = adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)
+        self.assertCountEqual(TARGETS, [c["target"] for c in out["tool_calls"]])
+
     def test_duplicate_tool_span_id_rejects_entire_export(self):
         data = fixture()
         spans = data["resourceSpans"][0]["scopeSpans"][0]["spans"]
@@ -63,3 +102,4 @@ class TestTraceIdentity(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
