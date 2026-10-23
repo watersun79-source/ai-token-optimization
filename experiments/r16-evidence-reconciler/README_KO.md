@@ -1,5 +1,17 @@
 # R16 무인 예약 실행 증거 대조기 — 격리 개발 브랜치
 
+## 2026-10-23 후속 — 최신 GitHub 원본 4/4 SHA 독립 대조 및 전체 회귀 43/43 PASS
+- 사용자 **수동 '실행' 명령**으로 원본 GitHub 브랜치 `ai/r16-evidence-reconciler-2026-10-22`에서 Python 소스와 테스트 3개를 실제 읽어 로컬 `/mnt/data/r16_test/`에 복원. 직접 `git hash-object` 해시를 각각 계산해 다음 GitHub blob SHA와 **4/4 완전 일치** 확인:
+  - `audit_v2.py`: `05fcfd2eac1b76d2e2f351e749a90647347a88aa`
+  - `tests/test_audit_v2.py`: `a1d68fbfad6c39218211f19a869c0f6f933726b6`
+  - `tests/test_cli_exit_codes.py`: `e417f706e9b8f760987d17de72708ad4863047f0`
+  - `tests/test_connected_tool_names.py`: `6e1623d0797473a34cdd21b0292095c40d45cb09`
+- **실제 무료 로컬 실행**: Python `3.13.5`, `python3 -m unittest discover -s tests -v` → `Ran 43 tests in 10.953s`, `OK`, 실패/오류 **0**. 이전에 미실행이었던 변경 후 전체 회귀를 **이번에 직접 완료**. 네이티브 예약 검사나 원격 CI 통과라는 뜻이 아님.
+- GitHub 테스트 commit `5c92a3f73d252871dcb51274a1f95f4242cbdd00`에 대한 `fetch_commit_workflow_runs` 결과 `workflow_runs=[]` 및 `get_commit_combined_status` 결과 `statuses=[]`: **원격 CI 성공·실패 모두 미검증**.
+- ChatGPT 공식 `automations.peek`: 단일 기존 예약 `6acb017062a08191a4136238b78b313a` 활성, 매시간 정각(Asia/Seoul), `last_run_time=2026-10-23T01:00:54.365515Z` (=10:00:54 KST), `paused_count=0`. 이는 실행 시각 메타이지 공식 per-run ID·종료 결과·동일 회차 GitHub/Slack 원시 호출이 아님. **정규 무인 성공 계속 미검증**.
+- 운영 보호: 예약·알림·주기·기존 Activepieces 운영·GitHub main 무변경, 모델 유료 API 호출 없음. 다음 목표: 지원되는 공식 Scheduled/Previous runs에서 개별 회차 원본이 제공되는 경우에만 같은 회차 독립 검증. 원본이 없으면 미검증을 유지하고 수동 테스트를 정규 실행으로 취급하지 않는다.
+
+
 ## 2026-10-23 추가 보강 — Python 공식 실행/호출 나노초 순서 검사
 - **재현**: Python `datetime.fromisoformat`이 소수점 이하 **7~9자리**의 나머지를 잘라서, `completed_at=22:02:30.000000100` 종료보다 `observed_at=22:02:30.000000900` 호출이 늦어도 이전 코드에서 같은 시각으로 오인. 역전된 시작·종료 시각도 잘못 비교할 수 있었음.
 - **범위**: 정규 예약과 무관한 수동 연구·격리 코딩. 기존 `target_slot` / `native_run.scheduled_for` 정각 문자 규칙 `EXACT_HOUR` 보존.
