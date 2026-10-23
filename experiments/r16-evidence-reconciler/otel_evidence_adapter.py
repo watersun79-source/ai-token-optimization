@@ -92,7 +92,10 @@ def _descends_from(span, root_span_id, root_trace_id, by_id):
     parent_id = span.get("parentSpanId")
     visited = set()
     while parent_id:
-        if (parent_id in visited or parent_id not in by_id
+        # OTLP parentSpanId is a hex string. Lists/dicts can otherwise raise
+        # TypeError on dictionary/set membership, aborting the entire audit.
+        if (not isinstance(parent_id, str) or parent_id in visited
+                or parent_id not in by_id
                 or by_id[parent_id][0].get("traceId") != root_trace_id):
             return False
         if parent_id == root_span_id:
@@ -130,11 +133,24 @@ def adapt_otlp(payload, *, expected_run_id, expected_targets):
                     return result
 
     by_id = {}
+    # OpenTelemetry's real span identity is (traceId, spanId). A repeated
+    # identity is ambiguous even if the later span has invalid timestamps.
+    # Reject rather than silently using the first (potentially forged) copy.
+    seen_trace_span_ids = set()
     for span in spans:
         if not isinstance(span, dict):
             continue
         trace_id, span_id = span.get("traceId"), span.get("spanId")
-        if not _valid_id(trace_id, TRACE_ID) or not _valid_id(span_id, SPAN_ID) or span_id in by_id:
+        if not _valid_id(trace_id, TRACE_ID) or not _valid_id(span_id, SPAN_ID):
+            continue
+        identity = (trace_id, span_id)
+        if identity in seen_trace_span_ids:
+            result["reason"] = "동일 trace 내 중복 span ID · 원본 진위 미검증"
+            return result
+        seen_trace_span_ids.add(identity)
+        # Existing R16 by_id ancestry index has a single trace-scoped slot.
+        # Unrelated traces cannot supply evidence for the selected root.
+        if span_id in by_id:
             continue
         start, end = _time_ns(span.get("startTimeUnixNano")), _time_ns(span.get("endTimeUnixNano"))
         if start is None or end is None or start > end:
