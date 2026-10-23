@@ -10,6 +10,7 @@ on:
       - experiments/r16-evidence-reconciler/activepieces_mock_guard_2026-10-23.js
       - experiments/r16-evidence-reconciler/tests/**
       - experiments/r16-evidence-reconciler/polyglot/**
+      - experiments/r16-evidence-reconciler/fixtures/**
   workflow_dispatch:
 
 # Zero AI/provider calls. GitHub's public-repo standard runner only.
@@ -53,8 +54,11 @@ jobs:
         run: python -m unittest discover -s polyglot -p 'test_*.py' -v
       - name: Run actual JavaScript mock guard against shared fixtures
         run: node --test polyglot/test_activepieces_guard.mjs
+      - name: Run existing 15-case JavaScript cross-check
+        run: node --experimental-default-type=module polyglot/check_js.mjs fixtures/time_cases.tsv
       - name: Run independent Java nanosecond time oracle
         run: |
           mkdir -p "$RUNNER_TEMP/r16-java"
-          javac -d "$RUNNER_TEMP/r16-java" polyglot/R16TimeOracle.java
+          javac -d "$RUNNER_TEMP/r16-java" polyglot/R16TimeOracle.java polyglot/R16TimeOrderCheck.java
           java -cp "$RUNNER_TEMP/r16-java" R16TimeOracle polyglot/time_vectors.tsv
+          java -cp "$RUNNER_TEMP/r16-java" R16TimeOrderCheck fixtures/time_cases.tsv
