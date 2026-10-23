@@ -30,7 +30,7 @@ export const code = async (inputs) => {
     return Date.UTC(year, month - 1, day, hour, minute, second, ms) - offset * 60000;
   };
   const slot = time(request.scheduled_for);
-  if (!Number.isFinite(slot) || !/T\d\d:00:00(?:\.\d+)?(?:Z|[+-]\d\d:\d\d)$/.test(request.scheduled_for))
+  if (!Number.isFinite(slot) || !/T\d\d:00:00(?:\.0+)?(?:Z|[+-]\d\d:\d\d)$/.test(request.scheduled_for))
     return result('Invalid timezone-aware scheduled slot');
   const original = request.official_run;
   if (!original || typeof original !== 'object' ||
@@ -57,7 +57,7 @@ export const code = async (inputs) => {
     },
   };
   const calls = Array.isArray(request.tool_calls) ? request.tool_calls : [];
-  if (calls.length > 16) return result('Too many tool calls in untrusted evidence payload');
+  if (calls.length > 1024) return result('Too many tool calls in untrusted evidence payload');
   const seen = new Set(), invocations = new Set();
   for (const c of calls) {
     // Reject inherited keys like constructor, toString, and __proto__.
