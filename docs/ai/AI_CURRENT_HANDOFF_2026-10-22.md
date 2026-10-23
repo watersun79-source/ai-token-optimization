@@ -1,6 +1,18 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
 
+## 2026-10-23 — 실제 오픈소스 참조 3언어 교차 CI 통과 (R16, 수동 채팅 작업)
+- **ResearchBot 참고 결과**: 공식 Temporal의 Workflow ID ≠ Run ID, OpenTelemetry 도구 호출 span, JSON Schema의 언어별 공통 검증, LangGraph의 단기 checkpoint / 장기 store 구분 조사. Python jsonschema·JS Ajv·LangGraph MIT, Java networknt/Temporal SDK·OpenTelemetry Apache-2.0. 오픈소스 코드 직접 복제·라이브러리 설치 없이 검증기 설계와 경계 사례에만 반영. API 키·유료 모델·새 서버 사용 없음.
+- **BuilderBot 적용 범위**: 격리 `ai/r16-evidence-reconciler-2026-10-22`에 `fixtures/time_cases.tsv` 15건, `tests/test_polyglot_fixtures.py`(Python 기존 검증기 호출), `polyglot/check_js.mjs`(기존 mock Activepieces JS 코드 직접 호출), `polyglot/R16TimeOrderCheck.java`(JDK java.time 나노초 독립 구현) 및 기존 별도 변경의 `R16TimeOracle.java`+ `time_vectors.tsv` 12건을 보존·통합. GitHub 격리 Actions의 실행 경로에 JS/Java 단계 추가. `main`, 예약 AI, Activepieces 운영 플로우 무변경.
+- **VerifierBot 공식 독립 증거**: GitHub Actions **run `39894040301`**, head SHA **`446d2b277c8ee67a833b0b3fe7021ac33ed707e7`**, job/check **`120220187407`**, status **`completed/success`**. 실제 job log: Python **44/44 OK**, JS 공통 15/15, Java 공통 15/15, 별도 Java 경계 12/12, GitHub Actions 경고 0건. [공식 실행 링크](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39894040301). 앞선 중복 실행 `39893876739`의 `cancelled`와 구분. 신규 README 상세 기록: [격리 증거 문서](https://github.com/watersun79-source/ai-token-optimization/blob/ai/r16-evidence-reconciler-2026-10-22/experiments/r16-evidence-reconciler/README_KO.md) blob **`2112a3dd16b2c8a5bfe9feac7fdd1525716c38f0`**.
+- Activepieces 기존 MOCK ONLY 격리 flow `zgSopq6Txh68wxsDc5K5Z`는 계속 비활성·미게시, GitHub JS SHA `b378e7640a03b60ea86400e7d4c47602b27386fe`와 실제 CODE 내용은 **마지막 공백 줄 1개 차이 외 정확히 동일**. 새 Activepieces 게시/변경 없음. 예약 유일 ID `6acb017062a08191a4136238b78b313a`, `automations.peek is_enabled=true`, `paused_count=0`, 최근 메타 `2026-10-23T03:04:51.184022Z` (=12:04:51 KST), 매시간 정각/알림/프롬프트 변경 없음.
+- **최종 구분**: GitHub 격리 코드의 **실제 자동 CI 성공 완료** vs ChatGPT 공식 예약의 **무인 GitHub·Slack 기억 복원 미검증**(native per-run ID·같은 회차 원시 호출 미제공). GitHub Actions ID를 ChatGPT 예약 run ID라고 주장하지 않는다.
+- **다음 목표**: 공식 Scheduled → AI → Previous runs / 원시 tool-call ledger에 실제 접근이 제공되면 인증된 개별 회차에 대해서만 독립 대조. 그 전에는 기능 성공을 추정하지 않고 이미 성공한 코드 검사 반복 실행 금지.
+
+---
+
+
+
 ## 2026-10-23 — R16 격리 원격 GitHub CI 실성공 43/43 × 2 (정규 ChatGPT 무인 성공과 별개)
 - **기존 CI 0건 원인 규명**: main `.github/workflows/validate.yml`은 main 푸시/PR만, 격리 branch `ai-memory-bridge.yml`은 기억 branch 특정 파일 변경만 실행. R16 별도 CI 트리거 없었음. GitHub API 원본에서 저장소 Actions 전체 **94건**, main **37건**, R16 **0건**(격리 CI 생성 전), 격리 커밋 `5c92a3f73d252871dcb51274a1f95f4242cbdd00`의 전체 이벤트 Actions/Checks 0건 확인. GitHub Actions 기능 전반 고장 아님.
 - **격리 브랜치 전용 CI 실제 생성**: `ai/r16-evidence-reconciler-2026-10-22` 의 `.github/workflows/r16-evidence-verifier.yml`. 정확히 해당 격리 branch push와 검증기 코드/테스트/워크플로 경로에만 트리거. `main` 무수정. 루트 테스트가 아닌 `experiments/r16-evidence-reconciler/tests` 기준으로 Python 3.12 표준 unittest 43건. 토큰 권한 `contents: read`, 무료 공개 저장소 + `ubuntu-latest` 표준 runner 사용, 외부 유료 API/비밀/AI 호출 0.
