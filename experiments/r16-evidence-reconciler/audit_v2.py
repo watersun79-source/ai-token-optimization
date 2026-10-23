@@ -52,6 +52,12 @@ EXACT_HOUR = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:00:00(?:\.0+)?(?:Z|[+-]\d{2}:
 def parsed_time(value):
     if not isinstance(value, str):
         return None
+    # Match the Java java.time offset bound for fail-closed cross-language checks.
+    # OffsetDateTime accepts at most +/-18:00, unlike Python fromisoformat.
+    offset = re.search(r'[+-](\d{2}):(\d{2})$', value)
+    if offset and (int(offset.group(1)) > 18 or
+                   (int(offset.group(1)) == 18 and int(offset.group(2)) != 0)):
+        return None
     try:
         dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
         return dt.astimezone(timezone.utc) if dt.tzinfo is not None and dt.utcoffset() is not None else None
