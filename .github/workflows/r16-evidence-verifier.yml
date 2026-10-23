@@ -7,14 +7,13 @@ on:
     paths:
       - .github/workflows/r16-evidence-verifier.yml
       - experiments/r16-evidence-reconciler/audit_v2.py
-      - experiments/r16-evidence-reconciler/tests/**
       - experiments/r16-evidence-reconciler/activepieces_mock_guard_2026-10-23.js
-      - experiments/r16-evidence-reconciler/fixtures/**
+      - experiments/r16-evidence-reconciler/tests/**
       - experiments/r16-evidence-reconciler/polyglot/**
   workflow_dispatch:
 
-# Do not change main, ChatGPT automation, Activepieces or external apps.
-# Public repository + standard GitHub runner; no provider API or secrets.
+# Zero AI/provider calls. GitHub's public-repo standard runner only.
+# NEVER authenticates native ChatGPT unattended execution.
 permissions:
   contents: read
 
@@ -23,9 +22,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  python-regression:
+  polyglot-regression:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     defaults:
       run:
         working-directory: experiments/r16-evidence-reconciler
@@ -34,17 +33,28 @@ jobs:
         uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - name: Set up standard-library Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - name: Run complete R16 offline regression
+      - name: Set up Node 24 (no npm dependencies)
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Set up OpenJDK 21 (no Maven dependencies)
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Run original Python regressions
         run: python -m unittest discover -s tests -v
-      - name: Verify original Activepieces JavaScript with shared offline fixtures
-        run: node --experimental-default-type=module polyglot/check_js.mjs fixtures/time_cases.tsv
-      - name: Compile and run independent Java timestamp oracle
+      - name: Run shared Python time fixtures
+        run: python -m unittest discover -s polyglot -p 'test_*.py' -v
+      - name: Run actual JavaScript mock guard against shared fixtures
+        run: node --test polyglot/test_activepieces_guard.mjs
+      - name: Run independent Java nanosecond time oracle
         run: |
-          mkdir -p /tmp/r16-polyglot-java
-          javac -encoding UTF-8 -d /tmp/r16-polyglot-java polyglot/R16TimeOrderCheck.java polyglot/R16TimeOracle.java
-          java -cp /tmp/r16-polyglot-java R16TimeOrderCheck fixtures/time_cases.tsv
-          java -cp /tmp/r16-polyglot-java R16TimeOracle polyglot/time_vectors.tsv
+          mkdir -p "$RUNNER_TEMP/r16-java"
+          javac -d "$RUNNER_TEMP/r16-java" polyglot/R16TimeOracle.java
+          java -cp "$RUNNER_TEMP/r16-java" R16TimeOracle polyglot/time_vectors.tsv
