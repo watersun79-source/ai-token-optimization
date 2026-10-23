@@ -1,5 +1,14 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-23 10:21 KST — 정규 회차 종료 경계의 검증기 불일치 수정
+- 사용자의 `실행` 요청에 의한 **수동 ChatGPT 격리 작업**. 공식 예약 R16 `6acb017062a08191a4136238b78b313a`는 `is_enabled=true`, 매시 정각, 최근 `last_run_time=2026-10-23T01:00:54.365515Z`(10:00:54 KST). 개별 회차 원본 run ID/도구 호출 ledger는 미제공으로 **무인 성공 미검증**.
+- GitHub Python 원본 SHA `70683e029c525462a55f013701be1e806e6b1e2d` + 일치하는 로컬 Git blob으로 **슬롯 10:00/완료 11:00** 모의 입력을 확인: `형식 통과 · 진위 미검증`. 격리 Activepieces JS 동일 입력은 `end < next-slot` 때문에 `Run timestamps inconsistent` → 수정 전 `TESTING` 원본 run `4VDnVPPKRaVvlpDhfQnWX`.
+- 격리 MOCK ONLY Activepieces flow `zgSopq6Txh68wxsDc5K5Z` JS 종료 경계 `<= next-slot`로 최소 변경 (Python 정책과 동기화). 수정 후 실제 `ap_test_flow`+독립 `ap_get_run` **4/4**: `xmIcVTEjePms5okYRmYPM` 경계 정확히 포함, `XrUFMiKfToISQWUJHRNKr` 1ns 전 포함, `A8LyP62BssgPzvoK4CUMB` 1ns 후 거부, `Qza2RyENPtecV2kXX8ovo` 공식 로그 누락 거부. 전부 `official_success_verified=false` / `status=UNVERIFIED` / `external_calls=0` (TESTING `SUCCEEDED`는 테스트 스텝 실행 완료만 뜻함).
+- 변경 JS GitHub 격리 blob `b378e7640a03b60ea86400e7d4c47602b27386fe`, `ap_read_step_code`와 remote read-back exact 일치. [상세 원본](https://github.com/watersun79-source/ai-token-optimization/blob/ai/r16-evidence-reconciler-2026-10-22/experiments/r16-evidence-reconciler/ACTIVEPIECES_MOCK_SAFE_FLOW_2026-10-22.md) 문서 blob `c0f39bec1743dd639efc66983a7270c1d5bc05cf`.
+- 사용자가 보호 지시한 단일 정규 예약(활성·일정·프롬프트·알림), GitHub main, Activepieces 운영 플로우/연결, 비용·비밀은 변경 없음. 다음 우선 목표는 공식 개별 예약 run ID와 GitHub·Slack 동일 회차 원본 호출 확보이며, 데이터가 없으면 미검증을 유지.
+
+---
+
 ## 2026-10-23 10시대 — Python 나노초 정확도 오류 2개 수정, JS 독립 교차 검증
 - **사용자의 일반 채팅 '실행' 요청에 따른 수동 격리 수정**, 기존 정규 예약의 무인 성공 증거가 아님.
 - `automations.peek`: 단일 기존 R16 ID `6acb017062a08191a4136238b78b313a`, `is_enabled=true`, Asia/Seoul 매시간 정각, `last_run_time=2026-10-23T01:00:54.365515Z` (=10:00:54 KST). 일시정지 0, ID/일정/프롬프트/알림 수정 없음. 10:00 이후 기존 기억·격리 GitHub 커밋 조회(당시) 0, 지정 Slack 스레드 신규 0, Activepieces 오늘 AUDIT 기록 0; 수동/자동 원시 조회 부재로 무인 성공은 계속 미검증.
