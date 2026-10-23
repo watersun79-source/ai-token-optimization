@@ -28,9 +28,11 @@ jobs:
         working-directory: experiments/r16-evidence-reconciler
     steps:
       - name: Check out isolated branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Set up standard-library Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Run complete R16 offline regression
