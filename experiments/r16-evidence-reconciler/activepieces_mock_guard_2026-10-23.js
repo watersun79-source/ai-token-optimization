@@ -45,7 +45,7 @@ export const code = async (inputs) => {
       !['completed','no_update'].includes(original.status))
     return result('Native run identity, slot, or terminal status mismatch');
   const start = time(original.started_at), end = time(original.completed_at);
-  if (start === null || end === null || !(slot <= start && start <= end && end < slot + 3600000000000n))
+  if (start === null || end === null || !(slot <= start && start <= end && end <= slot + 3600000000000n))
     return result('Run timestamps inconsistent');
   // Only these exact verified connector names are allowed. The alias spelling
   // can differ between ChatGPT scheduled Work and ordinary connected chats.
@@ -81,3 +81,4 @@ export const code = async (inputs) => {
     format_check: 'PASS', required_targets: [...seen], authenticity: 'UNVERIFIED',
   });
 };
+
