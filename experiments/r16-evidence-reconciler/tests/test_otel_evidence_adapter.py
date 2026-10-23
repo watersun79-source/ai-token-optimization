@@ -46,6 +46,36 @@ def fixture():
 
 
 class TestOtelAdapter(unittest.TestCase):
+    def test_malformed_timestamps_are_rejected_without_crashing(self):
+        for value in ("²", "9" * 5000, "18446744073709551616", "0", True, 1.5):
+            with self.subTest(value=repr(value)[:50]):
+                data = fixture()
+                data["resourceSpans"][0]["scopeSpans"][0]["spans"][1]["endTimeUnixNano"] = value
+                out = adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)
+                self.assertEqual(["slack_thread"], [c["target"] for c in out["tool_calls"]])
+
+    def test_json_integer_timestamps_are_accepted(self):
+        data = fixture()
+        for item in data["resourceSpans"][0]["scopeSpans"][0]["spans"]:
+            for key in ("startTimeUnixNano", "endTimeUnixNano"):
+                item[key] = int(item[key])
+        out = adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)
+        self.assertCountEqual(TARGETS, [c["target"] for c in out["tool_calls"]])
+
+    def test_out_of_range_root_timestamp_is_rejected(self):
+        data = fixture()
+        data["resourceSpans"][0]["scopeSpans"][0]["spans"][0]["endTimeUnixNano"] = "18446744073709551616"
+        self.assertEqual([], adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)["tool_calls"])
+
+    def test_uint64_max_timestamp_is_accepted(self):
+        data = fixture()
+        spans = data["resourceSpans"][0]["scopeSpans"][0]["spans"]
+        spans[0]["endTimeUnixNano"] = "18446744073709551615"
+        spans[1]["endTimeUnixNano"] = "18446744073709551615"
+        out = adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)
+        self.assertEqual(2, len(out["tool_calls"]))
+        self.assertEqual("2554-07-21T23:34:33.709551615Z", out["tool_calls"][0]["observed_at"])
+
     def test_valid_trace_maps_two_calls_without_promoting_trace_to_run_id(self):
         out = adapt_otlp(fixture(), expected_run_id=RUN, expected_targets=TARGETS)
         self.assertEqual(2, len(out["tool_calls"]))
@@ -148,3 +178,4 @@ class TestOtelAdapter(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
