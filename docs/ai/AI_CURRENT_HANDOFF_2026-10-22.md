@@ -1,5 +1,15 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-23 19:03 KST — 직전 공식 회차 결과 귀속 부분 검증
+- 인증된 `automations.peek.run_details.latest_result`가 직전 회차 `run_id=3381bc18-d844-832e-b64a-61c29bb8598a`, scheduled 18:00 KST, completed와 전체 결과 본문을 실제 제공했다. 직전 관찰에서 `in_progress`였던 동일 ID가 완료 결과로 전환된 것을 확인.
+- 결과 본문의 격리 commit `493ea72de030f2e402d3db34959fea6462bb8fa7`, Actions `39928466966`, 인계 blob `97aa7b91e5602aba40aced694a3de70742063413`, Slack ts `1792745941.496949`는 이번 GitHub·Slack 원본 재조회와 일치했다. **공식 회차 ↔ 저장된 결과 본문 ↔ 외부 원본**의 결과 귀속은 부분 검증됨.
+- 한계: 플랫폼 응답은 여전히 회차별 GitHub·Slack 원시 tool-call ledger를 제공하지 않는다. 따라서 결과 본문과 원본의 일치는 확인했지만, 해당 회차가 실제로 앱을 호출한 사실 자체는 독립 인증되지 않아 **정규 무인 앱 호출 성공 미검증** 유지.
+- 새 현재 회차는 `last_run.id=144a1464-05fc-8327-8d7d-1b5d7b6f1d37`, scheduled 19:00 KST, 조회 당시 `in_progress`; 완료로 승격하지 않음.
+- Slack 부모 스레드 기록 ts `1792749854.464169`. 새 코드 변경·CI 재실행 없음. GitHub main·예약 설정·운영 Activepieces·유료 API 변경 없음.
+
+---
+
+
 ## 2026-10-23 18:00 KST — 공식 회차 ID 필드 제공 확인 + OTLP 중복키 회귀 보완
 - **공식 회차 식별자 경계 개선**: 인증된 `automations.peek`가 이제 `run_details`를 실제 반환한다. 직전 완료 결과는 `latest_result.run_id=fb16cf89-ccf0-832c-8937-e9060a59d434`(scheduled 16:00 KST, completed), 이번 관찰 시점의 현재 회차는 `last_run.id=3381bc18-d844-832e-b64a-61c29bb8598a`(scheduled 18:00 KST, 조회 당시 `in_progress`). 이 값은 예약 ID·`last_run_time`·GitHub Actions ID와 다른 **플랫폼 회차별 필드**이므로 향후 공식 run ID 출처로 사용할 수 있다. 단, 현재 회차는 완료로 승격하지 않는다.
 - **독립 증거 한계 유지**: 동일 응답은 회차별 GitHub·Slack 원시 tool-call ledger를 제공하지 않는다. 직전 완료 결과 본문의 GitHub SHA/Actions와 Slack ts는 외부 원본과 일치하지만, 그 회차가 실제로 앱을 호출했다는 독립 원시 장부는 미제공 → **정규 무인 앱 호출 성공 미검증**.
