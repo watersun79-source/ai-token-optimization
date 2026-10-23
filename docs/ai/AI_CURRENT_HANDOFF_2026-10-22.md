@@ -1,5 +1,18 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+
+## 2026-10-23 15시대 — AI BOT GitHub 소스 URL 보안 검증 68/68
+- **오픈소스 공식 참조**: OWASP SSRF 방지 지침의 호스트 allowlist/파서 간 해석 불일치 주의 및 Python `urllib.parse` 공식 경고('URL split does not validate'). Pydantic AI(MIT)의 durable execution과 일반 memory 저장의 차이, Microsoft Agent Framework Go(MIT, preview)도 조사. 라이브러리/모델 추가 설치·유료 API 호출 없이 기존 격리 Python·JS·Java CI 그대로 재사용.
+- **실제 새 버그**: 격리 `bot_team_r16.py` ResearchBot이 제시된 참조 URL을 `startswith("https://github.com/")`로 판정해서 인코딩·경로 정규화·역슬래시 및 중복/제어문자 문제를 충분히 점검하지 못함. 이 모듈에는 네트워크 호출이 없으므로 실제 SSRF 침해로 단정하지 않는다.
+- **수정 및 GitHub SHA**: 격리 `ai/r16-evidence-reconciler-2026-10-22`에서 Python `re` fullmatch + `urllib.parse.urlsplit` 이중 확인으로 **정확한 github.com scheme/host·owner/repo 경로만** 참고 메타에 허용. 포트/userinfo, 퍼센트 인코딩, 경로 `..`/빈 segment, 쿼리/fragment, 탭·개행·역슬래시 거부. 중복 URL 제거·제목 제어문자 차단. bot 소스 commit `521be931069d507d46db1ad13928dc054aeff7ab` GitHub blob **`de90d1460fc60c9e86d1852e8483802ed544f2b5`**. 신규 `tests/test_bot_source_url_policy.py` 5건(commit `8a45be4e307eab0c5b0f6f20514a89b1023521bb`, blob **`ac4571e96b9f30c70423987fbd84c6c50640624e`**).
+- **공식 원격 CI 증거**: [GitHub Actions **`39909757804`**](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39909757804) 및 공식 Check/job **`120269756801`**, head SHA **`8a45be4e307eab0c5b0f6f20514a89b1023521bb`**, `completed/success`; 실제 runner 로그에서 Python **68/68 OK** (이전 63 + 신규 5), Python 다국어 2/2, JS 공통 20/20, Java 공통 20/20, Java oracle 12/12, 경고 0 직접 재확인. 변경 없는 성공 테스트를 별도로 재실행하지 않았음.
+- **격리 세부 기록**: [R16 README](https://github.com/watersun79-source/ai-token-optimization/blob/ai/r16-evidence-reconciler-2026-10-22/experiments/r16-evidence-reconciler/README_KO.md) blob **`9dc454b0ef2439bb60c835c4e699105e5d3be5f2`**, commit `fdc0f113127fbb74f0ffb50a97a27f14e33e1da1`. 이 CI는 단순 GitHub 코드 테스트 성공; ResearchBot은 실제 참고 소스의 진위는 여전히 확인하지 않는다고 표시.
+- **기존 예약 보호 상태 직접 조회**: ID `6acb017062a08191a4136238b78b313a` `is_enabled=true`, `paused_count=0`, Asia/Seoul 매시간 정각; `last_run_time=2026-10-23T06:07:08.222410Z` (=15:07:08 KST)은 예약 트리거 시각 메타뿐. 예약 알림·프롬프트·주기/상태, 기존 Activepieces 운영 flow, GitHub main, 비밀정보/결제 변경 없음.
+- **유일한 최우선 미완료**: ChatGPT Scheduled 공식 개별 per-run ID 및 동일 회차 GitHub/Slack 원시 tool-call 로그는 해당 연결에서 제공되지 않음. **정규 예약 무인 기억 복원 성공 = 미검증**. 수동 챗에서 만든 GitHub Actions ID나 Slack 자체 메모를 정규 예약의 무인 성공으로 오인하지 않는다. 다음 목표는 **권한 있는 공식 Scheduled → AI → Previous runs 원본 접근 가능 여부 검증**.
+
+---
+
+
 ## 2026-10-23 15시대 — R16 봇 증거 게이트 오독·공급망 고정 보완
 - **독립 봇 감사에서 확인한 두 개선점**: (1) 미인증 입력도 안전 규칙만 통과하면 `policy_checks=PASS`로 보여 예약 진위 통과로 오독될 수 있음, (2) 격리 CI가 GitHub Actions 가변 메이저 태그를 사용해 실행 의존성 재현성이 약함.
 - **격리 최소 수정**: `ai/r16-evidence-reconciler-2026-10-22`의 `bot_team_r16.py`를 `SAFE_UNVERIFIED`로 명확화(blob `6d1d48e39f72698d8364ebcaab13a24519ebb86f`), 관련 테스트 blob `3be872ddb166bd0d053ec208bbb451fd3aa256c4`. checkout/setup-python/setup-node/setup-java를 실행 로그에서 검증한 전체 commit SHA로 고정한 workflow blob `81dde1e4ebd769e16d35533dd8e3123dc23d95e3`. main·운영 Activepieces·기존 예약 무변경.
