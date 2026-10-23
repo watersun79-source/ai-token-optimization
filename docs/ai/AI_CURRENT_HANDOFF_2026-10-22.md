@@ -1,5 +1,17 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-23 15시대 — R16 ResearchBot 비가시 유니코드 이름 방어 회귀 TDD
+- **사용자의 일반 ChatGPT 채팅에서 지시한 수동 ResearchBot·BuilderBot·VerifierBot 오프라인 보안 강화 작업**, ChatGPT 예약 AI가 자체 실행한 작업이라고 오인하면 안 됨.
+- **추가로 조사한 공식 구현**: Microsoft Agent Framework [Sequential/Handoff/Approval](https://learn.microsoft.com/en-us/agent-framework/workflows/orchestrations/), OpenAI Agents SDK [guardrails](https://openai.github.io/openai-agents-python/guardrails/), OpenTelemetry의 [execute_tool span](https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-spans.md). API 비용/승인 없이 직접 SDK 설치·모델 호출은 하지 않았고 데이터 입력 방어 패턴만 참고.
+- 기존 격리 `bot_team_r16.py`의 `ResearchBot`는 직접 전달된 GitHub 참고자료 이름에서 `<CR/LF/TAB>` 등 ASCII control은 제외하지만 `U+202E`(양방향 방향전환)와 `U+200D`(제로폭 조인 문자)를 허용하는 약점 발견. 같은 격리 브랜치에서 이미 별도 개선된 GitHub URL allowlist는 **중복 덮어쓰기 없이 보존**.
+- 신규 `tests/test_bot_untrusted_references.py`에 URL 혼동/비가시 문자·잘못된 출처 자료 및 고정 시드 200개 합성 입력의 실패 폐쇄 안전 불변식 테스트 추가. 새 테스트 commit `8b214bf274690cce56321c272998431839727312`, blob `2137942c4d282c685f0f38e258270a38a4663005`. **패치 전 원격 TDD RED**: GitHub run **`39909896111`**, job `120270200607`, Python 72건 중 U+202E·U+200D 각각 오류로 **2 failures**. 다른 URL 검사는 통과.
+- **최소 수정**: 격리 Python BOT `ResearchBot` 이름 허용 조건의 ASCII 제어문자 검사만 `unicodedata.category(c).startswith('C')` 기반 전체 control/format 문자 거부로 교체. 나머지 안전 URL 검사/모의 provenance/기존 3봇 협력 정책 보존. 코드 commit `97893289a61eb2c6e12fbe204ab1e834f5ceba2b`, GitHub blob `b3bc27702347029f8c28352b72917d5524baa977`.
+- **정규 격리 CI GREEN 실제 원본**: [Actions run 39910021477](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39910021477), head SHA `97893289a61eb2c6e12fbe204ab1e834f5ceba2b`, job/check ID `120270605065`, `completed/success`. GitHub 원시 job 로그 **Python 72/72**, 별도 Python 2/2, JavaScript 12/12+20/20, Java 12/12+20/20 모두 통과. 동일 head SHA의 GitHub Check run `completed/success` 독립 확인. 각 검사는 모의/로컬 정합성 검사이며 예약 플랫폼 실제 원시 실행 원본 인증과는 별개.
+- **운영 영향 0**: 별도 R16 격리 브랜치 Python 봇/테스트만 변경, GitHub `main`, 기존 단일 ChatGPT 매시간 정각 예약, Activepieces 운영 플로우/연결, 과금/키/유료 모델 API 변경 없음. 정규 예약의 공식 native per-run ID와 동일 회차 GitHub·Slack 원시 tool-call ledger 미제공 → **무인 성공 미검증**.
+- **다음 최우선 목표**: 공식 ChatGPT Scheduled/Previous runs에 대한 인증된 개별 실행·원시 호출 ledger 접근이 제공될 때만 교차 검증. 제공되지 않으면 허위 run ID 생성/추측/우회 금지.
+
+---
+
 
 ## 2026-10-23 15시대 — AI BOT GitHub 소스 URL 보안 검증 68/68
 - **오픈소스 공식 참조**: OWASP SSRF 방지 지침의 호스트 allowlist/파서 간 해석 불일치 주의 및 Python `urllib.parse` 공식 경고('URL split does not validate'). Pydantic AI(MIT)의 durable execution과 일반 memory 저장의 차이, Microsoft Agent Framework Go(MIT, preview)도 조사. 라이브러리/모델 추가 설치·유료 API 호출 없이 기존 격리 Python·JS·Java CI 그대로 재사용.
