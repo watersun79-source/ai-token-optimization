@@ -149,6 +149,13 @@ def adapt_otlp(payload, *, expected_run_id, expected_targets):
     for span in spans:
         if not isinstance(span, dict):
             continue
+        # OTLP wire IDs are case-insensitive hex. Canonicalize a shallow copy
+        # before validation, duplicate detection and parent lookup; never alter
+        # the caller's original export or case-sensitive evidence attributes.
+        span = dict(span)
+        for id_field in ("traceId", "spanId", "parentSpanId"):
+            if isinstance(span.get(id_field), str):
+                span[id_field] = span[id_field].lower()
         trace_id, span_id = span.get("traceId"), span.get("spanId")
         if not _valid_id(trace_id, TRACE_ID) or not _valid_id(span_id, SPAN_ID):
             continue
