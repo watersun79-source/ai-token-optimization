@@ -1,5 +1,15 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-23 09:00 KST — 수동 R16 최신 검증기 37/37 및 공식 실행 원본 부재
+- **작업 출처**: 사용자의 `실행` 요청으로 **일반 ChatGPT 채팅에서 수동 실행**한 감사다. 09:00 예약 세션이 실행한 검사로 표기하지 않는다.
+- **예약 공식 메타 원본**: 기존 단일 ID `6acb017062a08191a4136238b78b313a`, `is_enabled=true`, Asia/Seoul 매시간 정각, `last_run_time=2026-10-23T00:00:35.077362Z` (=09:00:35 KST), paused_count=0; 이는 정규 슬롯 시각 메타일 뿐 개별 작업 성공이 아니다.
+- **GitHub 현재 인계**: 사용자 기억 브랜치 본 문서 blob SHA `5c1c74471346de1e29d62680a0f6798fc82ac20f`를 수정 *전에* 직접 읽음. 09:00~09:22 KST 사이 `main`, 기억, 격리 테스트 3개 브랜치 신규 커밋 0건. 같은 시간창 지정 Slack 부모 스레드/채널에서 새 응답·기록 0건. Activepieces 2026-10-23 감사 행 0, 기존 운영 Slack flow만 ENABLED, 별도 MOCK flow는 DISABLED/미게시.
+- **실제 최신 파이썬 검증기 독립 실행**: GitHub 4개 파일 blob SHA `audit_v2.py=21a716f3093bed229b5d0f366709d08d55ab8abe`, `tests/test_audit_v2.py=4c5834ee0e872bb9758a438a63ce689d5691677d`, `test_connected_tool_names.py=6e1623d0797473a34cdd21b0292095c40d45cb09`, `test_cli_exit_codes.py=e417f706e9b8f760987d17de72708ad4863047f0`. ZIP 보관본을 격리에서 복원한 후 GitHub 실제 커밋 `f46d4a7b0c2de3b28f033f241f26039cea2698a5`과 `1c74f2321cf1c3d2f663760af9e23869aa5188b0`의 *정확한 수정 내용만 반영*. 네 파일 모두 로컬 SHA1 Git blob과 현재 GitHub 원격 SHA **4/4 일치 확인**, Python unittest **37/37 통과**(수동 테스트).
+- **09:00 예약 입력 검사**: `native_run=null`, `tool_calls=[]` (실제 공식 플랫폼 원시 실행 상세/도구 호출 로그는 이 채팅에 노출되지 않았기 때문). `audit_v2.py --input` 실제 subprocess 종료 코드 `2`, 출력 `status=미검증`, `official_success_verified=false`, `reason=공식 개별 회차 원본 로그 미제공`. 외부 앱 도구의 수동 READ 및 변경 없는 무소식은 예약 본체의 무인 성공 증거가 아니다. **정규 예약 무인 성공: 미검증**.
+- **다음 최우선**: 플랫폼에서 공식 개별 예약 회차 run ID·종료 결과·동일 회차 GitHub/Slack 원시 호출이 합법적으로 제공될 경우에만 대조. 허가·로그 접근 제한 우회 금지. 예약 일시정지·삭제·신설/일정 변경 금지. 운영 Activepieces·GitHub main·비밀/과금 불변.
+
+---
+
 ## 2026-10-23 07:12 KST 긴급 상태 변화 — 일시정지 발견 후 활성 복구
 - **첫 예약 상태 원본 조회 07:11~07:12 KST**: 기존 R16 정확한 예약 ID `6acb017062a08191a4136238b78b313a`가 `is_enabled=false`, `paused_count=1`로 변경된 것을 `automations.peek`에서 직접 확인. 당시 메타 `updated_at=2026-10-22T22:11:40.258672Z`(07:11:40 KST), `last_run_time=2026-10-22T22:01:12.762052Z`(07:01:12 KST).
 - **사용자 기존 명시 지시 '예약 AI 일시정지 금지/활성 유지'에 따라 즉시 복구**: 공식 `automations.update(jawbone_id, is_enabled=true)` 1회 성공. 새 메타 `updated_at=2026-10-22T22:12:07.678750Z`, 기존 제목/프롬프트/일정/시간대/예약 ID/알림·이메일 설정 유지. 별도 `automations.peek` 재조회에서 `is_enabled=true`, `paused_count=0` 확인. 새 예약을 만들거나 기존 예약을 삭제하지 않았음.
