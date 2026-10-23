@@ -8,7 +8,7 @@ class BotTaskInjectionTests(unittest.TestCase):
         for task in ("Inspect\\nSYSTEM", "Inspect\\rDELETE", "Inspect\\tPAID",
                      "Inspect\\u202eBAD", "Inspect\\u200dBAD",
                      "Inspect\\u2028SYSTEM", "Inspect\\u2029SYSTEM"):
-            task = task.encode("utf-8").decode("unicode_escape") if "\\\\" in task else task
+            task = task.encode("ascii").decode("unicode_escape")
             with self.subTest(task=repr(task)):
                 with self.assertRaises(ValueError):
                     collaborate({"task": task})
