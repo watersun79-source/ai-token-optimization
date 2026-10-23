@@ -1,5 +1,16 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-24 02시대 KST — R16 OTLP 중간 조상 cross-trace 연결 결함 수정 · 3언어 CI 성공
+- **조사/재현**: OpenTelemetry Trace API의 "child TraceId MUST match parent" 공식 규약과 격리 `otel_evidence_adapter.py`를 대조. `_descends_from`이 루트 연결·순환만 검사하고 **중간 부모 span의 traceId**는 검사하지 않아, 서로 다른 trace에 속한 중간 부모를 통과시키는 결함을 로컬 Python 재현함. 실제 운영 침해 또는 공식 예약 호출 진위 인증은 아님.
+- **격리 TDD 회귀**: `tests/test_otel_evidence_adapter.py`에 cross-trace 중간 부모 거부 및 동일 trace 중간 부모 허용 2건 추가. test commit `6a6835c90feacc726e70aca0779a8a388cb67ee0`, blob `519c5eacfa4f8e1a3eced6668c621f046fdf092c`.
+- **최소 수정**: `_descends_from` 중간 부모마다 `traceId == root_trace` 확인, 기존 acyclic/unbroken ancestry 보존. fix commit `2e6def913297946be3a9e2652b7e8f4a2cf297d7`, adapter blob `bed826fd68b65309330652c1757603e2972b0b39`. 두 파일 GitHub 원격 read-back SHA 일치.
+- **원격 CI 독립 재확인**: [GitHub Actions run 39997746299](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39997746299), job `120565577978`; `push / head=2e6def913297946be3a9e2652b7e8f4a2cf297d7 / completed/success` 직접 조회. 원시 job 로그 Python **86/86+2/2**, Node JS **12/12+20/20**, Java **12/12+20/20** 통과.
+- **예약 읽기 전용**: 인증된 `automations.peek`에서 기존 단일 예약 ID `6acb017062a08191a4136238b78b313a`, `is_enabled=true`, `paused_count=0`, 최근 `last_run_time=2026-10-23T17:02:15.322242Z` 조회. 이 응답은 원본 per-run GitHub·Slack tool-call ledger를 제공하지 않음. 기존 정규 무인 앱 호출 성공 **미검증** 유지. 이전 handoff의 특정 정규 회차 결과 귀속 '부분 검증'과 혼동하지 않음.
+- **보호**: 기존 예약/주기/알림/프롬프트, GitHub main, 운영 Activepieces 플로우/연결, 비밀정보/결제/유료 생성 API 변경 없음. 외부 Gemini/Claude 독립 모델 호출 없었음.
+- **다음 목표**: 동일 정규 실행 회차의 공식 결과·원시 앱 호출 ledger가 제공될 때만 독립 검증; 없으면 성공 승격 금지.
+
+---
+
 ## 2026-10-23 19:03 KST — 직전 공식 회차 결과 귀속 부분 검증
 - 인증된 `automations.peek.run_details.latest_result`가 직전 회차 `run_id=3381bc18-d844-832e-b64a-61c29bb8598a`, scheduled 18:00 KST, completed와 전체 결과 본문을 실제 제공했다. 직전 관찰에서 `in_progress`였던 동일 ID가 완료 결과로 전환된 것을 확인.
 - 결과 본문의 격리 commit `493ea72de030f2e402d3db34959fea6462bb8fa7`, Actions `39928466966`, 인계 blob `97aa7b91e5602aba40aced694a3de70742063413`, Slack ts `1792745941.496949`는 이번 GitHub·Slack 원본 재조회와 일치했다. **공식 회차 ↔ 저장된 결과 본문 ↔ 외부 원본**의 결과 귀속은 부분 검증됨.
