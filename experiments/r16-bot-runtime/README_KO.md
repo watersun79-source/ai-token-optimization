@@ -46,3 +46,22 @@ PASS는 입력 스냅샷·로컬 소스와 테스트 기록의 일치이며 최�
 
 참고: [systemd.service의 Restart=on-failure](https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html).
 실제 서버/계정·요금·권한 확인 전에는 별도 배포를 수행하지 않는다.
+
+
+## R16 실제 역할별 규칙 실행 증거
+
+이전 `bot_coordinator.py`는 역할 ID를 **선택만** 하고 `batch_validate_100.py`를 실행해,
+실제로 선택된 역할의 개별 규칙 실행 결과가 없었다. 해당 결함을 수정했다.
+
+- 전체 100개 오프라인 규칙 무결성 검사는 기존과 같이 유지한다.
+- 이에 추가해 `evaluate_selected_rules()`가 목표별 필요한 BOT 규칙만 `runner.validate()`로 직접 실행한다.
+- `audit` 목표는 `E01..E10`(예약 원장 검증) 및 `G01..G10`(GitHub 증거 형식) 총 **20개**를 검사한다.
+- `selected_statuses`, `selected_outcome`, `executed_selected_rule_checks`를 반환하고
+  `background_latest.json` 로컬 기록에도 표시한다.
+- 검증되지 않은 공식 예약 원장(E 계열)은 **UNVERIFIED**이며, 전체 실행 과정의 `status: PASS`가
+  이 항목의 통과를 의미하지 않는다. `selected_outcome: UNVERIFIED`로 명시한다.
+- 값이 일치하는 것처럼 보이는 `G` 계열도 **오프라인 스냅샷 형식 검사**일 뿐, GitHub API 최신 상태를 인증하지 않는다.
+- 실제 외부 LLM 호출·Gemini/Claude 독립 협력·ChatGPT 예약 원시 로그 연동은 수행하지 않는다.
+
+설계 참고: [LangGraph 조건부 edges](https://github.com/langchain-ai/docs/blob/main/src/oss/langgraph/graph-api.mdx)와
+[CrewAI 순차 협업](https://github.com/crewAIInc/crewAI). 둘 다 개념만 참고했고 패키지 설치·공급자 API 호출·코드 복제는 하지 않았다.
