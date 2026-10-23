@@ -42,7 +42,7 @@ jobs:
       - name: Measure Python Java and JavaScript tests
         run: python measure_runtime.py
       - name: Verify local receipt and source changes fail closed
-        run: python -m unittest -v test_v5_receipt test_receipt_source_binding test_java_fixture_coverage test_javascript_fixture_coverage test_wrapper_integrity test_supervisor test_bot_coordinator
+        run: python -m unittest -v test_v5_receipt test_receipt_source_binding test_java_fixture_coverage test_javascript_fixture_coverage test_wrapper_integrity test_supervisor test_bot_coordinator test_background_coordinator
       - name: Install and verify all 100 offline role rules
         run: |
           python install_local.py
@@ -54,3 +54,7 @@ jobs:
           python supervisor.py --once --state-dir .ci_supervisor_state
           python bot_coordinator.py --goal audit --state-dir .ci_supervisor_state
           python -c 'import json; from pathlib import Path; d=json.loads(Path(".ci_supervisor_state/latest.json").read_text()); assert d["status"] == "PASS"; assert d["kind"] == "OFFLINE_LOCAL_CHECK_NOT_SCHEDULED_APP_PROOF"'
+      - name: Smoke-test offline background loop once (no daemon deployed)
+        run: |
+          python background_coordinator.py --goal audit --state-dir .ci_background_state
+          python -c 'import json; from pathlib import Path; d=json.loads(Path(".ci_background_state/background_latest.json").read_text()); assert d["status"] == "PASS"; assert d["cycle"] == 1; assert d["kind"] == "OFFLINE_BACKGROUND_LOOP_NOT_NATIVE_RESERVATION"; assert d["official_unattended_app_call_success"] == "UNVERIFIED"'
