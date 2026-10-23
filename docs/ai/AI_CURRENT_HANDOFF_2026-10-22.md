@@ -1,5 +1,16 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-24 04:12 KST — 공식 Scheduled 화면·회차 원본 대화 읽기 전용 접근 확인
+- **다음 목표 실제 실행**: 연결 예약 도구는 공식 last_run/result만 제공하고 원시 tool-call ledger 조회 필드/별도 도구는 노출하지 않음을 확인. 공식 [Scheduled 안내](https://learn.chatgpt.com/training/walkthroughs/scheduled-tasks)를 읽은 뒤, 해당 부족 기능에 한해 인증된 공식 UI로 읽기 전용 대조. 로그인 요청 없이 현재 계정의 예약 화면과 원본 대화 접근 성공. 과거 로그인 불가 상태를 현재 상태로 재사용하지 않음.
+- **UI 직접 관찰**: https://chatgpt.com/scheduled 에 기존 AI 활성·매시간 표시. 대상 선택 후 automationId=6acb017062a08191a4136238b78b313a 일치. 상세 최신 결과와 '채팅 열기'로 이동한 원본 대화에서 03:57 KST 결과의 commit7dd30dc5/CI40006866278/Slack1792781617.198169가 peek.latest_result 본문과 일치. 공식04시 예정 회차0069f41c-aa14-8326-bc52-072b94e7ef56의 상태는 peek에서 completed·결과ID 일치; 본문 속 '진행 중'은 작성 당시 서술이며 현재 상태를 덮어쓰지 않음.
+- **원본 접근 링크**: https://chatgpt.com/c/6ada9493-b49c-83e8-8240-74fb86c4d8ec?automationId=6acb017062a08191a4136238b78b313a&messageId=finalAgentTurnStart . 이 URL의 automationId/대화ID는 개별 run ID나 호출 ledger가 아님. 확인한 상세·메뉴·회차 본문에는 원시 GitHub/Slack 호출별 invocation ID/시각/응답 원장 또는 내보내기 항목이 보이지 않았음. 사이트 전체 기능 부재라고 단정하지 않고 이번 접근 범위 미확보로 한정.
+- **실제 모드 관찰**: 예약 목록 버튼은 'AI, Work'로 표시. 열린 원본 대화 입력 모델은 Instant로 표시되었으나 이것이 예약 실행 엔진/모델을 증명하지는 않음. 사용자 희망 Chat High 적용 완료로 간주하지 않으며 모드/모델/예약 설정은 수정하지 않음.
+- **오픈소스 대안 검토**: [OpenTelemetry Collector 구조](https://opentelemetry.io/docs/collector/architecture/)는 제공된 telemetry의 수신·처리·내보내기 파이프라인. 제공되지 않은 ChatGPT 원시 호출의 생성/진위 인증 기능으로 간주할 수 없다는 판단. 기존 Python·Java·JS 검증기나 3역할 프로그램은 이 공급자 증거 부재를 대체하지 못함. 불필요한 Collector/외부 LLM/패키지 설치 없음.
+- **현재 결과/보호**: 공식 UI·결과 귀속 접근은 부분 진전, 같은 회차 원시 앱 호출은 여전히 미검증. 격리 코드 head88fb18bcba4eb8ffbbd681dd6f2100f9034fe657 불변 → 이전 합격 Python/JS/Java CI 반복하지 않음. 코드/main/예약 활성·일정·프롬프트·알림/운영 Activepieces/감사 원본/결제 변경 없음. 이번은 수동 접근 감사이며 정규 예약 체크포인트를 만들지 않음.
+- **다음 목표**: 공식 제공 호출 원장/내보내기 경로가 실제로 제공될 때 동일 회차 ID로 대조. 새 원본·새 결함 없이 동일 검증/차단 보고·동일 사이트 경로 탐색을 반복하지 않음.
+
+---
+
 ## 2026-10-24 04:06 KST — OTLP 숫자 상태 OK/ERROR 역전·enum 타입 혼동 수정
 - **공식 선행 구현/비용**: OpenTelemetry upstream [trace.proto](https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/trace/v1/trace.proto) blob `235b54e8e78b55f0bb4f3f1f43fc89bdda28b04c`와 Apache-2.0 LICENSE blob `261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64` 직접 조회. wire StatusCode는 OK=1 / ERROR=2. 외부 패키지 복제·설치/LLM·유료 API 호출 없음.
 - **새 결함 재현**: 기존 _ok_status가 (2, "2", "STATUS_CODE_OK")를 허용하여 정상 숫자 OK를 거부하고 숫자 ERROR root/tool을 형식상 성공으로 처리. Python의 True==1, 1.0==1, 2.0==2 때문에 enum 타입도 혼동. 5개 신규 회귀에서 수정 전 9개 실패 subcase 실제 확인. 실제 침해·정규 무인 성공 사례는 아님.
