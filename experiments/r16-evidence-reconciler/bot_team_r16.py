@@ -9,12 +9,42 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from audit_v2 import AUTOMATION_ID, check
 
 MAX_INPUT_BYTES = 65536
+# Cross-parser defensive allowlist, based on OWASP SSRF guidance and Python's
+# warning that urllib.parse alone does not validate attacker-controlled URLs.
+# Metadata only: validation never performs a HTTP request.
+GITHUB_REFERENCE_PATH = re.compile(
+    r"https://github[.]com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+"
+    r"(?:/[A-Za-z0-9_.-]+)*"
+)
+
+
+def _safe_reference_url(value: Any) -> bool:
+    if not isinstance(value, str) or len(value) > 500:
+        return False
+    # Reject percent escapes, userinfo, paths with .., backslashes, whitespace,
+    # alternate ports, query and fragment, before any downstream URL parsing.
+    if GITHUB_REFERENCE_PATH.fullmatch(value) is None:
+        return False
+    try:
+        parsed = urlsplit(value)
+    except ValueError:
+        return False
+    segments = parsed.path.split("/")[1:]
+    return (
+        parsed.scheme == "https" and parsed.netloc == "github.com"
+        and parsed.username is None and parsed.password is None
+        and parsed.query == "" and parsed.fragment == ""
+        and len(segments) >= 2 and all(x not in (".", "..", "") for x in segments)
+    )
+
 ALLOWED_NEXT = {
     "READ_OFFICIAL_SCHEDULED_RUN",
     "READ_SAME_RUN_APP_CALLS",
@@ -30,16 +60,18 @@ class ResearchBot:
         if not isinstance(refs, list) or len(refs) > 20:
             raise ValueError("references must be a list of up to 20 entries")
         accepted = []
+        seen = set()
         for ref in refs:
             if not isinstance(ref, dict):
                 continue
             name = ref.get("name")
             url = ref.get("url")
             if (isinstance(name, str) and 1 <= len(name) <= 100
-                    and isinstance(url, str) and len(url) <= 500
-                    and url.startswith("https://github.com/")
-                    and not any(c in url for c in ("@", "#", "?", "\n", "\r"))):
+                    and name == name.strip()
+                    and not any(ord(c) < 32 or ord(c) == 127 for c in name)
+                    and _safe_reference_url(url) and url not in seen):
                 accepted.append({"name": name, "url": url})
+                seen.add(url)
         return {"role": "ResearchBot", "references_reviewed": accepted,
                 "source_authenticity": "NOT_VERIFIED_BY_OFFLINE_BOT"}
 
