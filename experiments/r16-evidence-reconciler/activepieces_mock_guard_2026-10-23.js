@@ -13,24 +13,27 @@ export const code = async (inputs) => {
   // Date.parse silently normalizes impossible dates (e.g. Feb 30 to Mar 2).
   // Validate every calendar/time component before computing a UTC instant.
   const time = v => {
-    if (typeof v !== 'string' || v.length > 48) return NaN;
+    if (typeof v !== 'string' || v.length > 48) return null;
     const m = /^([12]\d{3})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,9}))?(Z|([+-])(\d{2}):(\d{2}))$/.exec(v);
-    if (!m) return NaN;
+    if (!m) return null;
     const year = +m[1], month = +m[2], day = +m[3];
     const hour = +m[4], minute = +m[5], second = +m[6];
     const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
     const monthDays = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
     if (month < 1 || month > 12 || day < 1 || day > monthDays[month - 1] ||
-        hour > 23 || minute > 59 || second > 59) return NaN;
+        hour > 23 || minute > 59 || second > 59) return null;
     const zoneHour = m[10] === undefined ? 0 : +m[10];
     const zoneMinute = m[11] === undefined ? 0 : +m[11];
-    if (zoneHour > 23 || zoneMinute > 59) return NaN;
+    if (zoneHour > 23 || zoneMinute > 59) return null;
     const offset = m[8] === 'Z' ? 0 : (m[9] === '+' ? 1 : -1) * (zoneHour * 60 + zoneMinute);
-    const ms = +(m[7] || '').padEnd(3, '0').slice(0, 3);
-    return Date.UTC(year, month - 1, day, hour, minute, second, ms) - offset * 60000;
+    // BigInt nanoseconds preserve exact ordering for 1–9 digit fractions.
+    // This result is used only for comparisons; it is never JSON-serialized.
+    const fractionNs = BigInt((m[7] || '0').padEnd(9, '0'));
+    return BigInt(Date.UTC(year, month - 1, day, hour, minute, second)) * 1000000n
+      - BigInt(offset) * 60000000000n + fractionNs;
   };
   const slot = time(request.scheduled_for);
-  if (!Number.isFinite(slot) || !/T\d\d:00:00(?:\.0+)?(?:Z|[+-]\d\d:\d\d)$/.test(request.scheduled_for))
+  if (slot === null || !/T\d\d:00:00(?:\.0+)?(?:Z|[+-]\d\d:\d\d)$/.test(request.scheduled_for))
     return result('Invalid timezone-aware scheduled slot');
   const original = request.official_run;
   if (!original || typeof original !== 'object' ||
@@ -42,7 +45,7 @@ export const code = async (inputs) => {
       !['completed','no_update'].includes(original.status))
     return result('Native run identity, slot, or terminal status mismatch');
   const start = time(original.started_at), end = time(original.completed_at);
-  if (![start,end].every(Number.isFinite) || !(slot <= start && start <= end && end < slot + 3600000))
+  if (start === null || end === null || !(slot <= start && start <= end && end < slot + 3600000000000n))
     return result('Run timestamps inconsistent');
   // Only these exact verified connector names are allowed. The alias spelling
   // can differ between ChatGPT scheduled Work and ordinary connected chats.
@@ -68,7 +71,7 @@ export const code = async (inputs) => {
         !cfg.tools.includes(c.tool) || c.locator !== cfg.locator || c.success !== true ||
         typeof c.version !== 'string' || !cfg.pattern.test(c.version) ||
         typeof c.invocation_id !== 'string' || !c.invocation_id ||
-        invocations.has(c.invocation_id) || !Number.isFinite(ts) ||
+        invocations.has(c.invocation_id) || ts === null ||
         ts < start || ts > end) continue;
     seen.add(c.target); invocations.add(c.invocation_id);
   }
