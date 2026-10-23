@@ -8,6 +8,9 @@ on:
       - .github/workflows/r16-evidence-verifier.yml
       - experiments/r16-evidence-reconciler/audit_v2.py
       - experiments/r16-evidence-reconciler/tests/**
+      - experiments/r16-evidence-reconciler/activepieces_mock_guard_2026-10-23.js
+      - experiments/r16-evidence-reconciler/fixtures/**
+      - experiments/r16-evidence-reconciler/polyglot/**
   workflow_dispatch:
 
 # Do not change main, ChatGPT automation, Activepieces or external apps.
@@ -37,3 +40,10 @@ jobs:
           python-version: '3.12'
       - name: Run complete R16 offline regression
         run: python -m unittest discover -s tests -v
+      - name: Verify original Activepieces JavaScript with shared offline fixtures
+        run: node --experimental-default-type=module polyglot/check_js.mjs fixtures/time_cases.tsv
+      - name: Compile and run independent Java timestamp oracle
+        run: |
+          mkdir -p /tmp/r16-polyglot-java
+          javac -encoding UTF-8 -d /tmp/r16-polyglot-java polyglot/R16TimeOrderCheck.java
+          java -cp /tmp/r16-polyglot-java R16TimeOrderCheck fixtures/time_cases.tsv
