@@ -1,5 +1,16 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+
+## 2026-10-23 11:00 예약 메타 및 CI 조회 범위 정정 — 수동 읽기 전용 감사
+- 기존 유일 R16 예약 `6acb017062a08191a4136238b78b313a`를 `automations.peek`로 다시 조회: `is_enabled=true`, `paused_count=0`, Asia/Seoul 정각, `last_run_time=2026-10-23T02:06:18.531665Z` (=11:06:18 KST), 주기·제목·프롬프트·알림 불변. **정규 회차 공식 run ID·완료 상태·동일 회차 원시 GitHub/Slack 호출 로그는 미제공 → 무인 성공 미검증**.
+- Activepieces `AI Scheduled Run Evidence (AUDIT ONLY)` 테이블의 2026-10-23 검색 행 `0`; Slack 자정 이후 검색에는 사용자 채팅에 의한 수동 점검/수정 기록만 식별됨. 실제 정규 예약 성공·실패 어느 쪽도 증명하지 못함.
+- **새로 발견한 CI 조회 한계**: 연결된 `mcp__GitHub__fetch_commit_workflow_runs`는 **PR 이벤트에서 발생한 첫 페이지**의 실행만 검색한다. 따라서 `workflow_runs=[]`는 push 등 모든 이벤트의 실행 부재 증거가 아니다. `get_commit_combined_status`의 `statuses=[]` 또한 **Commit Statuses**만 의미하고 GitHub Actions **Check runs/check suites**를 대체하지 않는다. GitHub 공식 [statuses 문서](https://docs.github.com/en/rest/commits/statuses)도 두 API를 구분. 전체 원격 CI는 **미검증**(실패 확정 아님).
+- 기존 전체 Python 로컬 회귀 `43/43 PASS`, 원격 소스 SHA 4/4 검증은 그대로 유지하고 변경 없는 테스트 반복 금지. 격리 브랜치 상세 수정 기록: [README_KO.md](https://github.com/watersun79-source/ai-token-optimization/blob/ai/r16-evidence-reconciler-2026-10-22/experiments/r16-evidence-reconciler/README_KO.md).
+- 다음 공식 증거 확보: GitHub 모든 이벤트의 Actions run + Checks, ChatGPT Scheduled → AI → Previous runs의 인증된 개별 회차 ID/도구 호출. 현재 도구 미노출은 접근 불가로 정확히 보고하고 우회하지 않음. 기존 예약·Activepieces 운영·main·유료 API·비밀정보 변경 없음.
+
+---
+
+
 ## 2026-10-23 후속 — 수동 Python 전체 43/43 통과 (정규 예약 성공 아님)
 - **작업의 출처**: 사용자 직접 채팅의 `실행` 요청에 따른 수동 오프라인 검증. 정규 ChatGPT 예약이 Python을 호출했다는 증거로 오인 금지.
 - 격리 GitHub `ai/r16-evidence-reconciler-2026-10-22`의 최신 Python 검사기 + 단위 테스트 3개 파일을 로컬에 복원하고 `git hash-object` SHA-1을 원격 GitHub blob과 **4/4 완전 일치** 확인. 코드 `05fcfd2eac1b76d2e2f351e749a90647347a88aa`, 테스트 `a1d68fbfad6c39218211f19a869c0f6f933726b6`, CLI 테스트 `e417f706e9b8f760987d17de72708ad4863047f0`, 연결 도구명 테스트 `6e1623d0797473a34cdd21b0292095c40d45cb09`.
