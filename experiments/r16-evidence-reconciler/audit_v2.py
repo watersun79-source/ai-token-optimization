@@ -43,6 +43,8 @@ OPTIONAL = {
 
 SHA = re.compile(r'^[a-f0-9]{40}$')
 SLACK_TS = re.compile(r'^\d{10}\.\d{6}$')
+# Do not let datetime.fromisoformat() silently truncate nonzero nanoseconds.
+EXACT_HOUR = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:00:00(?:\.0+)?(?:Z|[+-]\d{2}:\d{2})$')
 
 
 def parsed_time(value):
@@ -71,12 +73,14 @@ def check(payload: dict) -> dict:
     if not isinstance(payload, dict):
         outcome['reason'] = '입력 형식 오류'
         return outcome
-    target = parsed_time(payload.get('target_slot'))
+    raw_slot = payload.get('target_slot')
+    target = parsed_time(raw_slot)
     task = payload.get('schedule') or {}
     if not isinstance(task, dict) or task.get('id') != AUTOMATION_ID or task.get('is_enabled') is not True:
         outcome['reason'] = '보호 예약 ID·활성 상태 불일치'
         return outcome
-    if not target or target.minute != 0 or target.second != 0 or target.microsecond != 0:
+    if (not target or not isinstance(raw_slot, str) or not EXACT_HOUR.fullmatch(raw_slot)
+            or target.minute != 0 or target.second != 0 or target.microsecond != 0):
         outcome['reason'] = '정각 슬롯/시간대가 확인되지 않음'
         return outcome
     last_run = parsed_time(task.get('last_run_time'))
@@ -95,7 +99,9 @@ def check(payload: dict) -> dict:
     if not isinstance(run_id, str) or not run_id.strip():
         outcome['reason'] = '공식 개별 회차 ID 미제공'
         return outcome
-    if native.get('automation_id') != AUTOMATION_ID or parsed_time(native.get('scheduled_for')) != target:
+    native_slot = native.get('scheduled_for')
+    if (native.get('automation_id') != AUTOMATION_ID or not isinstance(native_slot, str)
+            or not EXACT_HOUR.fullmatch(native_slot) or parsed_time(native_slot) != target):
         outcome['reason'] = '공식 개별 회차의 예약 ID 또는 슬롯 불일치'
         return outcome
     start, end = parsed_time(native.get('started_at')), parsed_time(native.get('completed_at'))
