@@ -46,6 +46,37 @@ def fixture():
 
 
 class TestOtelAdapter(unittest.TestCase):
+    def test_rejects_wrong_anyvalue_types_without_crashing(self):
+        for value in ({"stringValue": []}, {"stringValue": {}},
+                      {"boolValue": "current_handoff"}, {"intValue": "current_handoff"},
+                      {"intValue": []}, {"intValue": True},
+                      {"intValue": "9223372036854775808"},
+                      {"intValue": "-9223372036854775809"},
+                      {"intValue": "9" * 5000}):
+            with self.subTest(value=value):
+                data = fixture()
+                for item in data["resourceSpans"][0]["scopeSpans"][0]["spans"][1]["attributes"]:
+                    if item["key"] == "ai.evidence.target":
+                        item["value"] = value
+                out = adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)
+                self.assertEqual(["slack_thread"], [c["target"] for c in out["tool_calls"]])
+
+    def test_rejects_ambiguous_anyvalue_variants(self):
+        for extra in ({"boolValue": True}, {"arrayValue": {"values": []}}):
+            with self.subTest(extra=extra):
+                data = fixture()
+                data["resourceSpans"][0]["scopeSpans"][0]["spans"][0]["attributes"][0]["value"].update(extra)
+                self.assertEqual([], adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)["tool_calls"])
+
+    def test_valid_typed_unrelated_attributes_preserve_calls(self):
+        data = fixture()
+        attrs = data["resourceSpans"][0]["scopeSpans"][0]["spans"][1]["attributes"]
+        attrs.extend([{"key": "sampled", "value": {"boolValue": True}},
+                      {"key": "count", "value": {"intValue": "9223372036854775807"}},
+                      {"key": "offset", "value": {"intValue": -9223372036854775808}}])
+        out = adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)
+        self.assertCountEqual(TARGETS, [c["target"] for c in out["tool_calls"]])
+
     def test_malformed_timestamps_are_rejected_without_crashing(self):
         for value in ("²", "9" * 5000, "18446744073709551616", "0", True, 1.5):
             with self.subTest(value=repr(value)[:50]):
