@@ -1,5 +1,17 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-24 — v6 BOT 실행 기록의 실제 소스·공유 입력 연결 보강
+- **실제 새 결함**: 최신 v5 ZIP(libfile_fa06ba545d308191923a9bfda55182fe)을 읽고 원본 코드 대조. 테스트파일3개만 해시 검사해 runner.py/catalog.json/공유 TSV/measure_runtime.py 변경 뒤에도 이전 기록을 유효로 수용. 신규2회귀의 RED5 subcase 재현. 별도 evidence 입력 변조 회귀1개 추가.
+- **최소 재사용 수정**: 기존 v5 구현을 experiments/r16-bot-runtime에 보존·확장. V6 형식에서 실제 실행·테스트입력7파일 + 정규화 evidence 입력의 SHA256 대조, 측정전후 해시 일치 확인. 생성출력 polyglot/notice만 제외하고 측정건수는 별도 대조. 구 V5 receipt는 미검증. 설치본도 새 의존파일 복사·바이트 대조. Java는 javac가 없으면 OpenJDK source launcher로 실제 동일 소스 실행. 사용자원본 v5파일/예약은 변경하지 않음.
+- **공식선행구현·무료**: SLSA verifying-artifacts의 대상 digest 대조 원칙 참고(https://slsa.dev/spec/v1.2/verifying-artifacts), slsa-framework/slsa-verifier LICENSE Apache-2.0 blob261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64 확인. 구현코드 복제·외부설치·서명검증·유료API0. 로컬 해시는 SLSA 인증/신뢰된 공급자 증거가 아님.
+- **원격소스/CI**: 격리 commite034a85d98b259f037d9b7d70c0de28733f5fb2c, compare1commit/14files(새runtime13+좁은CI1). 원격 전체소스·Git blob SHA14/14 일치. 기존 R16 검증기/합격CI는 불변·재실행0. 새 workflow는 정확한 격리branch와 runtime경로만, contents:read/공개저장소 표준runner.
+- **실제 결과**: 로컬·원격 Python22+receipt8/Java20/JS20 모두PASS. Actions40029112255/job120672632253/head일치/attempt1 completed success, 원본로그 실제조회. https://github.com/watersun79-source/ai-token-optimization/actions/runs/40029112255 . 설치100명령/배치100규칙: snapshotPASS82, UNVERIFIED18, FAIL/ERROR0. 이는100LLM/100독립프로세스/실시간외부상태 인증이 아님. 공식무인성공미검증.
+- **독립검토**: ChatGPT 별도검토자1명이 v5대비 source-binding/producer/consumer/install을 독립대조; 새 좁은13assertions(파일7변조/입력변경/생성출력제외/측정중변경/Java fallback) PASS보고, 차단결함없음. root는14원격SHA·CI원시로그 별도확인. 외부Gemini/Claude 실행아님.
+- **배포파일**: AI_R16_100_BOT_v6_source_bound_verified.zip, SHA256 093120f7590acd805332daffbc000268b9e2d1d1e8ee9e989c7a447403585146, Library libfile_9352edf9fb348191baee99e2d61b59be. 파일129/설치wrapper100, ZIP CRC·각파일SHA 검증. 소스·회귀·실행receipt·결과·CI원시로그·무결성manifest 포함. receipt는24시간유효로 만료/변경시 재측정 필요. GitHub는 실행소스/CI, ZIP은 로컬실측산출물까지 포함.
+- **보호/남은목표**: main e8600906eb31da2735108842752a93887791f0c5 전후동일. peek 기존예약 활성·Asia/Seoul·정각·prompt/updated_at 불변. 최신관찰06시회차dbb75293-2a68-832a-9d6b-adc183fd3857 completed/resultID일치, same-run raw앱원장없음→무인성공미검증. 운영AP flow/연결·감사원본·정규checkpoint추가0. 이번결과는 검색기억/지정Slack에만 기록. 다음: 공식원장 제공시 ID/시각/SHA/Slackts 독립대조; 불변합격검사반복금지.
+
+---
+
 ## 2026-10-24 06:38 KST — v4 엄격 시간 규칙과 격리 검사기 불일치 수정 완료
 - **새 결함·재현**: 최신 v4 ZIP의 strict UTC-offset 규칙과 실제 GitHub audit_v2.py를 대조. Python fromisoformat이 +08:60/-00:60을 정상 오프셋으로 보정하여 잘못된 native 시작·tool 관찰 시각도 형식 통과시킴. last_run_time은 공백/소문자 t/10자리 소수초를 수용. 신규4회귀에서 수정 전7실패 subcase 확인.
 - **최소 수정**: 공통 parsed_time에 기존 AUDIT_TIME 전체일치(ASCII·소수초1~9자리)와 오프셋 분<=59 검증을 적용. 나노초 나머지·정상 offset 동치·±18:00·기존 OTLP/native 시간창·진위 미인증 유지. 새 공유 fixture5개 추가. 외부 새 패키지/유료 API0. v4 ZIP 자체와 예약 프롬프트/설정 변경0.
