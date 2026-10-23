@@ -1,5 +1,17 @@
 # R16 무인 예약 실행 증거 대조기 — 격리 개발 브랜치
 
+## 2026-10-23 추가 보강 — Python 공식 실행/호출 나노초 순서 검사
+- **재현**: Python `datetime.fromisoformat`이 소수점 이하 **7~9자리**의 나머지를 잘라서, `completed_at=22:02:30.000000100` 종료보다 `observed_at=22:02:30.000000900` 호출이 늦어도 이전 코드에서 같은 시각으로 오인. 역전된 시작·종료 시각도 잘못 비교할 수 있었음.
+- **범위**: 정규 예약과 무관한 수동 연구·격리 코딩. 기존 `target_slot` / `native_run.scheduled_for` 정각 문자 규칙 `EXACT_HOUR` 보존.
+- **최소 수정**: `AUDIT_TIME` 1~9자리 ISO 시각 검증과 `parsed_time_ns` (UTC datetime, 0~999 나노초 잔여분) 튜플 비교. `started_at`, `completed_at`, `tool_calls[].observed_at` 정확도 유지. 유료 모델/외부 앱 자동 호출 없음.
+- **실제 GitHub 격리 코드 커밋** `7b157aaaa2e8c5812181cd957a9bc2e5b3530b0c` / blob `05fcfd2eac1b76d2e2f351e749a90647347a88aa`.
+- **신규 회귀 테스트 커밋** `5c92a3f73d252871dcb51274a1f95f4242cbdd00` / blob `a1d68fbfad6c39218211f19a869c0f6f933726b6`. 새 테스트 4개: 800ns 종료 후 호출 거부, 나노초 시작·종료 역전 거부, 종료 전 정상 50ns 형식 허용, 9자리 초과 소수초 거부.
+- **검증 수준**: 위 판정 알고리즘을 로컬 Python에서 별도로 확인해 **표적 4/4 통과**, GitHub 원본 코드·테스트 blob 각각 재조회 일치. **수정 후 최신 전체 43개 단위 테스트/원격 CI는 이 채팅에서 실행하지 않았으므로 미검증**. 이전 39/39는 패치 *전* 수동 테스트 이력이며 최신 전체 성공으로 잘못 표기하지 않음.
+- 모든 경우 `official_success_verified=false` 원칙 유지. 형식 일치만으로 ChatGPT Scheduled 정규 무인 실행 성공을 주장하지 않음. 현재 도구는 공식 native per-run ID와 원본 GitHub·Slack tool-call ledger 미제공.
+- 기존 R16 매시간 정각 활성 예약/프롬프트/알림, 운영 Activepieces, GitHub main 및 유료 API 변경 없음. 다음 목표: **최신 소스 전체 회귀 실행·검증 → 공식 플랫폼 개별 실행 원본 접근 시 동일 회차 증거 비교**.
+
+
+
 ## 문제와 해결
 
 2026-10-22 22:00 KST ChatGPT 정규 예약의 last_run_time=2026-10-22T13:01:47.915363Z는 실행 시각 메타데이터다. 성공 판정, 공식 개별 실행 ID 및 원본 앱 호출 로그가 아니다. Activepieces 자체 체크포인트에 기록한 UUID나 GitHub Actions run ID는 ChatGPT 예약의 공식 실행 ID가 아니다.
