@@ -1,5 +1,17 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-24 03:57 KST — OTLP 다중 trace span ID 충돌 순서 의존 결함 수정
+- **공식 구현 조사**: Apache-2.0 OpenTelemetry upstream trace.proto는 span_id가 trace 내부에서 unique임을 명시. https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/trace/v1/trace.proto . 이전 동일-trace 중복 검출은 (traceId,spanId)를 썼지만 실제 ancestry by_id는 spanId 단일 키여서 불일치.
+- **실제 재현/TDD**: 다른 trace의 같은 ID가 먼저 나오면 정상 root/tool/intermediate가 색인에서 사라짐. 새 회귀 3개에서 수정 전 failures=3, 뒤에 나온 경우는 통과하는 입력 순서 의존을 확인. 진위 인증/운영 침해 증거 아님.
+- **최소 수정**: by_id를 (traceId,spanId)로 색인하고 부모 조회도 (root_trace_id,parent_id)로 제한. 같은-trace 중복 거부와 cross-trace 부모 거부 유지. 원본 다른 기여의 중복/parent 타입 및 봇 OTLP 전달 패치를 모두 보존.
+- **격리 SHA**: test commit 6dfc54af70ec19b191f591bda20b8949bfc08506 / blob 9ca09e12a9398a22af1a3533768dc18b7af3cd3d. fix commit cc0dc7f9fc23b4d33495b98ec28996cffec1fe73 / adapter blob 0dc468303ed52392fea5758e01fc64fd7f5f12f3. 두 파일 원격 blob/전체 문자열 재조회 일치.
+- **검증 원본**: 로컬 전체 Python 107/107. Actions https://github.com/watersun79-source/ai-token-optimization/actions/runs/40007532355 / matching head / completed success / job 120599160717. 원시 로그 Python 107/107+2/2, JS 12/12+20/20, Java 12/12+20/20. 독립 리뷰 에이전트 읽기 검토에서 차단급 회귀 없음. 불변 성공 CI 재실행 없음.
+- **봇 실제 실행**: Python ResearchBot→BuilderBot→VerifierBot 결정론적 로컬 실행. provider_calls=0, official_success_verified=false, next_action=READ_OFFICIAL_SCHEDULED_RUN. 외부 Gemini/Claude 호출/실모델 자동 협업은 미실행.
+- **현재 예약/교차기억**: 읽기 전용 peek 기존 활성 유지, 공식 03시 dbd09b73-6fd8-832f-b086-e0d5bf0217b6 completed/결과 ID 일치. 같은 회차 원시 앱 호출 ledger 미제공→무인 성공 미검증. 지정 Slack 원본 및 Activepieces 인증 기억 인덱스 기존 record Q2phcMESKTtdGzGLYUDmL 확인. 이 수동 점검 결과는 검색 인덱스에만 보조 기록하며 정규 예약 감사 체크포인트를 추가하지 않음.
+- **보호/다음 목표**: main·기존 예약 상태/일정/프롬프트/알림·운영 Activepieces 흐름/연결·감사 원본 불변. 유료 API/결제/비밀 사용 없음. 공식 동일 회차 원시 호출 ledger가 지원 도구에 제공될 때만 독립 검증; 그 전 무인 성공 승격 금지.
+
+---
+
 ## 2026-10-24 03:53 KST — 봇 협업 OTLP 입력 누락·잘못된 legacy fallback 수정
 - **실제 결함**: `bot_team_r16.collaborate`가 evidence의 schedule/slot/native_run/tool_calls만 전달하고 `otel` 키를 버림. 직접 audit_v2.check는 정상 OTLP 2개 target을 형식 통과시키지만 봇 경로는 missing 처리; 반대로 잘못된 OTLP({}, null)와 정상 형식의 legacy tool_calls가 함께 오면 봇 경로만 legacy로 형식 통과. 원본 진위를 인증한 사례는 아님.
 - **선행 구현 참고**: OpenTelemetry Apache-2.0 upstream [trace_service.proto](https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/collector/trace/v1/trace_service.proto) blob efbbedbe4545a6f809e8cdbd699379cbc16e1a1f의 ExportTraceServiceRequest/ResourceSpans 구조를 실제 조회. 기존 adapter와 checker를 재사용하며 SDK/외부 패키지/모델 호출 없음.
