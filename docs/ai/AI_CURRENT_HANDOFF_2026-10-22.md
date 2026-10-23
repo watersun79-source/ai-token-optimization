@@ -1,5 +1,15 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-23 오전 09시대 수동 R16 격리 검증기 JS/Python 불일치 2건 수정
+- 실제 Activepieces 격리 flow `zgSopq6Txh68wxsDc5K5Z`의 CODE step과 GitHub Python `audit_v2.py` 형식 검사 기준을 직접 대조해 **두 가지 재현 가능한 결함** 발견: JS는 16개 초과 도구 호출 전체 거부(반면 Python 1024개 허용), 예약 정각의 `.500`초도 허용(반면 Python 거부).
+- Activepieces `TESTING` 사전 재현 원본 run `Cu3LhqTJjKWmUW6Hmgs3h`(17건 오거부), `mZWYX0E1gvuqK7pM9eMgv`(`.500`초 오통과). 실제 기존 플로우가 아닌 **비활성·미게시·MOCK ONLY** 검증기에서만 수정.
+- JS CODE를 최소 수정(`>1024` 제한, `(?:\\.0+)?` 정각 소수부 검사), 17건/1024건 허용, 1025건/.500초 거부, .000초 허용, 공식 run 누락 거부 **6/6 실제 Activepieces TESTING·ap_get_run 검증**. 각 결과 `official_success_verified=false`, `external_calls=0`, 원본 진위 `UNVERIFIED`.
+- 변경된 격리 JS GitHub blob `f75bd4ccc4934032cc5ab62b8ea52ed26545be49` (actual CODE step read-back exact match). [상세 모의실행 ID·결과/문서](https://github.com/watersun79-source/ai-token-optimization/blob/ai/r16-evidence-reconciler-2026-10-22/experiments/r16-evidence-reconciler/ACTIVEPIECES_MOCK_SAFE_FLOW_2026-10-22.md), 문서 blob `2864d5cb39e24d8ed6078ea9e4f5b1e8f2c84eb8`.
+- 실제 활성 운영 flow: 기존 Slack `vtRwEYmcwDTunBZut265G` 1개. 격리 MOCK flow는 `DISABLED`, `published=false`, `ap_validate_flow valid=true`, 2/2 단계, issues 0. 정규 예약 R16 `6acb017062a08191a4136238b78b313a` 활성/한국시간 매시간 정각, 마지막 관측 `last_run_time=2026-10-23T00:00:35.077362Z`(09:00:35 KST), 일정/프롬프트/활성화/알림 변경 금지 및 이번 회차에서 설정 변경 없음.
+- **핵심 구분:** 이 검증은 사용자의 요청으로 시작한 **수동 ChatGPT 채팅**과 Activepieces 모의 테스트의 품질 검사일 뿐 정규 무인 실행 성공 증거가 아니다. 공식 per-run ID·동일 회차 원본 GitHub/Slack 호출 로그는 미제공 → 무인 성공 **미검증**.
+
+---
+
 ## 2026-10-23 09:00 KST — 수동 R16 최신 검증기 37/37 및 공식 실행 원본 부재
 - **작업 출처**: 사용자의 `실행` 요청으로 **일반 ChatGPT 채팅에서 수동 실행**한 감사다. 09:00 예약 세션이 실행한 검사로 표기하지 않는다.
 - **예약 공식 메타 원본**: 기존 단일 ID `6acb017062a08191a4136238b78b313a`, `is_enabled=true`, Asia/Seoul 매시간 정각, `last_run_time=2026-10-23T00:00:35.077362Z` (=09:00:35 KST), paused_count=0; 이는 정규 슬롯 시각 메타일 뿐 개별 작업 성공이 아니다.
