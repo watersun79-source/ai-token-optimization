@@ -46,18 +46,18 @@ OPTIONAL = {
 SHA = re.compile(r'^[a-f0-9]{40}$')
 SLACK_TS = re.compile(r'^\d{10}\.\d{6}$')
 # Preserve native timestamps at up to nine fractional digits for ordering.
-AUDIT_TIME = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.(\d{1,9}))?(?:Z|[+-]\d{2}:\d{2})$')
+AUDIT_TIME = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.([0-9]{1,9}))?(?:Z|[+-][0-9]{2}:[0-9]{2})$')
 # Do not let datetime.fromisoformat() silently truncate nonzero nanoseconds.
 EXACT_HOUR = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:00:00(?:\.0+)?(?:Z|[+-]\d{2}:\d{2})$')
 
 
 def parsed_time(value):
-    if not isinstance(value, str):
+    if not isinstance(value, str) or AUDIT_TIME.fullmatch(value) is None:
         return None
     # Match the Java java.time offset bound for fail-closed cross-language checks.
     # OffsetDateTime accepts at most +/-18:00, unlike Python fromisoformat.
     offset = re.search(r'[+-](\d{2}):(\d{2})$', value)
-    if offset and (int(offset.group(1)) > 18 or
+    if offset and (int(offset.group(2)) > 59 or int(offset.group(1)) > 18 or
                    (int(offset.group(1)) == 18 and int(offset.group(2)) != 0)):
         return None
     try:
