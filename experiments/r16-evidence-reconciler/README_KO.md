@@ -1,5 +1,15 @@
 # R16 무인 예약 실행 증거 대조기 — 격리 개발 브랜치
 
+## 2026-10-23 16:09 KST — OpenTelemetry OTLP 호출 증거 연결 구현·83/83
+- 새 결함: 기존 `audit_v2.py`는 OpenTelemetry를 참고했다고 설명했지만 실제 OTLP span→`tool_calls` 연결기가 없었고, 격리 CI path filter도 `triage_bot.py`와 향후 adapter를 누락했다.
+- 공식 OpenTelemetry GenAI Development 규약의 `invoke_agent` / `execute_tool`, `gen_ai.operation.name`, `gen_ai.tool.name`, span status와 trace/span ID 규칙을 참고했다. OTel trace/span/tool-call ID는 ChatGPT 공식 예약 run ID가 아니며, arguments/result 원문은 민감 가능해 저장하지 않는다.
+- 격리 최소 구현: `otel_evidence_adapter.py` blob `5c458b778270da077cf31b8ff07bc14dc71c4c94`가 OTLP JSON의 단일 root, 유효한 non-zero trace/span ID, 끊김 없는 부모 계보, 시간창, INTERNAL execute_tool, OK status, 정확한 tool/locator/SHA·Slack ts를 실패 폐쇄로 변환한다. `audit_v2.py` blob `64e7e3039005c3d0d86602e989bde932e96eecaa`가 이 결과를 기존 형식 게이트에 실제 연결하며 상태는 계속 `형식 통과 · 진위 미검증`이다.
+- 회귀 테스트 blob `995792a9bff8bfb39408c6c85fe1ade74a9e116f`: 교차 trace, orphan/단절 부모, ERROR+위조 success, root 밖 시간, 누락 version/잘못된 span name, zero/duplicate ID, 공식 run ID와 trace ID 분리, audit 연동 9개. workflow blob `92d349d4e312110154f6c5a96ed49c7d69ccdbc7`에 adapter·triage path trigger 추가.
+- 원격 검증: GitHub Actions [39915981921](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39915981921), head `ada144706220aed29df3eeaa6f21db2c42d1bfbc`, job/check `120289552532`, completed/success. 원시 로그 Python 83/83+2/2, JS 20/20, Java 12/12+20/20 PASS.
+- 한계: 실제 ChatGPT Scheduled exporter/공식 개별 run 원본은 제공되지 않았으므로 합성 OTLP만 검증했다. main·예약·운영 Activepieces·유료 API는 변경하지 않았고 정규 무인 성공은 계속 미검증이다.
+
+---
+
 
 ## 2026-10-23 15시대 후속 — 동시 기여 변경·URL 바이디 검사 재조회, Python 72/72 최종 성공
 - **신규 변경 충돌 감지·직접 대조**: 첫 OWASP URL 검증 변경은 코드 blob `de90d1460fc60c9e86d1852e8483802ed544f2b5`, 테스트 5건 blob `ac4571e96b9f30c70423987fbd84c6c50640624e`, GitHub run `39909757804`에서 Python 68/68 성공. 이후 **별도 기여의 변경**으로 최신 `bot_team_r16.py` blob `b3bc27702347029f8c28352b72917d5524baa977`에 `unicodedata.category(c).startswith('C')`를 이용한 bidi/숨은 제어문자 제목 차단이 추가됨. 같은 격리 브랜치에 `tests/test_bot_untrusted_references.py` 4건 추가, blob `2137942c4d282c685f0f38e258270a38a4663005`. 앞선 코드 SHA는 **패치 이력**이지 현행 최종 SHA가 아니므로 구분.
