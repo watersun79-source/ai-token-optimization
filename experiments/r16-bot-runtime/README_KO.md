@@ -26,3 +26,23 @@ PASS는 입력 스냅샷·로컬 소스와 테스트 기록의 일치이며 최�
 [slsa-verifier](https://github.com/slsa-framework/slsa-verifier) Apache-2.0 라이선스 확인;
 이번에는 코드 복제·설치·서명 검증을 수행하지 않았다.
 입력의 자체 SHA 검사와 신뢰된 공급자의 진위 인증을 구분한다.
+
+
+## R16 백그라운드 협업 준비 (실제 서버 배포 전)
+
+`background_coordinator.py`는 외부 AI 모델 호출 없이 기존 오프라인 100개 규칙 검사와 필요한 역할 선택을 반복할 수 있는 **명시적 실행 프로그램**이다.
+코드 추가만으로 ChatGPT 앱/기존 예약 AI 또는 클라우드 서비스에 자동 연결되지 않는다.
+
+- 사전 조건: 항상 켜져 있는 Linux/Unix 실행 호스트 + Python 3.12, Java 21, Node.js 24, 테스트 입력/로컬 설치 완료
+- 선행 명령: `python measure_runtime.py`, `python install_local.py`
+- **안전한 1회 시험:** `python background_coordinator.py --goal audit --state-dir .supervisor_state`
+- **호스트가 준비된 뒤 명시적으로 실행하는 반복 모드:** `python background_coordinator.py --repeat --interval 3600 --goal audit --state-dir .supervisor_state`
+- 장시간 실행 시에는 실제 호스트의 서비스 관리 도구(systemd 등)에서 시작·재시작·로그를 관리해야 한다. 이 저장소는 별도 서비스를 자동 설치·활성화하지 않는다.
+- `--repeat --max-runs 1`은 CI에서 사용하는 1회 제한 모드이며 상시 실행 증거가 아니다.
+- `background_latest.json`은 원자적으로 갱신하는 *로컬 실행 결과*다. 공식 ChatGPT 예약 run ID나 GitHub/Slack 무인 tool-call 원장을 증명하지 않는다.
+- 같은 `--state-dir`에서 두 반복 프로그램이 겹치면 잠금으로 두 번째 프로세스를 차단한다. 잠금 파일 심볼릭 링크도 거부한다.
+- 반복 간격 최소 3600초. 예약 슬롯 정각 동기화 또는 무중단 실행 보장은 없다. 서버 중지·재부팅·요금/무료 한도를 확인해야 한다.
+- 새 운영 스케줄·ChatGPT 기존 매시간 예약·GitHub main·Activepieces 운영 플로우·알림은 **변경하지 않는다**.
+
+참고: [systemd.service의 Restart=on-failure](https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html).
+실제 서버/계정·요금·권한 확인 전에는 별도 배포를 수행하지 않는다.
