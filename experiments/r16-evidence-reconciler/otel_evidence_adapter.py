@@ -79,12 +79,19 @@ def _valid_id(value, pattern):
     return isinstance(value, str) and bool(pattern.fullmatch(value)) and set(value) != {"0"}
 
 
+def _enum_is(value, number, name):
+    # Keep legacy string aliases, but bool/float equality is not enum typing.
+    return ((type(value) is int and value == number)
+            or (isinstance(value, str) and value in (str(number), name)))
+
+
 def _ok_status(span):
     status = span.get("status")
     if not isinstance(status, dict):
         return False
     code = status.get("code")
-    return code in (2, "2", "STATUS_CODE_OK") and not status.get("message")
+    # OTLP trace.proto StatusCode: UNSET=0, OK=1, ERROR=2.
+    return _enum_is(code, 1, "STATUS_CODE_OK") and not status.get("message")
 
 
 def _descends_from(span, root_span_id, root_trace_id, by_id):
@@ -185,7 +192,7 @@ def adapt_otlp(payload, *, expected_run_id, expected_targets):
         version = attrs.get("ai.evidence.version")
         if (attrs.get("gen_ai.operation.name") != "execute_tool"
                 or not isinstance(tool_name, str) or tool_name not in aliases
-                or span_name != f"execute_tool {tool_name}" or span.get("kind") not in (1, "1", "SPAN_KIND_INTERNAL")
+                or span_name != f"execute_tool {tool_name}" or not _enum_is(span.get("kind"), 1, "SPAN_KIND_INTERNAL")
                 or span["traceId"] != root_trace or not _descends_from(span, root["spanId"], root_trace, by_id)
                 or not (root_start <= start <= end <= root_end) or not _ok_status(span)
                 or attrs.get("ai.scheduler.run.id") != expected_run_id
