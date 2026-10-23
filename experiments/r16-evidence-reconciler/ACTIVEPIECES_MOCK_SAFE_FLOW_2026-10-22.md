@@ -76,3 +76,22 @@
   - 공식 개별 회차 ID 누락 `shobjWOHf76utpKgtkB9W` → `UNVERIFIED`.
 - 5개 모두 `official_success_verified=false`, `external_calls=0`; 새로운 외부 모델 호출이나 운영 연결 없음. 소스 [activepieces_mock_guard_2026-10-23.js](activepieces_mock_guard_2026-10-23.js)와 Activepieces step_1 실제 소스 독립 대조/원격 GitHub blob SHA `ffd1b3f351808f22bcab4feec5f42762e0f6ebea`.
 - ChatGPT 기존 정규 AI R16 활성/Asia/Seoul 매시 정각/원래 일정 유지. 격리 플로우는 `DISABLED`, `published=false`; 기존 운영 Slack flow, GitHub `main` 보호.
+
+
+## 2026-10-23 오전 — JS/Python 호출 로그 한도·정각 정밀도 동기화
+- **수동 ChatGPT 채팅에서 수행한 격리 검증**, 정규 예약 무인 회차의 실행 결과가 아니다.
+- 직접 재현한 2개 버그:
+  1. Python `audit_v2.py`는 기본 2건 + 15건 보조 로그, 즉 17건을 유효 범위로 처리(최대 1024건). 반면 격리 Activepieces JS는 **16건 초과 전부 거부**. 패치 전 Activepieces MOCK TESTING run `Cu3LhqTJjKWmUW6Hmgs3h` → `Too many tool calls`.
+  2. Python 검증기는 예약 시각의 microsecond가 0이 아니면 거부하지만 JS 정각 정규식은 `09:00:00.500`도 형식 통과. 패치 전 MOCK run `mZWYX0E1gvuqK7pM9eMgv` → `FORMAT_MATCH_ONLY`로 오판.
+- **최소 수정**: 격리 JS CODE만 `calls.length > 1024`로 상한 일치, 예약 정각은 초 `00` + 선택적 소수부 **0만** 허용(`(?:\\.0+)?`), 기존 달력/윤년·정확한 도구명 허용·상속 키 방어·미인증 결과 유지.
+- 수정 후 `ap_test_flow` + `ap_get_run` step 원본 6건 모두 Activepieces `SUCCEEDED`. 결과는 항상 `status=UNVERIFIED`, `official_success_verified=false`, `external_calls=0`:
+  - 17건 정상 `J2cMxmAaLIYqkM1tFdfRJ` → `FORMAT_MATCH_ONLY`
+  - 1024건 상한 `XNUj1IsY83WL6DaiOYnwf` → `FORMAT_MATCH_ONLY`
+  - 1025건 초과 `Zi52El9M1DOD7scgWgHu9` → 안전 거부
+  - 잘못된 `.500` 예약 시각 `W2YiqvZo4l6PwCXdCy2DH` → 안전 거부
+  - 올바른 `.000` 예약 시각 `HWxoQTpM0POf9N0ExuQSI` → `FORMAT_MATCH_ONLY`
+  - 공식 per-run 원본 없음 `Cw5hFyK8rtNUXlHcX7wsu` → 미검증
+- 격리 JS Live CODE와 GitHub 원격 소스 exact read-back 일치; [동기화 소스](activepieces_mock_guard_2026-10-23.js) Git blob **`f75bd4ccc4934032cc5ab62b8ea52ed26545be49`**, commit **`cc04dcd0019857014359135a67722ec32b7425cb`**.
+- 기존 단일 ChatGPT AI 예약 R16 `6acb017062a08191a4136238b78b313a`는 `is_enabled=true`, Asia/Seoul 매시 정각 유지. Activepieces 격리 flow `zgSopq6Txh68wxsDc5K5Z`는 **DISABLED·unpublished**; 운영 Slack 플로우 `vtRwEYmcwDTunBZut265G` 그대로 ENABLED. GitHub `main`, Activepieces 운영 플로우/연결, 예약 설정/알림, 과금/API 변경 없음.
+- `FORM MATCH`는 원본 진위 인증이 아니다. 공식 ChatGPT 개별 예약 run ID 및 동일 회차 tool-call 원본이 없어 **무인 GitHub/Slack 업무 성공은 미검증**.
+
