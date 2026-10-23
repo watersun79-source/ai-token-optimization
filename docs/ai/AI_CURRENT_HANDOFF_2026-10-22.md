@@ -1,5 +1,16 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-24 — Java 전체 fixture 검사 누락 최소 수정·v7 실행 패키지
+- 실제 결함: UtcStrictOracle.java의 subList(1,21)가 21번째 이후 실패 입력을 무시하고, 작은 정상fixture에서는 IndexOutOfBoundsException. 실제Java프로세스 신규5회귀 중 수정전4실패 재현.
+- 최소수정: 실제 lines.size()로 전체입력 반복, case0개·열수2개아닌행 거부. timestamp파싱/receiptV6진위경계는 불변. Oracle JDK21 List.subList/Files.readAllLines 공식문서 직접대조, 외부코드복제/라이브러리설치/유료API0.
+- 격리commit7bb7fb47c1c17c5742bbab6592fccd735e7eb0b4, compare1commit/3files만. Java blobbbeed254d81f2aeb64b2e264c2aa41f438f3f06a / 새testf89f8310c3752a17bb3a160b6273406c6f7f6d70 / workflow4cd710e8af33a13565944f7992f8b04d61362a1f. 원격전체내용·로컬Git blob SHA3/3일치, expected-head lease 갱신.
+- 로컬·원격 Python22+보강13/Java20/JS20=75검사 PASS. CI40029834241/job120675058993/head동일/attempt1 completed success; 원시로그 직접확인. https://github.com/watersun79-source/ai-token-optimization/actions/runs/40029834241 . 독립ChatGPT검토자1명 새Java13assertions 보고·차단결함없음. 기존R16검증기 불변합격CI 재실행0.
+- 실제설치100명령·단일프로세스100규칙=스냅샷PASS82/UNVERIFIED18. 외부LLM100개/실시간외부상태인증 아님.
+- v7 ZIP: AI_R16_100_BOT_v7_full_java_verified.zip, SHA256e1322a580a30217800bd4202f51fca07e658cb5f37fccbf00bddab00b02bc391, Librarylibfile_d37f2df6b43c8191af7219f96d3ad4b8. 130파일/CLIwrapper100, ZIP CRC·개별파일SHA일치. 최신소스·receipt·결과·원시CI로그 포함; 예전v6ZIP은 당시버전 보존. receipt형식은V6이며24시간유효·소스변경시 재측정.
+- 기존예약 활성·prompt/일정/updated_at불변, main e8600906eb31da2735108842752a93887791f0c5 전후동일. 운영APflow/연결·감사원본·정규checkpoint추가0. 최신관찰공식06시회차dbb75293-2a68-832a-9d6b-adc183fd3857 completed; same-run raw앱원장미제공→무인성공미검증. 기록은검색기억/지정Slack에만. 다음: 공식원장제공시 독립대조, 새결함/입력없는합격반복금지.
+
+---
+
 ## 2026-10-24 — v6 BOT 실행 기록의 실제 소스·공유 입력 연결 보강
 - **실제 새 결함**: 최신 v5 ZIP(libfile_fa06ba545d308191923a9bfda55182fe)을 읽고 원본 코드 대조. 테스트파일3개만 해시 검사해 runner.py/catalog.json/공유 TSV/measure_runtime.py 변경 뒤에도 이전 기록을 유효로 수용. 신규2회귀의 RED5 subcase 재현. 별도 evidence 입력 변조 회귀1개 추가.
 - **최소 재사용 수정**: 기존 v5 구현을 experiments/r16-bot-runtime에 보존·확장. V6 형식에서 실제 실행·테스트입력7파일 + 정규화 evidence 입력의 SHA256 대조, 측정전후 해시 일치 확인. 생성출력 polyglot/notice만 제외하고 측정건수는 별도 대조. 구 V5 receipt는 미검증. 설치본도 새 의존파일 복사·바이트 대조. Java는 javac가 없으면 OpenJDK source launcher로 실제 동일 소스 실행. 사용자원본 v5파일/예약은 변경하지 않음.
