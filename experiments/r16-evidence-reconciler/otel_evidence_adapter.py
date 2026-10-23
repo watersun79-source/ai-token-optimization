@@ -13,6 +13,10 @@ import re
 TRACE_ID = re.compile(r"^[0-9a-f]{32}$")
 SPAN_ID = re.compile(r"^[0-9a-f]{16}$")
 MAX_SPANS = 2048
+ANY_VALUE_FIELDS = {
+    "stringValue", "boolValue", "intValue", "doubleValue", "arrayValue",
+    "kvlistValue", "bytesValue", "stringValueStrindex",
+}
 
 
 def _attrs(items):
@@ -30,9 +34,23 @@ def _attrs(items):
         value = item.get("value")
         if not isinstance(value, dict):
             continue
+        if len(ANY_VALUE_FIELDS.intersection(value)) > 1:
+            return {}  # Protobuf AnyValue is a oneof, never several variants.
         for value_key in ("stringValue", "boolValue", "intValue"):
             if value_key in value:
-                out[attr_key] = value[value_key]
+                decoded = value[value_key]
+                if value_key == "stringValue" and not isinstance(decoded, str):
+                    return {}
+                if value_key == "boolValue" and type(decoded) is not bool:
+                    return {}
+                if value_key == "intValue":
+                    if isinstance(decoded, str):
+                        if not (1 <= len(decoded) <= 20 and re.fullmatch(r"-?[0-9]+", decoded)):
+                            return {}
+                        decoded = int(decoded)
+                    if type(decoded) is not int or not -(1 << 63) <= decoded < (1 << 63):
+                        return {}
+                out[attr_key] = decoded
                 break
     return out
 
