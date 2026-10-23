@@ -94,14 +94,16 @@ def _descends_from(span, root_span_id, root_trace_id, by_id):
     while parent_id:
         # OTLP parentSpanId is a hex string. Lists/dicts can otherwise raise
         # TypeError on dictionary/set membership, aborting the entire audit.
-        if (not isinstance(parent_id, str) or parent_id in visited
-                or parent_id not in by_id
-                or by_id[parent_id][0].get("traceId") != root_trace_id):
+        if not isinstance(parent_id, str):
+            return False
+        parent_key = (root_trace_id, parent_id)
+        if (parent_id in visited or parent_key not in by_id
+                or by_id[parent_key][0].get("traceId") != root_trace_id):
             return False
         if parent_id == root_span_id:
             return True
         visited.add(parent_id)
-        parent_id = by_id[parent_id][0].get("parentSpanId")
+        parent_id = by_id[parent_key][0].get("parentSpanId")
     return False
 
 
@@ -153,14 +155,10 @@ def adapt_otlp(payload, *, expected_run_id, expected_targets):
         parent_id = span.get("parentSpanId", "")
         if not isinstance(parent_id, str) or (parent_id and not _valid_id(parent_id, SPAN_ID)):
             continue
-        # Existing R16 by_id ancestry index has a single trace-scoped slot.
-        # Unrelated traces cannot supply evidence for the selected root.
-        if span_id in by_id:
-            continue
         start, end = _time_ns(span.get("startTimeUnixNano")), _time_ns(span.get("endTimeUnixNano"))
         if start is None or end is None or start > end:
             continue
-        by_id[span_id] = (span, _attrs(span.get("attributes")), start, end)
+        by_id[identity] = (span, _attrs(span.get("attributes")), start, end)
 
     roots = []
     for span, attrs, start, end in by_id.values():
@@ -214,5 +212,6 @@ def adapt_otlp(payload, *, expected_run_id, expected_targets):
     result["tool_calls"] = calls
     result["reason"] = "OTLP span 형식·인과 연결 통과 · 원본 진위 미검증" if calls else result["reason"]
     return result
+
 
 
