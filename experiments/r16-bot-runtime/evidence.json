@@ -1,0 +1,111 @@
+{
+  "notice": "Read-only connector snapshot + v5 measured local regression receipt. Snapshot PASS is NOT authenticated current provider state.",
+  "schedule": {
+    "id": "6acb017062a08191a4136238b78b313a",
+    "enabled": true,
+    "timezone": "Asia/Seoul",
+    "rrule": "FREQ=HOURLY;BYMINUTE=0;BYSECOND=0",
+    "notifications_enabled": false,
+    "email_enabled": false,
+    "last_run": "2026-10-23T21:04:39.404448Z",
+    "count": 1
+  },
+  "github": {
+    "repo": "watersun79-source/ai-token-optimization",
+    "branch": "ai/r16-evidence-reconciler-2026-10-22",
+    "head": "00facfbc9904fdee00b9375eec213c197a583bc1",
+    "ci_head": "00facfbc9904fdee00b9375eec213c197a583bc1",
+    "ci_run_id": 40017504707,
+    "ci_status": "completed",
+    "ci_conclusion": "success",
+    "ci_url": "https://github.com/watersun79-source/ai-token-optimization/actions/runs/40017504707",
+    "ci_job_id": 120633255774,
+    "job_status": "success",
+    "handoff_sha": "9076fdb27d290acc98c25aaab193d66ac32bd526",
+    "adapter_blob": "73f9afeb25e74747021a661246eabfae5789fa78",
+    "adapter_readback_sha": "73f9afeb25e74747021a661246eabfae5789fa78",
+    "test_blob": "8965dd5fc6b8aabe83ae04129ab63e3d599437a7",
+    "status_message_guard": true,
+    "max_spans": 2048,
+    "parent_id_guard": true,
+    "span_id_pattern": true,
+    "trace_id_pattern": true,
+    "attempt": 1,
+    "job_logs_read": true
+  },
+  "slack": {
+    "read_succeeded": true,
+    "channel": "C0C9649RQAZ",
+    "parent_ts": "1792416391.631669",
+    "tool": "mcp__Slack__slack_read_thread",
+    "read_only": true
+  },
+  "ap": {
+    "table_id": "bYxKH9XvAf27ODJ6GrC1U",
+    "row_count": 21,
+    "latest_evidence_level": "SELF_REPORTED_UNATTENDED_NOT_INDEPENDENTLY_PROVEN",
+    "latest_slot": "2026-10-22 21:00 Asia/Seoul",
+    "independent_native_authentication": false,
+    "table_label": "AI Scheduled Run Evidence (AUDIT ONLY)"
+  },
+  "oss": {
+    "langgraph_url": "https://github.com/langchain-ai/langgraph",
+    "langgraph_license": "MIT",
+    "langgraph_archived": false,
+    "crewai_license": "MIT",
+    "crewai_archived": false,
+    "otel_license": "Apache-2.0",
+    "otel_archived": false,
+    "autogen_license": "CC-BY-4.0",
+    "autogen_license_review": true
+  },
+  "package": {
+    "network_enabled": false,
+    "provider_model_calls": 0,
+    "github_write": false,
+    "slack_write": false,
+    "ap_write": false,
+    "schedule_write": false,
+    "load_secrets": false,
+    "remote_write": false,
+    "billing_actions": false,
+    "local_only": true,
+    "third_party_install": false,
+    "native_success_authenticator": false
+  },
+  "polyglot": {
+    "python_passed": 22,
+    "java_passed": 20,
+    "js_passed": 20,
+    "total_passed": 62,
+    "python_available": true,
+    "java_available": true,
+    "node_available": true
+  },
+  "ci_tests": {
+    "python": 127,
+    "python_shared": 2,
+    "javascript_time": 20,
+    "java_time": 20,
+    "js_oracle": 12,
+    "java_oracle": 12
+  },
+  "native": {
+    "authenticated_run_id": null,
+    "native_started": null,
+    "native_finished": null,
+    "scheduled_for": null,
+    "github_call": null,
+    "github_sha": null,
+    "slack_call": null,
+    "slack_run_id": null,
+    "slack_event_ts": null,
+    "slack_tool_status": null,
+    "slack_delivery": null,
+    "ap_signed_run_id": null,
+    "ap_same_run_link": null,
+    "ap_authenticated": null,
+    "same_run_correlated": null,
+    "native_authenticity": null
+  }
+}
