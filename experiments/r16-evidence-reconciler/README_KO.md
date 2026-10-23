@@ -1,6 +1,16 @@
 # R16 무인 예약 실행 증거 대조기 — 격리 개발 브랜치
 
 
+## 2026-10-23 14시대 — 외부 오픈소스 AI Bot 역할 연구 + 무료 3봇 실제 오프라인 연결
+- **ResearchBot 조사**: Microsoft [Agent Framework](https://github.com/microsoft/agent-framework) (MIT, Python/.NET, sequential/concurrent/handoff orchestration) 및 [CrewAI](https://github.com/crewAIInc/crewAI) (MIT, Python agents/crews/flows)를 공식 upstream에서 참고. Microsoft [AutoGen](https://github.com/microsoft/autogen)은 **유지보수 모드**여서 새 기반으로 설치하지 않음. [Hypothesis](https://github.com/HypothesisWorks/hypothesis) (MPL-2.0), [fast-check](https://github.com/dubzzz/fast-check) (MIT)의 속성 기반 테스트 아이디어 검토했으나 무승인 dependency 설치·유료 모델/API 호출 없이 기존 `unittest`/Java/JS 표준 환경 유지.
+- **BuilderBot 실제 수정**: 기존 `ai/bot-team-sandbox-2026-10-22`의 `experiments/ai-bot-team/bot_team.py` 및 `chat_router.py`를 읽고 본래 **오프라인 데모로써 실제 코딩·연결을 자동 수행하지 않는다는 한계** 확인. 현행 격리 R16에 `experiments/r16-evidence-reconciler/bot_team_r16.py`를 새로 작성. 세 역할 `ResearchBot`(제공된 참조 URL만 메타검사), `BuilderBot`(실제 audit 결과에 따른 읽기 전용 다음 행동 1개 선택), `VerifierBot`(실제 `audit_v2.check` 원본 형식·보호 정책 fail-closed). 64KB 입력 제한, 최대 참고 20개, 가짜 공식 성공 플래그 무시, 격리만 허용, CLI `exit 2`로 미검증을 성공 종료값으로 포장 금지. **외부 LLM 3개 또는 ChatGPT 전체 채팅의 실시간 자동 후킹이 아니고 무료 로컬 Python 코드**.
+- **실제 소스/테스트 커밋**: bot `85ccb1aef39b11e0efb2085cdda22668f7fa8942` (blob `8e2fb8aecddda9997e3e0dae55e3905ac7a76af2`), `tests/test_bot_team_r16.py` 9개 회귀 `e9b64923695e0f1d6320b8d4a165a4962cfb7b2c` (blob `b6ff4d81e393d5535c98fd8cf88be76fca8f7cfe`), 격리 `.github/workflows/r16-evidence-verifier.yml`에 봇 코드 경로 트리거 추가 commit `06e382630928f3fcd583b8fedbec204e435fbb8a` (blob `2e58b16236999fc9beff33c876230a0a1dee2e3f`). GitHub 원격 독립 재조회에서 세 blob SHA 정확 일치.
+- **VerifierBot 공식 원본 실행**: GitHub [Actions run `39905219028`](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39905219028), head `06e382630928f3fcd583b8fedbec204e435fbb8a`, Check/job `120255511427`, `push completed/success`. 원본 job logs **Python 전체 63/63 PASS** (신규 봇 9개 포함), 다국어 Python 2/2, JS 공통 20/20, Java 공통 20/20, Java oracle 12/12, Actions warnings 0. GitHub 이전 cancel 회차 `39905165919`는 성공으로 세지 않음.
+- **실제 능력의 한계**: 이 AI Bot 코드는 검증기 API를 호출하고 역할 간 상태 전달·정책 선택·독립 진위 부정 판정을 **실제로 실행**한다. 그러나 제공된 GitHub/Slack 문서·run 메타의 **외부 기원 인증**이나 ChatGPT 공식 Scheduled native per-run 실행 이력 접근 권한은 만들지 않는다. `official_success_verified=false` 항상 유지. 수동/CI 코드 통과와 **예약 AI 무인 GitHub·Slack 기억 복원 성공**은 별개로 **미검증**.
+- **보호·다음 최우선**: 기존 매시간 정각 단일 ChatGPT 예약·프롬프트·알림, 운영 Activepieces, GitHub `main`, 비밀키·유료 호출 **변경 없음**. 공식 Scheduled → AI → Previous runs 원본이 인증된 읽기 권한으로 제공되면 그때 동일 실행 ID/원시 GitHub·Slack 호출을 독립 대조; 현재는 추정 ID·우회 API 사용 금지.
+
+
+
 ## 2026-10-23 — 다국어 UTC 오프셋 해석 불일치 수정 (JSON Schema Test Suite·Java 표준 라이브러리·SLSA 참고)
 - **다른 사람 공개 구현 재검토**: [JSON Schema Test Suite](https://github.com/json-schema-org/JSON-Schema-Test-Suite) MIT의 여러 구현 공통 fixture 방식을 적용하고, Java `java.time.OffsetDateTime`이 `±18:00`을 초과하는 offset을 거부한다는 점을 독립 검사로 확인. [SLSA provenance](https://github.com/slsa-framework/slsa/blob/main/spec/build-provenance.md)의 실행 출처/빌더 정체성 분리 원칙도 검토. 타인 코드는 복사/설치하지 않았음.
 - **원인 실제 재현**: Python `datetime.fromisoformat('2026-10-23T11:00:00+19:00')`은 +19시간을 파싱하지만 Java 21 `OffsetDateTime.parse`는 +19:00 및 +23:59를 거부. 기존 mock JS 구현은 offsetHour >23에서만 거부 → **같은 증거의 언어별 형식 판정 불일치**. RFC 3339가 금지한다고 주장하지 않으며, R16 내부 정책으로 `±18:00` 이하의 정합성 범위를 채택.
