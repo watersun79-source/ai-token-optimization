@@ -174,6 +174,12 @@ def check(payload: dict) -> dict:
         tool, locator, version_type = REQUIRED[t]
         invocation = c.get('invocation_id')
         observed = parsed_time_ns(c.get('observed_at'))
+        if 'otel' in payload:
+            # OTLP provides the full interval; an in-window end alone cannot
+            # prove that this invocation started during the supplied run.
+            began = parsed_time_ns(c.get('started_at'))
+            if began is None or observed is None or not start <= began <= observed:
+                continue
         version = c.get('version')
         is_valid_version = isinstance(version, str) and bool((SHA if version_type == 'sha' else SLACK_TS).fullmatch(version))
         if (c.get('origin') != 'official_task_tool_call' or c.get('run_id') != run_id

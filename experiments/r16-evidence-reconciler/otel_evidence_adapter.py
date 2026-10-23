@@ -215,6 +215,7 @@ def adapt_otlp(payload, *, expected_run_id, expected_targets):
             "tool": tool_name,
             "locator": locator,
             "invocation_id": f"otel-span:{span['spanId']}",
+            "started_at": _iso_utc(start),
             "observed_at": _iso_utc(end),
             "version": version,
             "trace_id": root_trace,
