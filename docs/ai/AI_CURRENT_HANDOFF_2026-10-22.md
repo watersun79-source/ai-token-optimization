@@ -1,5 +1,15 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-23 12:20 KST — Python·JavaScript·Java 기존 15건 + 추가 12건 통합 CI 최신 성공
+- **사용자 일반 채팅에서 수동으로 작업한 R16 교차 검증**. 기존 R16 정규 ChatGPT 예약의 무인 성공 증거는 아님.
+- 공개 원본 조사: OpenTelemetry tool-call span과 Temporal workflow ID/run ID 구별, GitHub Actions의 branch/path 필터, Eclipse Temurin JDK+Python/Node 표준 검사 구조를 참고. 외부 오픈소스 프로그램 복제/추가 패키지 설치·유료 생성 API 호출 없이 격리 소스에서 최소 구현.
+- R16 격리 브랜치에서 기존 15건 공통 자료(`fixtures/time_cases.tsv`, Python `test_polyglot_fixtures.py`, Node `check_js.mjs`, Java `R16TimeOrderCheck.java`) + 새 12건 자료(`polyglot/time_vectors.tsv`, Python `test_polyglot_vectors.py`, Node `test_activepieces_guard.mjs`, Java `R16TimeOracle.java`)를 **둘 다 보존**. 기존 JS 실제 `code()`를 import해 검사, Java는 `java.time`으로 독립 판단; 모든 합성 입력은 원본 진위 `UNVERIFIED`.
+- **중간 통합 실패의 원인과 수정**: GitHub run `39894369222`는 Node 24가 더 이상 `--experimental-default-type=module`을 허용하지 않아 `node: bad option` / exit 9. 기존 자바스크립트 `.mjs` 파일의 Node 명령에서 **해당 옵션만 삭제**, 기존 테스트 포함 유지.
+- **최신 공식 CI 성공**: 격리 워크플로 commit **`aca1087776b154f5febdfe94a2df6a45689121ff`**, GitHub Actions run **`39894432542`**, job/check **`120221459588`**, `push`, `completed/success`이며 Check run의 exact commit SHA 일치 독립 확인. 원시 job log: Python 기존 **44/44**, 추가 Python **2/2**, Node JS 실제 검증기 **12/12**, 기존 Node JS **15/15**, Java 새 oracle **12/12**, 기존 Java oracle **15/15** 모두 PASS. GitHub URL https://github.com/watersun79-source/ai-token-optimization/actions/runs/39894432542.
+- 실제 사용한 원격 `.github/workflows/r16-evidence-verifier.yml` SHA **`d9b42318ed5fe4a8bc2139a2cd1a50edf17784a8`**, 최신 격리 README 원격 blob SHA **`fc7f918e15bbbc02a1a1a9d25f66d2920b429565`**. 마지막 README 업데이트는 docs만 변경하므로 동일 코드 SHA의 최신 CI 결과와 별도로 구분. 기존 `main`, 단일 매시간 정각 예약(활성 유지), Activepieces 운영, 알림, 비용·비밀 모두 변경 없음.
+- **다음 최우선 목표**: 기존 ChatGPT Scheduled AI의 **공식 개별 per-run ID + 종료 결과 + 동일 회차 GitHub/Slack 원시 tool-call**이 실제 제공되는지 확인. `automations.peek.last_run_time`은 실행 메타일 뿐 원본 인증이 아니다. 원시 접근이 불가능하면 **정규 무인 성공 미검증** 유지.
+---
+
 
 ## 2026-10-23 — 실제 오픈소스 참조 3언어 교차 CI 통과 (R16, 수동 채팅 작업)
 - **ResearchBot 참고 결과**: 공식 Temporal의 Workflow ID ≠ Run ID, OpenTelemetry 도구 호출 span, JSON Schema의 언어별 공통 검증, LangGraph의 단기 checkpoint / 장기 store 구분 조사. Python jsonschema·JS Ajv·LangGraph MIT, Java networknt/Temporal SDK·OpenTelemetry Apache-2.0. 오픈소스 코드 직접 복제·라이브러리 설치 없이 검증기 설계와 경계 사례에만 반영. API 키·유료 모델·새 서버 사용 없음.
