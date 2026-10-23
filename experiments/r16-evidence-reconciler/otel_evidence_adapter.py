@@ -38,10 +38,15 @@ def _attrs(items):
 
 
 def _time_ns(value):
-    if not isinstance(value, str) or not value.isdigit():
+    # OTLP fixed64 accepts JSON integers or decimal strings, never booleans.
+    # Bound strings before conversion to avoid Unicode/int-limit exceptions.
+    if type(value) is int:
+        number = value
+    elif isinstance(value, str) and 1 <= len(value) <= 20 and value.isascii() and value.isdigit():
+        number = int(value)
+    else:
         return None
-    number = int(value)
-    if number <= 0:
+    if not 0 < number <= 0xFFFFFFFFFFFFFFFF:
         return None
     return number
 
@@ -170,3 +175,4 @@ def adapt_otlp(payload, *, expected_run_id, expected_targets):
     result["tool_calls"] = calls
     result["reason"] = "OTLP span 형식·인과 연결 통과 · 원본 진위 미검증" if calls else result["reason"]
     return result
+
