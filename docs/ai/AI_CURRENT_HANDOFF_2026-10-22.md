@@ -1,5 +1,18 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-24 03:06 KST — R16 OTLP AnyValue 타입 혼동·비정상 입력 예외 수정
+- **새 실제 결함**: _attrs가 값 타입을 확인하지 않아 stringValue 배열/객체가 ai.evidence.target에 들어오면 TypeError, boolValue/intValue 문자열이 current_handoff 등 증거 대상 문자열로 통과. 여러 AnyValue variant를 동시에 넣어도 첫 문자열을 채택함. 실제 침해/공식 예약 인증 성공 사례 아님.
+- **공식 upstream 대조**: Apache-2.0 OpenTelemetry common.proto AnyValue oneof(string/bool/int64 등), 공식 common 규약과 대조. upstream common.proto blob d659c26a66da0c1234e951694924b12eb96bd0e0. https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/common/v1/common.proto
+- **TDD·최소 변경**: adapter 회귀 3개 추가, 수정 전 19건 실행 결과 4 failures/2 errors 재현. string/bool 타입 및 int64 범위 확인·intValue decimal 문자열을 실제 정수로 변환·알려진 oneof variant 중복 거부. unsupported variant는 증거로 사용하지 않음. 신규 테스트는 malformed 값, 중복 variant, 정상 bool/int64 속성과 기존 호출 보존을 검증.
+- **격리 원격 SHA**: 테스트 commit 872146e12d83f6c20ebdb69ae0896ef2bfc9cf80 / blob 8d7296906d28bf4d9cb8ca71c2e256865a638a77. 수정 commit fc0c10b1ee753ef4e52b93b07bc51698029c2474 / adapter blob 459d62f64677f5e924b287a63af1641f6a217975. 두 파일 원격 재조회 SHA가 로컬 Git blob과 일치.
+- **실제 검증**: 로컬 adapter 19/19 및 갱신된 전체 Python 95/95 통과. GitHub Actions https://github.com/watersun79-source/ai-token-optimization/actions/runs/40000509030 completed/success, head fc0c10b1ee753ef4e52b93b07bc51698029c2474, job 120575052734 모든 단계 success. 원시 로그 Python 95/95+2/2, JavaScript 12/12+20/20, Java 12/12+20/20 통과. 별도 리뷰 에이전트 읽기 검토에서 차단급 회귀 없음; 테스트/원격 SHA 재실행 없이 root의 원격 조회와 분리.
+- **다른 기여 보존**: 직전 task bidi/구분자 방어 변경 head 3dc0adb015ad682767dd02f12b15764a991406da / CI 40000185589 success 직접 확인. 해당 bot 코드/테스트를 덮어쓰지 않고 현재 전체 회귀에 포함.
+- **공식 예약 결과 귀속**: 읽기 전용 peek에서 03:00 KST 공식 회차 dbd09b73-6fd8-832f-b086-e0d5bf0217b6 completed, latest_result 동일 ID. 본문이 참조한 이전 CI 39999901160의 진행 중 상태는 당시 스냅샷; 현재는 failure이며 후속 40000185589 success와 구별. 공식 결과 제공은 확인됐지만 같은 회차 원시 GitHub/Slack tool-call ledger 미제공 → 무인 앱 호출 성공 미검증.
+- **교차/보호**: 지정 Slack 기존 기록 재조회, 인증 Activepieces 기억 인덱스 4건 읽기 완료. 현재 수동 점검의 정규 체크포인트 삽입 없음. main·예약 프롬프트/상태/일정/알림·운영 Activepieces·비밀/결제/유료 API 변경 없음.
+- **다음 목표**: 공식 동일 회차 원시 GitHub/Slack 호출 ledger가 지원 도구에 제공될 때만 검증. 이미 통과한 변경 없는 CI 반복 금지.
+
+---
+
 ## 2026-10-24 02:54 KST — R16 OTLP fixed64 timestamp 예외·범위 결함 수정
 - **공식 조사**: OpenTelemetry OTLP/JSON 규약의 fixed64 timestamp decimal-string/JSON integer 처리와 upstream opentelemetry-proto(실제 LICENSE Apache-2.0, blob 261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64)를 확인. 새 SDK 설치나 외부 LLM 호출 없음. https://opentelemetry.io/docs/specs/otlp/#json-protobuf-encoding
 - **실제 재현**: 기존 _time_ns는 superscript ² 및 5000자리 숫자 문자열에서 ValueError, uint64 초과값 허용, 정상 JSON 정수 시간값 거부. 기존 12개 adapter 검사에 회귀 4개 추가 후 로컬 RED(2 failures, 2 errors) 확인.
