@@ -1,5 +1,18 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-23 11:43 KST — 모든 이벤트 GitHub Actions·Checks 실제 재대조
+- **이 항목은 일반 ChatGPT 채팅 수동 읽기 전용 대조**. ChatGPT 기존 정규 예약이 자체 실행한 원본 증거가 아니다.
+- 기존 R16 `6acb017062a08191a4136238b78b313a`: `automations.peek` 원본 `is_enabled=true`, `paused_count=0`, 매시간 정각(Asia/Seoul), `last_run_time=2026-10-23T02:06:18.531665Z` (= **11:06:18 KST**), schedule/title/prompt/alerts/email 설정 변경하지 않음. 이 값만으로 실제 run 완료 시각·도구 실행 결과를 주장할 수 없음.
+- 이전 보고의 `fetch_commit_workflow_runs`는 PR 필터 + 첫 페이지이므로 `workflow_runs=[]`로 push 기반 CI의 부재를 확정할 수 없다는 문제를 **GitHub REST 전체 이벤트 조회**로 실제 해소: `GET /repos/watersun79-source/ai-token-optimization/actions/runs?per_page=100` → `total_count=94`, `main` 지정 → 37건, R16 기억 브랜치 → 5건, R16 격리 검사 브랜치 → 0건(이번 조회 시점, 저장소의 모든 워크플로우 실행을 뜻하는 단일 집계). 이전 Commit Status 0건과 GitHub Actions Checks는 별개.
+- **현재 `main` HEAD 원본** `GET /branches/main` → SHA **`e8600906eb31da2735108842752a93887791f0c5`**. 정확히 동일 SHA의 `push` Actions run **`39680499361`**, `completed / success`, `2026-10-21T21:39:03Z` (= **2026-10-22 06:39:03 KST**), 원본 `jobs` 1건 `test` success, `Python regression`, `Compare JavaScript validator`, `provider-free review metadata guard` 각 step success. 동일 SHA의 `check-runs` 1건 `test` success. **현재 main HEAD와 검증된 CI가 정확히 일치**.
+- **PR #1 병합 후**: Pull Request 원본 `merged=true`, merge SHA **`840e7142779d4a66938b334c71ca41f5a92e49b2`**, 2026-10-19T13:39:01Z. 같은 SHA `push` Actions run **`39261957043`**, `completed / success`, 실제 `test` job success, Python·JS 단계 success, `check-runs` 1건 success.
+- **PR #4 병합 후**: Pull Request 원본 `merged=true`, merge SHA **`297d1d2d52e213e0b3c93c93d74e322fb11e744b`**, 2026-10-19T13:39:32Z. 같은 SHA `push` Actions run **`39262028914`**, `completed / success`, 실제 `test` job success, Python·JS·provider-free guard 단계 success, `check-runs` 1건 success.
+- **현재 main에 두 병합 포함 독립 검증**: `compare/{PR#1 merge SHA}...main` → `status=ahead, ahead_by=6, behind_by=0, merge_base=PR#1 merge SHA`; `compare/{PR#4 merge SHA}...main` → `status=ahead, ahead_by=3, behind_by=0, merge_base=PR#4 merge SHA`. 두 병합 커밋 모두 현재 main의 조상임.
+- **R16 격리 검사 현재 CI와 혼동 금지**: `ai/r16-evidence-reconciler-2026-10-22` 브랜치의 GitHub Actions 0건. 이 브랜치의 최신 `Python unittest 43/43`는 사용자가 채팅에서 실행한 **수동 로컬 검증**이고, GitHub CI 통과는 직접 검증되지 않았음. R16 기억 브랜치 과거 5개 push CI success는 2026-10-21 커밋이며 **현재 기억 브랜치 HEAD의 CI 성공을 뜻하지 않음**.
+- **예약 무인 성공 별도 미검증**: ChatGPT 공식 개별 per-run ID/terminal status/동일 회차 GitHub·Slack 원본 도구 호출 ledger는 현재 연결 도구로 미제공. Activepieces 2026-10-23 감사 행 0, 11:00~11:45 지정 Slack 신규 기록은 채팅 수동 기록 외 독립 증거 확인 불가. 오프라인/CI 통과 ≠ 예약 무인 성공.
+- 원본 링크: [main HEAD Actions](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39680499361), [PR #1 병합 Actions](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39261957043), [PR #4 병합 Actions](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39262028914). GitHub main·Activepieces 운영 및 연결·기존 예약 설정·비용/비밀정보 변경 없음.
+---
+
 
 ## 2026-10-23 11:00 예약 메타 및 CI 조회 범위 정정 — 수동 읽기 전용 감사
 - 기존 유일 R16 예약 `6acb017062a08191a4136238b78b313a`를 `automations.peek`로 다시 조회: `is_enabled=true`, `paused_count=0`, Asia/Seoul 정각, `last_run_time=2026-10-23T02:06:18.531665Z` (=11:06:18 KST), 주기·제목·프롬프트·알림 불변. **정규 회차 공식 run ID·완료 상태·동일 회차 원시 GitHub/Slack 호출 로그는 미제공 → 무인 성공 미검증**.
