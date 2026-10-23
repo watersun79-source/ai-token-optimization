@@ -117,6 +117,22 @@ class AuditV2Tests(unittest.TestCase):
         self.assertEqual(r['status'],'미검증')
         self.assertIn('정각 슬롯',r['reason'])
 
+    def test_nano_fractional_slot_rejected(self):
+        p=self.make()
+        fractional='2026-10-22T22:00:00.000000001+09:00'
+        p['target_slot']=fractional
+        p['native_run']['scheduled_for']=fractional
+        r=check(p)
+        self.assertEqual(r['status'], '미검증')
+        self.assertIn('정각 슬롯', r['reason'])
+
+    def test_nano_fractional_native_slot_rejected(self):
+        p=self.make()
+        p['native_run']['scheduled_for']='2026-10-22T22:00:00.000000001+09:00'
+        r=check(p)
+        self.assertEqual(r['status'], '미검증')
+        self.assertIn('슬롯 불일치', r['reason'])
+
     def test_unhashable_target_does_not_crash(self):
         p=self.make()
         p['tool_calls'].insert(0,{'target': []})
