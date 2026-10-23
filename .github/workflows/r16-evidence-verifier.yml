@@ -45,5 +45,6 @@ jobs:
       - name: Compile and run independent Java timestamp oracle
         run: |
           mkdir -p /tmp/r16-polyglot-java
-          javac -encoding UTF-8 -d /tmp/r16-polyglot-java polyglot/R16TimeOrderCheck.java
+          javac -encoding UTF-8 -d /tmp/r16-polyglot-java polyglot/R16TimeOrderCheck.java polyglot/R16TimeOracle.java
           java -cp /tmp/r16-polyglot-java R16TimeOrderCheck fixtures/time_cases.tsv
+          java -cp /tmp/r16-polyglot-java R16TimeOracle polyglot/time_vectors.tsv
