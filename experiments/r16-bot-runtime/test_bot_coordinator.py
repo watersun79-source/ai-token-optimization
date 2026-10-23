@@ -11,6 +11,24 @@ class CoordinatorTests(unittest.TestCase):
     def test_build_selects_review_roles(self):
         self.assertEqual(select_roles("build"), ("research", "build", "verify"))
 
+    def test_missing_role_id_fails_closed(self):
+        import json
+        from bot_coordinator import verify_role_catalog
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "catalog.json"
+            path.write_text(json.dumps([{"id": "G01"}]))
+            with self.assertRaisesRegex(ValueError, "missing catalog role IDs"):
+                verify_role_catalog(path)
+
+    def test_duplicate_role_id_fails_closed(self):
+        import json
+        from bot_coordinator import verify_role_catalog
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "catalog.json"
+            path.write_text(json.dumps([{"id": "G01"}, {"id": "G01"}]))
+            with self.assertRaisesRegex(ValueError, "duplicate catalog role ID"):
+                verify_role_catalog(path)
+
     def test_unknown_goal_fails_closed(self):
         with self.assertRaises(ValueError):
             select_roles("other")
