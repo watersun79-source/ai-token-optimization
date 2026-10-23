@@ -1,5 +1,14 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-23 16:09 KST — R16 OpenTelemetry OTLP 호출 증거 연결 실제 구현
+- **새 결함 확인**: 격리 `audit_v2.py`는 OpenTelemetry tool span을 설계 근거로만 언급했고 실제 OTLP→검증기 `tool_calls` 어댑터가 없었다. 기존 CI path filter도 `triage_bot.py` 및 새 adapter 경로를 누락해 source-only 변경이 CI를 건너뛸 수 있었다.
+- **공식 규약 대조**: OpenTelemetry GenAI agent/tool span 규약(Development)의 `invoke_agent`, `execute_tool`, `gen_ai.operation.name`, `gen_ai.tool.name` 및 OTel trace/span ID·status 규칙을 사용. trace ID/span ID/`gen_ai.tool.call.id`를 ChatGPT 공식 scheduled run ID로 승격하지 않으며, arguments/result 원문은 민감 가능해 수집하지 않음.
+- **격리 최소 적용**: `otel_evidence_adapter.py` blob `5c458b778270da077cf31b8ff07bc14dc71c4c94`; `audit_v2.py` blob `64e7e3039005c3d0d86602e989bde932e96eecaa`; 테스트 blob `995792a9bff8bfb39408c6c85fe1ade74a9e116f`; workflow blob `92d349d4e312110154f6c5a96ed49c7d69ccdbc7`. 단일 run root, non-zero trace/span, 끊김 없는 부모 계보, root 시간창, INTERNAL execute_tool, OK status, 정확한 도구·locator·SHA/Slack ts를 확인한 뒤 기존 형식 게이트로 연결. 출력은 계속 **형식 통과·진위 미검증**.
+- **원격 독립 검증**: GitHub Actions [run 39915981921](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39915981921), head `ada144706220aed29df3eeaa6f21db2c42d1bfbc`, job/check `120289552532`, `completed/success`. 원시 로그: Python **83/83 + 2/2**, JS **20/20**, Java **12/12 + 20/20** PASS. 격리 README blob `9fcee538384205654fd6e34796350b5c464d2613` readback 대상.
+- **보호/한계**: 이번 검증은 합성 OTLP fixture와 GitHub CI이고 실제 ChatGPT Scheduled exporter 원본이 아님. 공식 개별 run ID와 같은 회차 GitHub·Slack 원시 호출 ledger가 미제공이므로 **정규 무인 성공 미검증**. GitHub main·기존 예약·운영 Activepieces·비밀/유료 API 변경 없음.
+
+---
+
 ## 2026-10-23 15:17 KST — ResearchBot Unicode Zl/Zp 다중 행 출처 이름 거부
 - 일반 사용자 채팅의 `다른 사람 오픈소스 + Python/Java/AI BOT 동원` 지시에 따른 **수동 격리 Research/Builder/Verifier 코드 보안 강화**. 현행 단일 R16 예약의 native 무인 회차 작업 증거로 취급하지 않음.
 - **참고 출처**: Unicode Core Specification U+2028 Line Separator와 U+2029 Paragraph Separator (General Category `Zl/Zp`), Python `unicodedata.category` 및 OWASP Secure Coding with AI/agent 간 불신 경계. SDK·LLM API/네트워크 모델 호출 없음.
