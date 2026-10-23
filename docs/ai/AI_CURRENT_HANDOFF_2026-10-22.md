@@ -1,5 +1,17 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-24 — OTLP Status.message 타입 검사 최소 수정 완료
+- **공식 upstream/라이선스**: OpenTelemetry trace.proto의 Status.message는 string(blob235b54e8e78b55f0bb4f3f1f43fc89bdda28b04c); LICENSE Apache-2.0(blob261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64). https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/trace/v1/trace.proto . ProtoJSON null은 미설정으로 허용: https://protobuf.dev/programming-guides/json/ . 새 패키지/상용 모델/유료 API 설치·호출 없음.
+- **재현/최소 수정**: 이전 `not status.get("message")`가 false/0/0.0/[]/{}를 빈 문자열처럼 받아 root·tool 증거 형식을 통과시킴. 신규3회귀의 malformed subcase10개 수정 전 실패. message가 None(누락/null) 또는 정확한 빈 문자열일 때만 기존 OK enum과 함께 허용. 비어 있지 않은 message 거부 유지; 전체 OTLP 스키마 검사/공식 원장 진위 인증으로 확대 주장하지 않음.
+- **격리 원격**: commit00facfbc9904fdee00b9375eec213c197a583bc1, 원격 compare1commit/2files. adapter blob73f9afeb25e74747021a661246eabfae5789fa78 / tests/test_otel_status_message.py blob8965dd5fc6b8aabe83ae04129ab63e3d599437a7. 두 파일 로컬 Git blob·원격 전체 문자열·SHA 일치, expected head lease로 갱신.
+- **검증 원본**: 로컬 Python127/127 및 공유2/2, JS12/12+20/20. Actions40017504707/job120633255774, head동일, attempt1 completed/success. 원시 로그 Python127+2, JS12+20, Java12+20 PASS. Java는 로컬 javac 부재로 원격실행만 확인. https://github.com/watersun79-source/ai-token-optimization/actions/runs/40017504707 . 불변 성공 CI 수동 재실행0.
+- **독립 검토/봇**: ChatGPT 내부 독립 검토자1명, Critical/Important 없음; 소규모 독립15입력/75assertions 통과 보고, 전체suite 중복 실행 없음. 로컬 Git 이력 미복원으로 검토자 exact baseline diff 미검증이나 총괄이 GitHub 원격 compare로 변경2파일 확인. Python ResearchBot→BuilderBot→VerifierBot 합성 empty/null은 target2, malformed false는 Slack target1만 남겨 READ_SAME_RUN_APP_CALLS, SAFE_UNVERIFIED/provider_calls0/official_success_verified=false. 외부 Gemini/Claude 실행 아님.
+- **공식 예약 최신 관찰 갱신**: read-only peek의 05:00 KST 예정 회차7c03102e-ca90-8333-b956-241ea1e6f796는 started2026-10-23T20:04:13.250098Z→completed20:05:03.506300Z. recorded_status completed, latest_result.run_id·scheduled_for·완료시각 일치, created_at은 시작 이후. 이전 본문 '진행 중'은 당시 서술이며 현재 완료 메타데이터로 갱신. 공식 실행 완료 확인과 같은회차 GitHub/Slack raw tool-call ledger 증명은 별개. raw ledger 미제공→무인 앱 호출 성공 미검증, delivery unknown.
+- **보호/다음 목표**: 기존 예약 활성·Asia/Seoul·매시간정각·설정/알림/main/운영Activepieces/감사원본 불변. 이번 수동 결과는 검색기억만 갱신하며 정규체크포인트 추가0. 남은 최우선은 공식 같은회차 원시 앱 호출 원장 제공 시 ID·시각·GitHub SHA·Slack ts 독립 대조; 전체 비소비 AnyValue 스키마 검증은 범위 밖.
+
+---
+
+
 ## 2026-10-24 05:03 KST — 최댓값 정각 슬롯 OverflowError 보강 완료
 - **실제 재현/공식 근거**: target_slot와 last_run_time이 9999-12-31T23:00:00Z이면 next-hour 덧셈이 검사기와 offline bot에서 OverflowError. Python 공식 datetime 문서의 지원 연도 범위/덧셈 overflow 규칙과 대조: https://docs.python.org/3/library/datetime.html . 신규 검사3개 중2개 수정 전 ERROR, 마지막 지원 가능22시 슬롯은 정상 증거 gate 도달.
 - **최소 변경**: 정각/시간대 검증 뒤 slot_end를 한 번 계산. OverflowError는 구조화된 미검증 결과로 반환하고, 정상 slot_end를 metadata/native window 양쪽에 재사용. 기존 시간창 검증 약화 없음. commit40b5746aa4d286b056e7e463d53949e1ae4bb433, compare1commit/2files만. audit_v2.py blob e1ab741920f8c1a90b5d5293dd8415f4c0ce2ef5 / tests/test_slot_overflow.py blob44d1658f5e33a5ed6b317a71c9c59d589794aa78. 원격 전체 소스 문자열과 SHA 재조회 일치.
