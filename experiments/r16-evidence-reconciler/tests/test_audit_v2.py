@@ -167,4 +167,34 @@ class AuditV2Tests(unittest.TestCase):
         self.assertEqual(r['status'],'미검증')
         self.assertIn('1024건 초과',r['reason'])
 
+
+    def test_nanosecond_late_tool_call_rejected(self):
+        p=self.make()
+        p['native_run']['completed_at']='2026-10-22T22:02:30.000000100+09:00'
+        p['tool_calls'][1]['observed_at']='2026-10-22T22:02:30.000000900+09:00'
+        r=check(p)
+        self.assertEqual(r['status'],'미검증')
+        self.assertIn('slack_thread',r['missing'])
+
+    def test_nanosecond_reverse_native_start_end_rejected(self):
+        p=self.make()
+        p['native_run']['started_at']='2026-10-22T22:02:00.000000900+09:00'
+        p['native_run']['completed_at']='2026-10-22T22:02:00.000000100+09:00'
+        self.assertIn('시각 불일치',check(p)['reason'])
+
+    def test_nanosecond_in_range_tool_call_accepted_format_only(self):
+        p=self.make()
+        p['native_run']['completed_at']='2026-10-22T22:02:30.000000100+09:00'
+        p['tool_calls'][1]['observed_at']='2026-10-22T22:02:30.000000050+09:00'
+        r=check(p)
+        self.assertTrue(r['status'].startswith('형식 통과'))
+        self.assertIs(r['official_success_verified'],False)
+
+    def test_more_than_nine_fractional_digits_rejected(self):
+        p=self.make()
+        p['tool_calls'][0]['observed_at']='2026-10-22T22:02:00.0000000001+09:00'
+        r=check(p)
+        self.assertEqual(r['status'],'미검증')
+        self.assertIn('current_handoff',r['missing'])
+
 if __name__=='__main__':unittest.main()
