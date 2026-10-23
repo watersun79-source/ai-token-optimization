@@ -1,5 +1,17 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-24 06:38 KST — v4 엄격 시간 규칙과 격리 검사기 불일치 수정 완료
+- **새 결함·재현**: 최신 v4 ZIP의 strict UTC-offset 규칙과 실제 GitHub audit_v2.py를 대조. Python fromisoformat이 +08:60/-00:60을 정상 오프셋으로 보정하여 잘못된 native 시작·tool 관찰 시각도 형식 통과시킴. last_run_time은 공백/소문자 t/10자리 소수초를 수용. 신규4회귀에서 수정 전7실패 subcase 확인.
+- **최소 수정**: 공통 parsed_time에 기존 AUDIT_TIME 전체일치(ASCII·소수초1~9자리)와 오프셋 분<=59 검증을 적용. 나노초 나머지·정상 offset 동치·±18:00·기존 OTLP/native 시간창·진위 미인증 유지. 새 공유 fixture5개 추가. 외부 새 패키지/유료 API0. v4 ZIP 자체와 예약 프롬프트/설정 변경0.
+- **공식·선행 구현**: 기존 v4 Python/Java/JS 소스와 GitHub 격리 guard/java.time 설계를 재사용. Python datetime: https://docs.python.org/3/library/datetime.html ; Java ZoneOffset 범위·파싱: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/time/ZoneOffset.html . 외부 라이브러리 설치·복제 없음, 표준 라이브러리만 사용.
+- **격리 원격**: commit8833ad690cced97aee552c877f0e5f311bcc09ba, compare1commit/3files. audit blob824c6843c37c3932528c986a88b4286bf7288402 / fixtures49488b519f8a847a95ab5771253e86e6c78e7d1c / testsb9d09666f27ffb3a7b1fb5d3828e9f2bd59428d3. 각 원격 전체문자열·SHA와 로컬 Git blob 일치. expected-head lease로 격리 branch만 갱신.
+- **실제 검증**: 로컬 Python131+2, JS12+25 PASS. Actions40028121133/job120669319386/head동일/attempt1 completed success; 원시 로그 Python131+2, JS12+25, Java12+25 PASS. Java는 로컬 javac 부재로 원격 실행만 확인. https://github.com/watersun79-source/ai-token-optimization/actions/runs/40028121133 . 새 변경의 기존 자동 CI이며 불변 합격 수동 반복0.
+- **독립 검토·BOT**: 별도 제한 맥락 ChatGPT 검토자1명은 변경3파일을 검토하고 offset 전범위·OTLP 생성 경계·소비자 소규모 재현 4,813 assertions PASS 보고, Critical/Important/Minor 없음. root는 원격 compare·SHA·CI raw logs 별도 확인. Python ResearchBot→BuilderBot→VerifierBot 실실행에 공식06시 완료 메타데이터를 전달했으나 원시 앱 원장 없으므로 target0/READ_SAME_RUN_APP_CALLS/exit2/SAFE_UNVERIFIED/provider_calls0/official_success_verified=false. 외부 Gemini/Claude·독립 생성형 모델100개 실행 아님.
+- **정규 회차·기억 구분**: peek 공식06시 예정 dbb75293-2a68-832a-9d6b-adc183fd3857는 2026-10-23T21:03:10.036785Z 시작→21:04:34.953079Z 완료, resultID·scheduled_for 일치. 과거 본문 '진행 중'은 당시 서술. 기존 예약 활성·Asia/Seoul·정각 및 v4 지침 확인. AP 감사테이블21건, 2026-10-24 슬롯검색0건; 수동검증을 정규체크포인트로 쓰지 않음. 같은회차 원시 앱 호출 ledger 미제공→무인 GitHub/Slack 성공 미검증, delivery unknown.
+- **보호·다음**: main은 e8600906eb31da2735108842752a93887791f0c5로 전후 동일. 기존 예약 프롬프트·일정·활성·알림, 운영Activepieces flow/연결, 감사원본 변경0. 수동 결과는 지정 기억/Slack에 최소 기록. 다음 최우선은 공식 same-run 원장 제공 시 회차ID·시각·GitHubSHA·Slackts 독립 대조. 새 원본/결함 없이 합격 검사 반복 금지.
+
+---
+
 ## 2026-10-24 — OTLP Status.message 타입 검사 최소 수정 완료
 - **공식 upstream/라이선스**: OpenTelemetry trace.proto의 Status.message는 string(blob235b54e8e78b55f0bb4f3f1f43fc89bdda28b04c); LICENSE Apache-2.0(blob261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64). https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/trace/v1/trace.proto . ProtoJSON null은 미설정으로 허용: https://protobuf.dev/programming-guides/json/ . 새 패키지/상용 모델/유료 API 설치·호출 없음.
 - **재현/최소 수정**: 이전 `not status.get("message")`가 false/0/0.0/[]/{}를 빈 문자열처럼 받아 root·tool 증거 형식을 통과시킴. 신규3회귀의 malformed subcase10개 수정 전 실패. message가 None(누락/null) 또는 정확한 빈 문자열일 때만 기존 OK enum과 함께 허용. 비어 있지 않은 message 거부 유지; 전체 OTLP 스키마 검사/공식 원장 진위 인증으로 확대 주장하지 않음.
