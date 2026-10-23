@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import unicodedata
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -68,7 +69,7 @@ class ResearchBot:
             url = ref.get("url")
             if (isinstance(name, str) and 1 <= len(name) <= 100
                     and name == name.strip()
-                    and not any(ord(c) < 32 or ord(c) == 127 for c in name)
+                    and not any(unicodedata.category(c).startswith('C') for c in name)
                     and _safe_reference_url(url) and url not in seen):
                 accepted.append({"name": name, "url": url})
                 seen.add(url)
