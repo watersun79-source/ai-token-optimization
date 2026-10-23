@@ -8,6 +8,8 @@ on:
       - .github/workflows/r16-evidence-verifier.yml
       - experiments/r16-evidence-reconciler/audit_v2.py
       - experiments/r16-evidence-reconciler/bot_team_r16.py
+      - experiments/r16-evidence-reconciler/triage_bot.py
+      - experiments/r16-evidence-reconciler/otel_evidence_adapter.py
       - experiments/r16-evidence-reconciler/activepieces_mock_guard_2026-10-23.js
       - experiments/r16-evidence-reconciler/tests/**
       - experiments/r16-evidence-reconciler/polyglot/**
