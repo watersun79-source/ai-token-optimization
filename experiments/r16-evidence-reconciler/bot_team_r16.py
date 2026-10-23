@@ -116,8 +116,10 @@ def collaborate(payload: Any) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError("input must be a JSON object")
     task = payload.get("task")
-    if not isinstance(task, str) or not task.strip() or len(task) > 2000:
-        raise ValueError("task must contain 1-2000 characters")
+    if (not isinstance(task, str) or not task.strip() or len(task) > 2000
+            or any(unicodedata.category(c).startswith("C") or
+                   unicodedata.category(c) in ("Zl", "Zp") for c in task)):
+        raise ValueError("task must contain 1-2000 visible characters")
     research = ResearchBot().run(payload)
     # Explicitly pass only expected fields; injected success flags are ignored.
     evidence = payload.get("evidence", {})
