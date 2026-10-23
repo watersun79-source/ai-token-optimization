@@ -109,3 +109,12 @@
 - ChatGPT 기존 AI 예약 ID `6acb017062a08191a4136238b78b313a` 읽기 전용 `automations.peek`: `is_enabled=true`, `paused_count=0`, `last_run_time=2026-10-23T01:00:54.365515Z` (=10:00:54 KST), Asia/Seoul 정각 유지. 예약 종료 성공 또는 네이티브 개별 회차/앱 호출 증거가 아님. 별도 Activepieces AUDIT 10/23 기록 `count=0`.
 - 예약 ID·프롬프트·주기·알림/기존 운영 Activepieces flow/연결·GitHub main·비밀/유료 모델 API 변경 없음. **정규 ChatGPT 무인 GitHub/Slack 성공: 미검증**.
 - **다음 목표**: 공식 ChatGPT `Scheduled → AI → Previous runs`의 개별 회차 원본 및 같은 회차 앱 호출 감사 로그를 실제 제공 가능한 권한 있는 도구로 확보할 수 있을 때만 검증. 기존 예약/운영 플로우 쓰기·권한 우회 금지.
+
+
+## 2026-10-23 10:21 KST — 다음 정각 종료 경계 일치
+- 사용자 일반 채팅의 수동 격리 검사이며, **ChatGPT R16 실제 무인 예약 결과가 아님**.
+- GitHub 최신 Python `audit_v2.py` blob `70683e029c525462a55f013701be1e806e6b1e2d`는 공식 회차 시작·종료가 `target <= start <= end <= target + 1 hour`이면 **일단 입력 형식만 일치**로 취급한다. 실제 원격 Python과 Git blob SHA가 같은 로컬 파일로 동일 모의 입력 검사 → `형식 통과 · 진위 미검증`, `official_success_verified=false`.
+- 격리 Activepieces JS는 이전에 `end < slot + 1 hour`로 검사해 종료 시각이 정확히 다음 정각인 동일 모의 입력을 거부. **패치 전 직접 Activepieces TESTING** run `4VDnVPPKRaVvlpDhfQnWX`: `Run timestamps inconsistent`.
+- **최소 수정**: 비활성·미게시 R16 MOCK ONLY flow `zgSopq6Txh68wxsDc5K5Z`의 CODE step 종료 경계 `end <= slot + 3600000000000n`로 조정, Python과 동기화. 나노초 BigInt 정밀도·일부만 맞춘 호출 로그 거부·`UNVERIFIED` 정책 유지.
+- **수정 후 실제 테스트 4/4**: 정확히 다음 정각에 종료 `xmIcVTEjePms5okYRmYPM` ⇒ 형식만 PASS, 경계 1ns 전 `XrUFMiKfToISQWUJHRNKr` ⇒ 형식만 PASS, 경계 1ns 후 `A8LyP62BssgPzvoK4CUMB` ⇒ 거부, 공식 native run 누락 `Qza2RyENPtecV2kXX8ovo` ⇒ 거부. `ap_test_flow` 뒤 모두 별도로 `ap_get_run` 원본 STEP 결과 읽음, 4회 `environment=TESTING`/status=`SUCCEEDED`, 그러나 출력 `status=UNVERIFIED`, `official_success_verified=false`, `external_calls=0` 불변.
+- GitHub 실제 JS 격리 파일 소스는 Activepieces 코드와 exact match로 갱신(원격 blob SHA `b378e7640a03b60ea86400e7d4c47602b27386fe`, commit `1314e73fcdfede591d9e939ee035a21d30099a53`). 정규 R16 예약/운영 플로우/GitHub main/유료 API는 변경 없음. **정규 무인 GitHub·Slack 성공 미검증**.
