@@ -55,7 +55,7 @@ jobs:
       - name: Run actual JavaScript mock guard against shared fixtures
         run: node --test polyglot/test_activepieces_guard.mjs
       - name: Run existing 15-case JavaScript cross-check
-        run: node --experimental-default-type=module polyglot/check_js.mjs fixtures/time_cases.tsv
+        run: node polyglot/check_js.mjs fixtures/time_cases.tsv
       - name: Run independent Java nanosecond time oracle
         run: |
           mkdir -p "$RUNNER_TEMP/r16-java"
