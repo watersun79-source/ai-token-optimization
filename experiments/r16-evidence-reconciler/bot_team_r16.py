@@ -72,7 +72,7 @@ class VerifierBot:
             and builder.get("provider_calls") == 0
             and audit.get("official_success_verified") is False
         )
-        return {"role": "VerifierBot", "policy_checks": "PASS" if safe else "BLOCK",
+        return {"role": "VerifierBot", "policy_checks": "SAFE_UNVERIFIED" if safe else "BLOCK",
                 "native_run_authenticated": False,
                 "official_success_verified": False,
                 "scope": "OFFLINE_FORMAT_AND_POLICY_ONLY"}
