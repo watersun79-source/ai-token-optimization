@@ -61,3 +61,50 @@ jobs:
       - name: Verify receipt and never claim native ChatGPT automation proof
         run: |
           python -c 'import json; from pathlib import Path; p=Path(".hourly_audit_state/background_latest.json"); d=json.loads(p.read_text()); assert d["status"] == "PASS"; assert d["cycle"] == 1; assert d["kind"] == "OFFLINE_BACKGROUND_LOOP_NOT_NATIVE_RESERVATION"; assert d["official_unattended_app_call_success"] == "UNVERIFIED"; print("R16_HOURLY_OFFLINE_RECEIPT_VALIDATED")'
+
+      - name: Report audit provenance in GitHub summary
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          def read_json(path):
+              try:
+                  return json.loads(Path(path).read_text(encoding="utf-8"))
+              except (OSError, ValueError):
+                  return {}
+
+          rules = read_json("summary_v6.json")
+          audit = read_json(".hourly_audit_state/background_latest.json")
+          statuses = rules.get("statuses", {})
+          checked_sha = subprocess.run(
+              ["git", "rev-parse", "HEAD"], text=True,
+              capture_output=True, check=False,
+          ).stdout.strip() or "UNVERIFIED"
+          event = os.environ.get("GITHUB_EVENT_NAME", "unknown")
+          lines = [
+              "## AI R16 — 자동 검사 결과",
+              "",
+              "| 항목 | 검증 결과 |",
+              "|---|---|",
+              f"| GitHub 실행 ID | \`{os.environ.get('GITHUB_RUN_ID', 'unknown')}\` |",
+              f"| 실행 방식 | \`{event}\` ({'정기 예약' if event == 'schedule' else '비정기 실행'}) |",
+              f"| 워크플로 커밋 | \`{os.environ.get('GITHUB_SHA', 'unknown')}\` |",
+              f"| 검사한 코드 커밋 | \`{checked_sha}\` |",
+              f"| 규칙 100개 | PASS {statuses.get('PASS', '미확인')}, UNVERIFIED {statuses.get('UNVERIFIED', '미확인')} |",
+              f"| 오프라인 감사 실행 | \`{audit.get('status', '미확인')}\` / {audit.get('cycle', '미확인')}회 |",
+              "| ChatGPT 원본 예약 앱 호출 증명 | 미검증 (이 작업은 GitHub 오프라인 감사) |",
+              "",
+              "정기 예약은 매시간 15분으로 등록돼 있지만 실행 시각은 GitHub 사정에 따라 달라질 수 있어.",
+              "",
+          ]
+          report = "\n".join(lines)
+          dest = os.environ.get("GITHUB_STEP_SUMMARY")
+          if dest:
+              with open(dest, "a", encoding="utf-8") as stream:
+                  stream.write(report + "\n")
+          print("R16_AUDIT_SUMMARY_WRITTEN")
+          PY
