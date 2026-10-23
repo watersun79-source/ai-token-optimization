@@ -1,5 +1,6 @@
 """Isolated, free, offline R16 BOT supervisor. No provider APIs or writes outside state dir."""
 import argparse
+import fcntl  # Unix/Linux worker: non-blocking advisory process lock
 from datetime import datetime, timezone
 import json
 import os
@@ -12,7 +13,25 @@ ROOT = Path(__file__).resolve().parent
 
 
 def run_once(state_dir: Path, *, script=ROOT / "batch_validate_100.py", timeout=120):
+    """Run at most one check per state directory (Linux/Unix workers only)."""
     state_dir.mkdir(parents=True, exist_ok=True)
+    # flock releases automatically when the owning process closes or crashes.
+    # O_NOFOLLOW prevents a pre-existing lock-file symlink redirection.
+    fd = os.open(state_dir / ".supervisor.lock",
+                 os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    try:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            # Do not overwrite latest.json with the status of a skipped run.
+            return {"status": "BUSY", "reason": "another_check_is_running",
+                    "kind": "OFFLINE_LOCAL_CHECK_NOT_SCHEDULED_APP_PROOF"}
+        return _run_once_locked(state_dir, script=script, timeout=timeout)
+    finally:
+        os.close(fd)
+
+
+def _run_once_locked(state_dir: Path, *, script, timeout):
     started = datetime.now(timezone.utc).isoformat()
     try:
         proc = subprocess.run([sys.executable, str(script)], cwd=ROOT,
