@@ -22,6 +22,8 @@ def _attrs(items):
     for item in items:
         if not isinstance(item, dict) or not isinstance(item.get("key"), str):
             continue
+        if item["key"] in out:
+            return {}  # Fail closed on duplicate OTLP attribute keys.
         value = item.get("value")
         if not isinstance(value, dict):
             continue
