@@ -1,5 +1,16 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-23 10시대 — Python 나노초 정확도 오류 2개 수정, JS 독립 교차 검증
+- **사용자의 일반 채팅 '실행' 요청에 따른 수동 격리 수정**, 기존 정규 예약의 무인 성공 증거가 아님.
+- `automations.peek`: 단일 기존 R16 ID `6acb017062a08191a4136238b78b313a`, `is_enabled=true`, Asia/Seoul 매시간 정각, `last_run_time=2026-10-23T01:00:54.365515Z` (=10:00:54 KST). 일시정지 0, ID/일정/프롬프트/알림 수정 없음. 10:00 이후 기존 기억·격리 GitHub 커밋 조회(당시) 0, 지정 Slack 스레드 신규 0, Activepieces 오늘 AUDIT 기록 0; 수동/자동 원시 조회 부재로 무인 성공은 계속 미검증.
+- **Python 독립 테스트 신규 오류 발견**: `datetime.fromisoformat`은 소수초가 6자리보다 길 때 나머지를 자를 수 있어, `2026-10-22T22:00:00.000000001+09:00` (실제로는 정각 +1나노초)을 정각으로 오판. `target_slot`과 `native_run.scheduled_for` 두 경로에서 실제 원격 버전의 모의 입력을 `형식 통과`로 잘못 판정함. 추가한 두 회귀 테스트가 패치 전 **2/2 실패**.
+- **격리 Python 수정**: 문자열 단계의 엄격한 `EXACT_HOUR` (`(?:\\.0+)?`만 허용) 검사를 두 슬롯에 추가. 기존 테스트 포함 Python unittest **39/39 PASS**, 정상 정각의 `.000000000`은 유지하며 미인증 결과는 항상 `official_success_verified=false`. 최신 GitHub `audit_v2.py` blob **`70683e029c525462a55f013701be1e806e6b1e2d`** commit `c8aff856012d29c05cac490c41bff5873f9340aa`, `tests/test_audit_v2.py` blob **`0bf74ed8b5da2abb95f61ef619cc393b04ef583c`** commit `7259b10cade177bdd88a53288ecb0da5a10583fe`; GitHub 원격 fetch read-back exact 일치.
+- **JS 동시 변경 보호 및 독립 교차 확인**: 별도 10:06 KST GitHub 커밋 `dd756f0c03482b73e8a718663acc79303ee7f1b9`가 격리 Activepieces JS의 시각 계산을 `BigInt` 나노초로 변경했음. 정규 예약과의 인과관계 증거 없음. 이미 반영된 코드를 **덮어쓰지 않고** Activepieces `ap_read_step_code`와 GitHub 코드 blob `d98d9842191e4e17753c56620800c7eca541e0b9`의 정확한 일치 확인. `ap_test_flow`+ `ap_get_run` 3건: 정상 정각 `CioiC4q4xgLiliQPZ4tw8` 형식만 통과, 나노초 오류 타깃 슬롯 `XgL5fenmcFYHEb4RoT4YP` 거부, 나노초 오류 공식 슬롯 `PNo2qepQawJwgrKDTnJAi` 거부. 모두 테스트 환경 `SUCCEEDED`이지만 **`status=UNVERIFIED`, `official_success_verified=false`, `external_calls=0`**.
+- Activepieces 격리 MOCK flow `zgSopq6Txh68wxsDc5K5Z`는 여전히 DISABLED/unpublished, 기존 운영 Slack flow `vtRwEYmcwDTunBZut265G` 보호. GitHub `main`, 유료 API·결제, 원래 예약 프롬프트/주기/알림 쓰기 없음.
+- **다음 유일한 무인 완료 목표**: ChatGPT 플랫폼 공식 per-run ID + 같은 회차의 실제 GitHub·Slack 원시 tool-call ledger 확보. 현재 도구에 없는 실행 원본의 출처를 문서/모의 자료로 만들어내지 말 것.
+
+---
+
 ## 2026-10-23 오전 09시대 수동 R16 격리 검증기 JS/Python 불일치 2건 수정
 - 실제 Activepieces 격리 flow `zgSopq6Txh68wxsDc5K5Z`의 CODE step과 GitHub Python `audit_v2.py` 형식 검사 기준을 직접 대조해 **두 가지 재현 가능한 결함** 발견: JS는 16개 초과 도구 호출 전체 거부(반면 Python 1024개 허용), 예약 정각의 `.500`초도 허용(반면 Python 거부).
 - Activepieces `TESTING` 사전 재현 원본 run `Cu3LhqTJjKWmUW6Hmgs3h`(17건 오거부), `mZWYX0E1gvuqK7pM9eMgv`(`.500`초 오통과). 실제 기존 플로우가 아닌 **비활성·미게시·MOCK ONLY** 검증기에서만 수정.
