@@ -17,6 +17,19 @@ def main():
     installed={p.name for p in bindir.glob('ai-bot-*')}
     expected={'ai-bot-'+i for i in ids}
     if installed!=expected:raise RuntimeError('CLI wrapper install mismatch')
+    # Verify actual wrapper bytes, not only filenames: fail closed on tampering.
+    for bot_id in ids:
+        wrapper=bindir/('ai-bot-'+bot_id)
+        expected_source=('''#!/usr/bin/env python3
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from runner import main
+if __name__ == '__main__':
+    raise SystemExit(main(['--bot', 'BOT_ID', *sys.argv[1:]]))
+''').replace('BOT_ID',bot_id).encode('utf8')
+        if wrapper.is_symlink() or not wrapper.is_file() or wrapper.read_bytes()!=expected_source:
+            raise RuntimeError('CLI wrapper content mismatch: '+bot_id)
     checked={}
     for fn in ('runner.py','catalog.json','evidence.json','runtime_proof.json','test_runtime.py',
                'UtcStrictOracle.java','utc_strict_oracle.js','measure_runtime.py','utc_strict_oracle_cases.tsv'):
