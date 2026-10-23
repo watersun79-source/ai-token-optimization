@@ -1,5 +1,16 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-24 04:51 KST — 독립 검토2개로 발견한 OTLP 후보 선택 회귀 수정
+- **실제 AI 검토 실행**: ChatGPT 내부 독립 하위 에이전트2개를 별도 제한 맥락으로 실행. review_run_binding은 회차·시간·봇 소비, review_otlp_parser는 파서·ID·중복·입력형식을 읽기 전용 검토. 외부 Gemini/Claude 호출로 표현하지 않음. 두 검토자는 코드 변경·패키지 설치·불변 합격 전체 테스트 재실행을 하지 않았고 새 소규모 재현만 수행.
+- **Important 후속 회귀**: 앞선 native 시작 시각 검사 추가 뒤, adapter가 같은 target의 첫 structurally-valid span만 남기고 후속 후보를 버림. 첫 호출이 native시작-1ns이고 뒤 호출은 정상일 때 인계가 누락되며, 입력 순서만 바꾸면 형식 통과. 파서 검토자가 발견하고 회차 검토자·root가 각각 독립 재현. 잘못된 성공 승격이 아니라 정상 증거 누락/불필요한 재조회라는 실제 false-negative.
+- **최소 수정/TDD**: audit_v2가 시간·회차 검증 후 최종 target을 고르도록 adapter의 성급한 target dedup만 제거. 구조상 유효한 모든 후보를 전달하며 기존 trace/span 중복 거부·native interval·1024-call 보수적 상한 유지. 신규2회귀 RED2실패→기존119+신규2=121/121 통과. 독립 회차 검토자 후속 재현에서 양 순서 모두 후보3개·필수target2개·official_success_verified=false·정상 다음목표 확인. 전체 스키마/진위 인증으로 확대 주장하지 않음.
+- **격리 소스**: [commit81801b6fb1e61b7209aaaa2e1aa2c592a05ad6a6](https://github.com/watersun79-source/ai-token-optimization/commit/81801b6fb1e61b7209aaaa2e1aa2c592a05ad6a6). adapter blob1497d0245fbba5ab32697fca894218ddaba44562 / tests/test_otel_native_window.py blob5e1a20470d667a83cedd0024516dddfff941f72f. 로컬 Git blob·원격 전체 문자열·SHA 일치. compare1commit/2files만 확인. head lease로 동시 변경 보호.
+- **원격 CI 원본**: [Actions40014573154](https://github.com/watersun79-source/ai-token-optimization/actions/runs/40014573154), job120623212828, head동일, attempt1/completed success. 원시 로그 Python121/121+2/2, JS12/12+20/20, Java12/12+20/20 PASS. 새 수정 자동 CI이며 불변 합격 수동 재실행 아님. 로컬 javac 없음, Java는 원격 실실행으로 확인.
+- **경미/후순위2범주 기록**: (1) target_slot/last_run_time=9999-12-31T23:00:00Z에서 next-hour 덧셈 OverflowError: 현재 회차와 무관한 극단 경계 입력, 별도 보강 후보. (2) 소비하지 않는 AnyValue variant 및 falsey Status.message의 완전한 스키마 타입 검사는 미구현: 현재 도구는 소비 증거 필드의 의미·상관관계 검사이며 전체 OTLP schema validator가 아님. 두 항목은 진위 인증 우회가 아니고 이번 중요한 실제 후속 회귀 수정과 구분하여 기록. 외부 source 범위는 OpenTelemetry 공식 trace.proto/common.proto/OTLP JSON, 새로운 유료 도구·패키지 없음.
+- **예약/보호/다음**: 읽기 전용 peek에서 기존 활성·동일04시 예정 공식회차0069f41c-aa14-8326-bc52-072b94e7ef56 completed/result ID일치. raw same-run 앱 호출 ledger 미제공→예약 무인 성공 미검증 유지. main·예약 설정/활성/일정/프롬프트/알림·운영 Activepieces 흐름/연결·감사 원본 불변, 수동 결과는 검색 기억만 갱신하며 정규 체크포인트 추가0. 다음 최우선은 공식 같은 회차 원시 호출 원장 제공 시 독립 대조. 후순위 입력 보강은 위2범주로 한정.
+
+---
+
 ## 2026-10-24 04:38 KST — OTLP 호출 시작 시각과 공식 회차 시간창 연결 누락 수정
 - **공식 구현/비용**: OpenTelemetry Apache-2.0 [trace.proto](https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/trace/v1/trace.proto) blob235b54e8e78b55f0bb4f3f1f43fc89bdda28b04c에서 span 시작·종료가 별도의 나노초 필드임을 직접 대조. 해당 필드와 기존 Python parsed_time_ns 구현을 재사용. R16의 '동일 공식 회차 안의 호출' 정책을 검증하는 수정이며, 모든 OTel span이 임의 외부 시간창 안에 있어야 한다는 일반 규격으로 주장하지 않음. 새 외부 패키지·유료 API 없음.
 - **실제 새 결함/TDD**: adapter가 시작 시각을 버리고 observed_at(종료)만 전달해, 공식 native 시작1ns 전에 시작한 tool도 종료가 회차 안이면 형식 통과. 신규3회귀에서 RED3실패 재현: native 경계 -1ns/+0ns, native 자체 submicrosecond 정밀도, Python3역할봇 소비 경로.
