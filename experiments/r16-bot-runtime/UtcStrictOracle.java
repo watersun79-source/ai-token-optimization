@@ -14,8 +14,12 @@ public class UtcStrictOracle {
     } catch(Exception e) {return false;}
   }
   public static void main(String[] a)throws Exception{
-    int n=0; for(String line:Files.readAllLines(Paths.get("utc_strict_oracle_cases.tsv")).subList(1,21)){
-      String[] fields=line.split("\t"); boolean ok=valid(fields[0]);
+    var lines=Files.readAllLines(Paths.get("utc_strict_oracle_cases.tsv"));
+    if(lines.size()<2)throw new IllegalArgumentException("No timestamp cases supplied");
+    int n=0; for(String line:lines.subList(1,lines.size())){
+      String[] fields=line.split("\t",-1);
+      if(fields.length!=2)throw new IllegalArgumentException("Malformed case "+(n+1));
+      boolean ok=valid(fields[0]);
       if(!fields[1].equals(ok?"PASS":"FAIL")) throw new RuntimeException("mismatch case "+(n+1)+" "+fields[0]);n++;
     }
     System.out.println("Java strict timestamp oracle: PASS "+n+"/"+n);
