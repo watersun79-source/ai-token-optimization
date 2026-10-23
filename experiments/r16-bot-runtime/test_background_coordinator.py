@@ -45,6 +45,24 @@ class BackgroundCoordinatorTests(unittest.TestCase):
             payload = json.loads((Path(tmp) / "background_latest.json").read_text())
             self.assertEqual(payload["cycle"], 2)
 
+    def test_selected_rule_counts_preserved_in_local_receipt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            def inspected(goal, state_dir):
+                return {
+                    "status": "PASS",
+                    "executed_selected_rule_checks": 20,
+                    "selected_statuses": {"PASS": 10, "UNVERIFIED": 10},
+                    "selected_outcome": "UNVERIFIED",
+                }
+            result = run_loop("audit", Path(tmp), max_runs=1,
+                              dispatch_fn=inspected, emit_fn=lambda _: None)
+            self.assertEqual(result["status"], "PASS")
+            receipt = json.loads((Path(tmp) / "background_latest.json").read_text())
+            self.assertEqual(receipt["executed_selected_rule_checks"], 20)
+            self.assertEqual(receipt["selected_statuses"]["UNVERIFIED"], 10)
+            self.assertEqual(receipt["selected_outcome"], "UNVERIFIED")
+            self.assertEqual(receipt["official_unattended_app_call_success"], "UNVERIFIED")
+
     def test_failure_never_becomes_success(self):
         with tempfile.TemporaryDirectory() as tmp:
             calls = iter([{"status": "ERROR"}, {"status": "PASS"}])
