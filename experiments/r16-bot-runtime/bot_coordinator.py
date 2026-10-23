@@ -1,10 +1,12 @@
 """Offline role routing for scheduled R16 checks; no remote or LLM calls."""
 import argparse
+from collections import Counter
 from datetime import datetime, timezone
 import json
 from pathlib import Path
 
 from supervisor import run_once
+from runner import validate, ROOT as RUNTIME_ROOT
 
 ROLES = {
     "research": ("O01", "O02", "O03", "O04", "O05", "O06", "O07", "O08", "O09", "O10"),
@@ -40,19 +42,81 @@ def verify_role_catalog(catalog_path: Path):
     return True
 
 
+def evaluate_selected_rules(goal: str, *, catalog=None, evidence=None):
+    """Execute only selected rule IDs with the existing offline validator.
+
+    PASS means snapshot values matched, not real provider authentication.
+    """
+    roles = select_roles(goal)
+    if catalog is None:
+        catalog = json.loads((RUNTIME_ROOT / "catalog.json").read_text(encoding="utf-8"))
+    if evidence is None:
+        evidence = json.loads((RUNTIME_ROOT / "evidence.json").read_text(encoding="utf-8"))
+    if not isinstance(catalog, list) or not isinstance(evidence, dict):
+        raise ValueError("catalog/evidence must be list/object")
+    ids = [row["id"] for row in catalog]
+    if len(ids) != len(set(ids)):
+        raise ValueError("duplicate catalog role ID")
+    index = {row["id"]: row for row in catalog}
+    selected_ids = [rule_id for role in roles for rule_id in ROLES[role]]
+    if len(selected_ids) != len(set(selected_ids)):
+        raise ValueError("duplicate selected rule ID")
+    if any(rule_id not in index for rule_id in selected_ids):
+        raise ValueError("selected rule ID missing from catalog")
+    results = [validate(index[rule_id], evidence) for rule_id in selected_ids]
+    if any(item.get("id") != selected_ids[i] or
+           item.get("status") not in ("PASS", "FAIL", "UNVERIFIED", "ERROR")
+           for i, item in enumerate(results)):
+        raise ValueError("invalid rule result")
+    statuses = Counter(item["status"] for item in results)
+    outcome = ("FAIL" if statuses["FAIL"] or statuses["ERROR"]
+               else "UNVERIFIED" if statuses["UNVERIFIED"] else "PASS")
+    return {
+        "selected_roles": list(roles),
+        "selected_rule_ids": selected_ids,
+        "executed_selected_rule_checks": len(results),
+        "selected_statuses": dict(statuses),
+        "selected_outcome": outcome,
+        "selected_result_statuses": [
+            {"id": row["id"], "status": row["status"]} for row in results
+        ],
+        "selected_evidence_scope": "OFFLINE_SNAPSHOT_NOT_PROVIDER_AUTHENTICATED",
+    }
+
+
 def dispatch(goal: str, state_dir: Path, *, script=None):
     roles = select_roles(goal)
     verify_role_catalog(Path(__file__).resolve().parent / "catalog.json")
-    # Offline rules are categorized, not independently invoked AI agents.
+    # First validate the whole local runtime/integrity snapshot, then evaluate
+    # exactly the selected subset. These are not independent LLM model calls.
     receipt = run_once(state_dir, **({"script": script} if script else {}))
-    return {
+    response = {
         "goal": goal,
         "selected_roles": list(roles),
-        "selected_rule_ids": sorted({item for role in roles for item in ROLES[role]}),
         "status": receipt["status"],
         "kind": "OFFLINE_ROLE_ROUTING_NOT_NATIVE_SCHEDULED_TOOL_CALL",
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "official_unattended_app_call_success": "UNVERIFIED",
     }
+    if receipt["status"] != "PASS":
+        response.update({
+            "executed_selected_rule_checks": 0,
+            "selected_outcome": "UNVERIFIED",
+            "selected_statuses": {},
+        })
+        return response
+    try:
+        selected = evaluate_selected_rules(goal)
+        response.update(selected)
+        if selected["selected_outcome"] == "FAIL":
+            response["status"] = "ERROR"
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        response["status"] = "ERROR"
+        response["selected_outcome"] = "UNVERIFIED"
+        response["executed_selected_rule_checks"] = 0
+        response["selected_statuses"] = {}
+        response["error_type"] = type(exc).__name__
+    return response
 
 
 def main():
