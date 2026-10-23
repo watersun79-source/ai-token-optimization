@@ -91,7 +91,10 @@ def _ok_status(span):
         return False
     code = status.get("code")
     # OTLP trace.proto StatusCode: UNSET=0, OK=1, ERROR=2.
-    return _enum_is(code, 1, "STATUS_CODE_OK") and not status.get("message")
+    # ProtoJSON permits null as unset; false/0/containers are not strings.
+    message = status.get("message")
+    return (_enum_is(code, 1, "STATUS_CODE_OK")
+            and (message is None or (isinstance(message, str) and message == "")))
 
 
 def _descends_from(span, root_span_id, root_trace_id, by_id):
