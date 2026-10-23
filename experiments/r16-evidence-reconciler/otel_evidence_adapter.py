@@ -19,17 +19,20 @@ def _attrs(items):
     out = {}
     if not isinstance(items, list):
         return out
+    seen_keys = set()
     for item in items:
         if not isinstance(item, dict) or not isinstance(item.get("key"), str):
             continue
-        if item["key"] in out:
-            return {}  # Fail closed on duplicate OTLP attribute keys.
+        attr_key = item["key"]
+        if attr_key in seen_keys:
+            return {}  # Fail closed even if the first value was unsupported.
+        seen_keys.add(attr_key)
         value = item.get("value")
         if not isinstance(value, dict):
             continue
-        for key in ("stringValue", "boolValue", "intValue"):
-            if key in value:
-                out[item["key"]] = value[key]
+        for value_key in ("stringValue", "boolValue", "intValue"):
+            if value_key in value:
+                out[attr_key] = value[value_key]
                 break
     return out
 

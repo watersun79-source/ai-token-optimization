@@ -109,5 +109,22 @@ class TestOtelAdapter(unittest.TestCase):
         self.assertEqual([], adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)["tool_calls"])
 
 
+    def test_rejects_duplicate_keys_when_first_value_type_is_unsupported(self):
+        data = fixture()
+        root = data["resourceSpans"][0]["scopeSpans"][0]["spans"][0]
+        root["attributes"].insert(
+            0, {"key": "ai.scheduler.run.id", "value": {"doubleValue": 1.0}}
+        )
+        self.assertEqual([], adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)["tool_calls"])
+
+        data = fixture()
+        call = data["resourceSpans"][0]["scopeSpans"][0]["spans"][1]
+        call["attributes"].insert(
+            0, {"key": "ai.evidence.target", "value": {"doubleValue": 1.0}}
+        )
+        out = adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)
+        self.assertEqual(["slack_thread"], [item["target"] for item in out["tool_calls"]])
+
+
 if __name__ == "__main__":
     unittest.main()
