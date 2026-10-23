@@ -1,5 +1,15 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-23 10:56 KST — 최신 R16 Python 원격 원본 43/43 전체 회귀 실측
+- 사용자가 일반 채팅에서 `실행`을 요청한 **수동 오프라인 검사**. 정규 ChatGPT 매시 정각 회차의 무인 GitHub·Slack 성공을 뜻하지 않는다.
+- `automations.peek` 원본: 기존 단일 R16 ID `6acb017062a08191a4136238b78b313a`, `is_enabled=true`, `paused_count=0`, Asia/Seoul 매시 정각, 최근 `last_run_time=2026-10-23T01:00:54.365515Z`(10:00:54 KST). 일정·활성·알림·프롬프트 변경 없음.
+- 10:26경 격리 브랜치에 이미 반영된 새 Python 나노초 원본 검사 수정·회귀 테스트 4개를 GitHub read-only로 확인. 코드 blob `05fcfd2eac1b76d2e2f351e749a90647347a88aa`, 주요 테스트 blob `a1d68fbfad6c39218211f19a869c0f6f933726b6`, CLI 테스트 `e417f706e9b8f760987d17de72708ad4863047f0`, connected tools 테스트 `6e1623d0797473a34cdd21b0292095c40d45cb09`.
+- 정확히 위 두 GitHub 커밋 원본 patch만 로컬 격리 복제에 적용하여 네 파일의 **Git blob SHA 4/4 완전 일치 검증**. `python -m unittest discover -s tests -v` 실제 로컬 실행 **43/43 PASS, exit 0**, 새 나노초 4테스트 포함. 기존 GitHub 노트의 '최신 43건 전체 미실행' 제한을 이번 수동 테스트로 해소. 그 외 GitHub CI/공식 예약 실행의 검증은 별개로 유지.
+- 동일 내용을 격리 브랜치 `experiments/r16-evidence-reconciler/README_KO.md`에 기록하고 GitHub 원격 재조회: blob `d369e44e8f900fe1ae260b3bd3b50a4de6bae010`, commit `2e0a3fd40167df389a8ea826d53aabddd4f7f3a1`.
+- 해당 슬롯 `ChatGPT 공식 개별 per-run ID`, `run_details` 원본 종료 상태·동일 회차 원시 GitHub/Slack 호출을 현재 도구로 조회할 수 없으므로 **무인 성공 미검증**. 기존 운영 Activepieces, GitHub main, GitHub CI, 과금/비밀정보 변경 없음.
+
+---
+
 ## 2026-10-23 10:21 KST — 정규 회차 종료 경계의 검증기 불일치 수정
 - 사용자의 `실행` 요청에 의한 **수동 ChatGPT 격리 작업**. 공식 예약 R16 `6acb017062a08191a4136238b78b313a`는 `is_enabled=true`, 매시 정각, 최근 `last_run_time=2026-10-23T01:00:54.365515Z`(10:00:54 KST). 개별 회차 원본 run ID/도구 호출 ledger는 미제공으로 **무인 성공 미검증**.
 - GitHub Python 원본 SHA `70683e029c525462a55f013701be1e806e6b1e2d` + 일치하는 로컬 Git blob으로 **슬롯 10:00/완료 11:00** 모의 입력을 확인: `형식 통과 · 진위 미검증`. 격리 Activepieces JS 동일 입력은 `end < next-slot` 때문에 `Run timestamps inconsistent` → 수정 전 `TESTING` 원본 run `4VDnVPPKRaVvlpDhfQnWX`.
