@@ -74,6 +74,26 @@ class TestOtelAdapter(unittest.TestCase):
         data = fixture(); data["resourceSpans"][0]["scopeSpans"][0]["spans"][1]["traceId"] = "5" * 32
         self.assertEqual(1, len(adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)["tool_calls"]))
 
+    def test_rejects_cross_trace_intermediate_parent(self):
+        data = fixture()
+        spans = data["resourceSpans"][0]["scopeSpans"][0]["spans"]
+        middle = span("7" * 16, "intermediate", "chat")
+        middle["traceId"] = "9" * 32
+        spans.append(middle)
+        spans[1]["parentSpanId"] = middle["spanId"]
+        out = adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)
+        self.assertEqual(["slack_thread"], [call["target"] for call in out["tool_calls"]])
+
+    def test_accepts_same_trace_intermediate_parent(self):
+        data = fixture()
+        spans = data["resourceSpans"][0]["scopeSpans"][0]["spans"]
+        middle = span("7" * 16, "intermediate", "chat")
+        spans.append(middle)
+        spans[1]["parentSpanId"] = middle["spanId"]
+        out = adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)
+        self.assertCountEqual(["current_handoff", "slack_thread"],
+                              [call["target"] for call in out["tool_calls"]])
+
     def test_rejects_orphan_parent(self):
         data = fixture(); data["resourceSpans"][0]["scopeSpans"][0]["spans"][1]["parentSpanId"] = "9" * 16
         self.assertEqual(1, len(adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)["tool_calls"]))
