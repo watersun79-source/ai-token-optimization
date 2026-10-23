@@ -1,5 +1,15 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-23 15시대 — R16 봇 증거 게이트 오독·공급망 고정 보완
+- **독립 봇 감사에서 확인한 두 개선점**: (1) 미인증 입력도 안전 규칙만 통과하면 `policy_checks=PASS`로 보여 예약 진위 통과로 오독될 수 있음, (2) 격리 CI가 GitHub Actions 가변 메이저 태그를 사용해 실행 의존성 재현성이 약함.
+- **격리 최소 수정**: `ai/r16-evidence-reconciler-2026-10-22`의 `bot_team_r16.py`를 `SAFE_UNVERIFIED`로 명확화(blob `6d1d48e39f72698d8364ebcaab13a24519ebb86f`), 관련 테스트 blob `3be872ddb166bd0d053ec208bbb451fd3aa256c4`. checkout/setup-python/setup-node/setup-java를 실행 로그에서 검증한 전체 commit SHA로 고정한 workflow blob `81dde1e4ebd769e16d35533dd8e3123dc23d95e3`. main·운영 Activepieces·기존 예약 무변경.
+- **공식 원격 검증**: GitHub Actions [run `39909423239`](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39909423239), job `120268698529`, head `d2309ceb6b1d9a22ad2ee3e6b1d4d74d05a43938`, `completed/success`. 원시 로그가 네 Action의 고정 SHA를 그대로 다운로드했고 Python 63/63, 추가 Python 2/2, JS 20/20, Java 12/12+20/20 통과.
+- **오픈소스 판단**: Microsoft Agent Framework·CrewAI의 역할/순차/승인 패턴, Hypothesis·fast-check의 property-test 패턴만 참고. 외부 패키지·유료 모델·비밀키·운영 호출 0. 실제 병렬 조사 봇은 이번 수동 작업의 조사 보조이며 정규 예약의 상시 독립 AI가 아님.
+- **판정/다음 목표**: 격리 코드·공급망 검증은 완료. 공식 예약 회차와 같은 실행의 GitHub·Slack 원시 tool-call 원장은 계속 미제공이므로 **정규 무인 기억 복원 성공 미검증**. 다음 목표는 공식 원장이 실제 제공될 때만 회차별 독립 대조.
+
+---
+
+
 
 ## 2026-10-23 14시대 — R16 ResearchBot·BuilderBot·VerifierBot 오프라인 증거 게이트 추가
 - **다른 사람 개발물 조사**: [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) MIT의 순차/병렬/handoff 패턴, [CrewAI](https://github.com/crewAIInc/crewAI) MIT의 역할 분리, [Hypothesis](https://github.com/HypothesisWorks/hypothesis) MPL-2.0와 [fast-check](https://github.com/dubzzz/fast-check) MIT의 property-test 패턴. AutoGen은 유지보수 모드이므로 새로운 종속성으로 채택하지 않았고, 모델 API/외부 에이전트 추가 비용·보안 승인 없이 호출하지 않음.
