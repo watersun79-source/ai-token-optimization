@@ -1,5 +1,17 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-23 후속 — 수동 Python 전체 43/43 통과 (정규 예약 성공 아님)
+- **작업의 출처**: 사용자 직접 채팅의 `실행` 요청에 따른 수동 오프라인 검증. 정규 ChatGPT 예약이 Python을 호출했다는 증거로 오인 금지.
+- 격리 GitHub `ai/r16-evidence-reconciler-2026-10-22`의 최신 Python 검사기 + 단위 테스트 3개 파일을 로컬에 복원하고 `git hash-object` SHA-1을 원격 GitHub blob과 **4/4 완전 일치** 확인. 코드 `05fcfd2eac1b76d2e2f351e749a90647347a88aa`, 테스트 `a1d68fbfad6c39218211f19a869c0f6f933726b6`, CLI 테스트 `e417f706e9b8f760987d17de72708ad4863047f0`, 연결 도구명 테스트 `6e1623d0797473a34cdd21b0292095c40d45cb09`.
+- **실제 Python 3.13.5** `python3 -m unittest discover -s tests -v`: `Ran 43 tests in 10.953s`, `OK`, 실패 0건. 나노초 타임스탬프 회귀 4개를 포함한 **현재 코드 전체 43/43 PASS**. 과거 39/39와 구분하고, 동일 소스에서는 이 검사를 불필요하게 재실행하지 않는다.
+- 격리 브랜치 [검증 결과 README](https://github.com/watersun79-source/ai-token-optimization/blob/ai/r16-evidence-reconciler-2026-10-22/experiments/r16-evidence-reconciler/README_KO.md) GitHub 실제 commit `7d05698e89eb30dc1fe36efa7b0e9281987c28b2`, blob `7284e7e87b65f78703d2173f3ce0486e2b13f94b`, 별도 원격 읽기 일치.
+- GitHub 해당 테스트 커밋 `5c92a3f73d252871dcb51274a1f95f4242cbdd00`의 Actions workflow_runs 및 statuses가 빈 목록이라 **원격 CI 성공은 미검증**. 기존 보호 예약 `6acb017062a08191a4136238b78b313a`는 `is_enabled=true`, `paused_count=0`, Asia/Seoul 매시간 정각, 마지막 시각 메타 `2026-10-23T01:00:54.365515Z` (=10:00:54 KST). 새 예약·일정·활성·알림 변경 없음.
+- **가장 중요한 미완료**: ChatGPT 개별 예약 공식 per-run ID·종료 상태·같은 회차 GitHub/Slack 원시 호출 원본은 이 도구에서 제공되지 않음. 그래서 **무인 성공 미검증** 유지. 수동 GitHub 커밋/Slack 알림/Activepieces TESTING run과 공식 무인 성공을 혼동하지 않는다.
+- 다음 최우선: 공식 Scheduled → AI → Previous runs 또는 지원되는 공식 연결 도구에서 실제 개별 회차 로그·승인 대기 여부가 확인될 경우에만 같은 회차 독립 교차 검증. 운영 Activepieces·main·예약 설정 보호 및 무료 우선.
+
+---
+
+
 ## 2026-10-23 10:56 KST — 최신 R16 Python 원격 원본 43/43 전체 회귀 실측
 - 사용자가 일반 채팅에서 `실행`을 요청한 **수동 오프라인 검사**. 정규 ChatGPT 매시 정각 회차의 무인 GitHub·Slack 성공을 뜻하지 않는다.
 - `automations.peek` 원본: 기존 단일 R16 ID `6acb017062a08191a4136238b78b313a`, `is_enabled=true`, `paused_count=0`, Asia/Seoul 매시 정각, 최근 `last_run_time=2026-10-23T01:00:54.365515Z`(10:00:54 KST). 일정·활성·알림·프롬프트 변경 없음.
