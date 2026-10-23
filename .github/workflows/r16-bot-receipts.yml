@@ -49,3 +49,8 @@ jobs:
           python batch_validate_100.py
       - name: Verify installed receipt consumer
         run: python .local_install/bin/ai-bot-M01
+      - name: Smoke-test offline supervisor and coordinator (not a scheduled run)
+        run: |
+          python supervisor.py --once --state-dir .ci_supervisor_state
+          python bot_coordinator.py --goal audit --state-dir .ci_supervisor_state
+          python -c 'import json; from pathlib import Path; d=json.loads(Path(".ci_supervisor_state/latest.json").read_text()); assert d["status"] == "PASS"; assert d["kind"] == "OFFLINE_LOCAL_CHECK_NOT_SCHEDULED_APP_PROOF"'
