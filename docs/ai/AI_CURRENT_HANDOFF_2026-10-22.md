@@ -1,5 +1,14 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-24 — 사용자 요청으로 기존 예약에 v7·항상 진행 그래프 등록
+- 사용자 최신 지시: 필요한 공개 구현/언어/BOT으로 계속 진행하고 항상 직관적 그래프 보고, 예약AI등록.
+- 기존 단일 AI예약6acb017062a08191a4136238b78b313a의 prompt만 수정. 기존100전문역할·보호조건·v4시간규칙 유지, 최신v7소스/전체Javafixture/receiptV6·24시간검사/실제런타임접근조건/매회차 단계상태표·완료/부분/차단/미검증·실측수치만표시·불변합격반복금지를 추가.
+- automations.update 성공 뒤 별도peek에서 prompt전체문자열일치, id/title/schedule/is_enabled/default_timezone/timing_mode/conversation_id 전후동일 확인. 활성true, Asia/Seoul 매시간정각 유지, 새예약생성0. updated_at 2026-10-23T21:57:28.950034+00:00; prompt SHA256 854194b80afe3744ffc0e480251c1a7d5d86a6669af63ff62fce84832d5967aa. 일정·활성·알림필드는 요청하지않고 prompt만전송. 알림상태 자체는도구미제공이므로현재설정값인증으로확대하지않음.
+- 이전수동75검사/CI40029834241 성공은이전코드검증근거이며 새예약실행증거아님. v7ZIP은예약샌드박스자동설치/마운트아님. 코드변경/불변CI재실행0.
+- 마지막관찰회차dbb75293-2a68-832a-9d6b-adc183fd3857 completed는이번prompt수정이전. 수정후정규회차·원시GitHub/Slack앱호출성공은미검증, delivery unknown. 다음최우선: 변경후첫정규회차의공식run/result와가능한raw원장을대조. main/운영APflow/연결/감사원본불변·정규checkpoint추가0·유료API0.
+
+---
+
 ## 2026-10-24 — Java 전체 fixture 검사 누락 최소 수정·v7 실행 패키지
 - 실제 결함: UtcStrictOracle.java의 subList(1,21)가 21번째 이후 실패 입력을 무시하고, 작은 정상fixture에서는 IndexOutOfBoundsException. 실제Java프로세스 신규5회귀 중 수정전4실패 재현.
 - 최소수정: 실제 lines.size()로 전체입력 반복, case0개·열수2개아닌행 거부. timestamp파싱/receiptV6진위경계는 불변. Oracle JDK21 List.subList/Files.readAllLines 공식문서 직접대조, 외부코드복제/라이브러리설치/유료API0.
