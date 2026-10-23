@@ -1,6 +1,19 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
 
+## 2026-10-23 14시대 — R16 ResearchBot·BuilderBot·VerifierBot 오프라인 증거 게이트 추가
+- **다른 사람 개발물 조사**: [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) MIT의 순차/병렬/handoff 패턴, [CrewAI](https://github.com/crewAIInc/crewAI) MIT의 역할 분리, [Hypothesis](https://github.com/HypothesisWorks/hypothesis) MPL-2.0와 [fast-check](https://github.com/dubzzz/fast-check) MIT의 property-test 패턴. AutoGen은 유지보수 모드이므로 새로운 종속성으로 채택하지 않았고, 모델 API/외부 에이전트 추가 비용·보안 승인 없이 호출하지 않음.
+- **기존 3봇 자산 재활용**: GitHub `ai/bot-team-sandbox-2026-10-22`의 `experiments/ai-bot-team/bot_team.py` 및 `chat_router.py` 원본을 실제 읽고, 해당 도구는 수동 오프라인 계획 데모이며 자동 코딩/ChatGPT 전체 메시지 후킹이 아님을 확인.
+- **실제 격리 새 기능**: `ai/r16-evidence-reconciler-2026-10-22` 브랜치 `experiments/r16-evidence-reconciler/bot_team_r16.py`에 ResearchBot(입력된 GitHub 참조 메타 판정), BuilderBot(`audit_v2.check` 결과로 READ_OFFICIAL_SCHEDULED_RUN / READ_SAME_RUN_APP_CALLS / COMPARE_INDEPENDENT_GITHUB_SLACK_READBACK 중 안전한 1개 선택), VerifierBot(원시 예약 진위 미확인 상태 강제 유지)을 순차 실행. **독립 모델 세 개가 동작하는 것은 아니며, 실제 실행 가능한 표준 Python 오프라인 다중 역할 프로그램**. 입력 64KB/참조 20건 상한, 링크 안전 검사, 예약·운영 쓰기/과금 0, 원본 없이 성공 표시 주입하면 거부. `--input` CLI 성공 허위 보고를 막도록 unauthenticated exit code 2.
+- **CI 추가 실제 검증**: 새 bot 코드 commit `85ccb1aef39b11e0efb2085cdda22668f7fa8942`, blob **`8e2fb8aecddda9997e3e0dae55e3905ac7a76af2`**; 신규 9개 bot 테스트 commit `e9b64923695e0f1d6320b8d4a165a4962cfb7b2c`, blob **`b6ff4d81e393d5535c98fd8cf88be76fca8f7cfe`**; 격리 CI 코드 경로 추가 commit `06e382630928f3fcd583b8fedbec204e435fbb8a`, workflow blob **`2e58b16236999fc9beff33c876230a0a1dee2e3f`**. 실제 원격 GitHub [Actions **`39905219028`**](https://github.com/watersun79-source/ai-token-optimization/actions/runs/39905219028) head SHA `06e382630928f3fcd583b8fedbec204e435fbb8a`, job/Check **`120255511427`**, `completed/success`. 원시 job 로그 **Python 전체 `Ran 63 tests in 0.218s OK`**, 봇 9개 포함, 다국어 Python 2/2·JavaScript 20/20·Java 20/20·Java oracle 12/12, 경고 0. 이전 취소 run `39905165919` 성공 처리하지 않음.
+- **기억 인계 상세**: [R16 격리 README](https://github.com/watersun79-source/ai-token-optimization/blob/ai/r16-evidence-reconciler-2026-10-22/experiments/r16-evidence-reconciler/README_KO.md) commit `0cab00af341cec6ea9772a93a10cefb28b9eef1e`, GitHub blob **`f9f1f5fe6f9b61303eab8b49241db4ecf7740f83`**.
+- **한계/최우선**: GitHub Actions는 R16 코드와 봇 역할 프로그램의 **CI 검증 성공**만 의미. ChatGPT 기존 매시간 정각 단일 예약 ID `6acb017062a08191a4136238b78b313a`의 `automations.peek is_enabled=true`, `paused_count=0`; 마지막 `last_run_time=2026-10-23T04:59:11.509561Z`은 회차 성공/완료 증거 아님. 공식 개별 `native per-run ID`와 같은 회차 GitHub·Slack 앱 호출 원본 계속 미제공: **무인 기억 복원 성공 미검증**. main·Activepieces 운영·예약 프롬프트/알림/주기/활성·유료 API 변경 없음.
+- **다음 목표 1개**: 인증된 ChatGPT Scheduled → AI → Previous runs 공식 개별 회차와 원본 tool-call 장부가 제공되는 실제 공식 도구 경로를 확인하고, 없으면 미검증 유지. 원본 미제공을 임의 합성 run ID로 대신하지 않음.
+
+---
+
+
+
 ## 2026-10-23 — R16 다국어 시간대 검증 차이 해소 20/20 + 공식 원격 CI 성공 (정규 무인 예약과 구별)
 - **다른 사람 공개 구현 참조**: JSON-Schema-Test-Suite(MIT) 공통 다언어 fixture 구조, Java 21 OffsetDateTime의 `±18:00` 경계 검증, SLSA build provenance의 출처/실행 ID 분리. 외부 코드를 직접 복제·추가 설치하지 않고 R16 격리 코드의 위험한 오프셋 해석 불일치를 수정.
 - **실제 재현**: Python `fromisoformat`은 `+19:00` 시간대를 수용하지만 Java는 거부; 기존 JS는 +23시까지만 검사. 격리 `fixtures/time_cases.tsv` 15→20건으로 확대하여 `±19:00`, `+18:01` 거부·`±18:00` 허용을 세 언어에서 동일하게 판정.
