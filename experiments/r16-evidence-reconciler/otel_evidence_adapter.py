@@ -64,15 +64,16 @@ def _ok_status(span):
     return code in (2, "2", "STATUS_CODE_OK") and not status.get("message")
 
 
-def _descends_from(span, root_span_id, by_id):
-    """Require an unbroken, acyclic parent chain to the scheduled-run root."""
+def _descends_from(span, root_span_id, root_trace_id, by_id):
+    """Require an unbroken, acyclic same-trace chain to the run root."""
     parent_id = span.get("parentSpanId")
     visited = set()
     while parent_id:
+        if (parent_id in visited or parent_id not in by_id
+                or by_id[parent_id][0].get("traceId") != root_trace_id):
+            return False
         if parent_id == root_span_id:
             return True
-        if parent_id in visited or parent_id not in by_id:
-            return False
         visited.add(parent_id)
         parent_id = by_id[parent_id][0].get("parentSpanId")
     return False
@@ -143,7 +144,7 @@ def adapt_otlp(payload, *, expected_run_id, expected_targets):
         if (attrs.get("gen_ai.operation.name") != "execute_tool"
                 or not isinstance(tool_name, str) or tool_name not in aliases
                 or span_name != f"execute_tool {tool_name}" or span.get("kind") not in (1, "1", "SPAN_KIND_INTERNAL")
-                or span["traceId"] != root_trace or not _descends_from(span, root["spanId"], by_id)
+                or span["traceId"] != root_trace or not _descends_from(span, root["spanId"], root_trace, by_id)
                 or not (root_start <= start <= end <= root_end) or not _ok_status(span)
                 or attrs.get("ai.scheduler.run.id") != expected_run_id
                 or attrs.get("ai.evidence.locator") != locator
