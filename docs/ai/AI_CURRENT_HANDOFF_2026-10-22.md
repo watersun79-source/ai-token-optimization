@@ -1,5 +1,16 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-24 03:49 KST — OTLP root parentSpanId 잘못된 타입 추가 차단
+- **새 결함 재현**: 직전 dce944c 변경으로 자식 parentSpanId의 list/dict 예외는 방어되었으나 root 판별은 여전히 `not span.get("parentSpanId")`여서 [], {}, false, 0, null을 빈 root ID로 채택. 직전 최신 코드 기준 회귀 실행에서 5개 subTest 실패를 실제 확인. 실제 예약 인증 성공이나 침해 증거가 아닌 격리 파서 결함.
+- **선행 구현/라이선스**: OpenTelemetry upstream [trace.proto](https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/trace/v1/trace.proto), blob 235b54e8e78b55f0bb4f3f1f43fc89bdda28b04c, root parent ID empty/8-byte ID 규약 참조. Apache-2.0 LICENSE blob 261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64 확인. 이 검증기의 fail-closed 입력 정책으로 비문자열/null을 거부하며 누락된 root parent는 허용. SDK 복제/패키지 설치/유료 모델 호출 없음.
+- **실제 최소 변경**: span 색인 전에 parentSpanId 문자열·ID 검사 5줄. malformed root와 정상 누락 root 회귀 2건 추가. 동시에 추가된 중복 span/부모 체인 방어와 README 기록 보존. 격리 commit [39078857e4b0628ff1313cd98ecf98d4e677f8c2](https://github.com/watersun79-source/ai-token-optimization/commit/39078857e4b0628ff1313cd98ecf98d4e677f8c2). adapter blob 0590f0b73ef8ec298c745fd5a6e00efea2866661, test blob e43f9e9dcd7f381848596babcaedfeef98cbd401. 두 파일의 원격 SHA와 전체 문자열 재조회 일치.
+- **검증**: 로컬 Python 102/102, 공유 Python 2/2, JS 12/12+20/20 통과. 로컬 javac 없음. 원격 [Actions 40006281259](https://github.com/watersun79-source/ai-token-optimization/actions/runs/40006281259) / job 120594894519 / head 동일 / attempt 1 / completed success. 원시 job 로그 Python 102/102+2/2, JS 12/12+20/20, Java 12/12+20/20 통과.
+- **봇·예약 구분**: ResearchBot→BuilderBot→VerifierBot Python 오프라인 실행 SAFE_UNVERIFIED. 실제 외부 LLM 호출 0. 읽기 전용 예약 조회에서 기존 ID 활성·Asia/Seoul 정각 유지, 공식 03시 회차 dbd09b73-6fd8-832f-b086-e0d5bf0217b6 completed와 동일 결과 귀속 확인. 회차별 원시 GitHub/Slack tool-call ledger는 도구에서 제공되지 않아 무인 성공 미검증.
+- **보호/다음 목표**: main·기존 예약 설정/주기/알림·운영 Activepieces·비밀/결제/유료 API 변경 없음. 지원 도구가 공식 동일 회차 앱 호출 원시 ledger를 제공할 때만 독립 검증. 변하지 않은 통과 CI 재실행 없음.
+
+---
+
+
 
 ## 2026-10-24 03:45 KST — OTLP 중복 span ID·비정상 parentSpanId 방어 및 Python 100/100
 - **실제 결함**: 현행 R16 `otel_evidence_adapter.py`가 동일 trace에서 동일 `spanId`가 재등장해도 첫 항목만 채택하므로 상충하는 모의 실행 기록을 조용히 무시할 수 있었다. 또한 자식 `parentSpanId`가 문자열 대신 nonempty array/object라면 `_descends_from`의 set/dict membership이 `TypeError: unhashable type`으로 중단될 수 있었다. 실제 침해·ChatGPT 공식 예약 실행 성공 증거가 아니라 **OTLP 사용자 입력 파서의 오류**.
