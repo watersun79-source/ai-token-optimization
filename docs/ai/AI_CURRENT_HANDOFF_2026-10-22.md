@@ -1,5 +1,16 @@
 # AI 현재 인계 — 현행 예약 R16 / 이전 R15·R13 이력 (2026-10-22)
 
+## 2026-10-24 04:38 KST — OTLP 호출 시작 시각과 공식 회차 시간창 연결 누락 수정
+- **공식 구현/비용**: OpenTelemetry Apache-2.0 [trace.proto](https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/trace/v1/trace.proto) blob235b54e8e78b55f0bb4f3f1f43fc89bdda28b04c에서 span 시작·종료가 별도의 나노초 필드임을 직접 대조. 해당 필드와 기존 Python parsed_time_ns 구현을 재사용. R16의 '동일 공식 회차 안의 호출' 정책을 검증하는 수정이며, 모든 OTel span이 임의 외부 시간창 안에 있어야 한다는 일반 규격으로 주장하지 않음. 새 외부 패키지·유료 API 없음.
+- **실제 새 결함/TDD**: adapter가 시작 시각을 버리고 observed_at(종료)만 전달해, 공식 native 시작1ns 전에 시작한 tool도 종료가 회차 안이면 형식 통과. 신규3회귀에서 RED3실패 재현: native 경계 -1ns/+0ns, native 자체 submicrosecond 정밀도, Python3역할봇 소비 경로.
+- **최소 격리 수정**: adapter가 started_at 나노초값1필드 보존. audit_v2의 OTLP 경로는 native_start <= tool_start <= tool_end <= native_end를 검사. legacy 입력은 기존 관찰 시각 정책 유지하며 전체 interval 검증으로 확대 주장하지 않음. 수정 후 로컬 전체119/119 통과; 기존 enum/hex중복/원본불변 회귀 보존.
+- **원격 소스**: [commit29966fd828f53d2ce6a50f61842e957f77827cae](https://github.com/watersun79-source/ai-token-optimization/commit/29966fd828f53d2ce6a50f61842e957f77827cae), audit blob a61db09ea4a05a068dba6e2cb1e39360771c25b2 / adapter14536a940943cf180ede65b4162b6705342f4c4e / test45e0acc78f3f10f02b8c10e8bd74ef4a2a0540ce. 각 로컬 Git blob·원격 전체 문자열·SHA 일치. compare1commit/3files, 운영 main 변경 없음.
+- **원격 CI 실제 원본**: [Actions40012840637](https://github.com/watersun79-source/ai-token-optimization/actions/runs/40012840637), job120617305123, head동일, attempt1/completed success. 원시 로그 Python119/119+2/2, JS12/12+20/20, Java12/12+20/20 PASS. 새 코드 자동 CI만 확인했고 이전 합격을 재실행하지 않음. 로컬 javac 없음; Java는 원격 실실행.
+- **봇 실실행**: Python ResearchBot→BuilderBot→VerifierBot에 합성 입력 전달. native 시작-1ns 호출은 해당target 제외(정상Slack1개 유지); 경계시작은 target2. 둘다 SAFE_UNVERIFIED/provider_calls0/official_success_verified=false. 외부 Gemini/Claude·독립LLM3개가 아님.
+- **보호/현재 목표**: 기존 예약 설정·활성·일정·프롬프트·알림, main, 운영 Activepieces 흐름·연결, 감사 원본 불변. 이 수동 작업은 검색 기억만 갱신하고 정규 감사 체크포인트를 추가하지 않음. 동일 회차 원시 앱 호출 ledger 미제공 → 예약 무인 성공 미검증. 다음 목표는 공식 원시 호출 원장 제공 시 나노초 시작·종료와 회차ID를 함께 독립 대조하는 것; 형식 통과를 진위 인증으로 승격 금지.
+
+---
+
 ## 2026-10-24 04:24 KST — OTLP 대소문자 ID 호환성·중복 우회 결함 수정
 - **공식/선행 구현 조사**: [OTLP JSON 규칙](https://opentelemetry.io/docs/specs/otlp/#json-protobuf-encoding)은 traceId/spanId를 대소문자 무관한 hex로 정의. 기존 OpenTelemetry Apache-2.0 소스·격리 Python adapter 재사용; 외부 소스 복제·새 패키지/서버/유료 모델 설치·호출 없음.
 - **실제 새 결함/TDD**: 기존 소문자 정규식 때문에 정상 대문자·혼합 ID의 root/tool/parent가 누락. 동일한 trace/span을 대문자로 다시 넣으면 중복 항목을 무시해 기존 전체 입력 거부 규칙에서 빠짐. 신규 회귀4개에서 수정 전 실패 subcase14개 확인. 실제 침해나 정규 예약 인증 성공의 증거는 아님.
