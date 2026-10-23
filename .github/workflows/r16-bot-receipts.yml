@@ -42,7 +42,7 @@ jobs:
       - name: Measure Python Java and JavaScript tests
         run: python measure_runtime.py
       - name: Verify local receipt and source changes fail closed
-        run: python -m unittest -v test_v5_receipt test_receipt_source_binding test_java_fixture_coverage
+        run: python -m unittest -v test_v5_receipt test_receipt_source_binding test_java_fixture_coverage test_javascript_fixture_coverage
       - name: Install and verify all 100 offline role rules
         run: |
           python install_local.py
