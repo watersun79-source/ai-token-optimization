@@ -125,12 +125,17 @@ def collaborate(payload: Any) -> dict[str, Any]:
     evidence = payload.get("evidence", {})
     if not isinstance(evidence, dict):
         raise ValueError("evidence must be a JSON object")
-    audit = check({
+    audit_input = {
         "schedule": evidence.get("schedule"),
         "target_slot": evidence.get("target_slot"),
         "native_run": evidence.get("native_run"),
         "tool_calls": evidence.get("tool_calls"),
-    })
+    }
+    # Preserve OTLP presence, including invalid/null input: the checker must
+    # keep its OTLP-first policy rather than fall back to legacy tool calls.
+    if "otel" in evidence:
+        audit_input["otel"] = evidence["otel"]
+    audit = check(audit_input)
     builder = BuilderBot().run(audit)
     verifier = VerifierBot().run(research, builder, audit)
     return {
@@ -162,3 +167,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

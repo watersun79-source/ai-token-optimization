@@ -8,11 +8,55 @@ import unittest
 
 from audit_v2 import AUTOMATION_ID
 from bot_team_r16 import collaborate
+from audit_v2 import check
+from test_otel_evidence_adapter import fixture, RUN, TARGETS
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class BotTeamR16Tests(unittest.TestCase):
+    def otel_sample(self):
+        return {"task": "OTLP 호출 증거를 봇 협업에서 검증", "evidence": {
+            "target_slot": "2026-10-23T06:00:00Z",
+            "schedule": {"id": AUTOMATION_ID, "is_enabled": True},
+            "native_run": {"origin": "official_task_run_details", "run_id": RUN,
+                           "automation_id": AUTOMATION_ID, "scheduled_for": "2026-10-23T06:00:00Z",
+                           "started_at": "2026-10-23T06:00:00Z", "completed_at": "2026-10-23T06:00:05Z",
+                           "status": "completed"},
+            "otel": fixture(),
+        }}
+
+    def test_collaboration_preserves_otlp_evidence_without_legacy_calls(self):
+        p = self.otel_sample()
+        expected = check(p["evidence"])
+        self.assertCountEqual(TARGETS, expected["verified_targets"])
+        actual = collaborate(p)
+        self.assertEqual(expected, actual["audit"])
+        self.assertFalse(actual["official_success_verified"])
+        self.assertEqual(0, actual["provider_calls"])
+
+    def test_invalid_otlp_cannot_fall_back_to_legacy_calls_in_collaboration(self):
+        p = self.otel_sample()
+        p["evidence"]["tool_calls"] = [
+            {"target": target, "origin": "official_task_tool_call", "run_id": RUN,
+             "success": True, "tool": next(iter(aliases)), "locator": locator,
+             "invocation_id": target, "observed_at": "2026-10-23T06:00:01Z",
+             "version": "a" * 40 if target == "current_handoff" else "1792735600.070409"}
+            for target, (aliases, locator, _) in TARGETS.items()
+        ]
+        # Without OTLP these supplied legacy calls would pass format checks.
+        legacy = dict(p["evidence"])
+        del legacy["otel"]
+        self.assertTrue(check(legacy)["status"].startswith("형식 통과"))
+        for invalid in ({}, None):
+            with self.subTest(otel=invalid):
+                p["evidence"]["otel"] = invalid
+                expected = check(p["evidence"])
+                self.assertEqual([], expected["verified_targets"])
+                actual = collaborate(p)
+                self.assertEqual(expected, actual["audit"])
+                self.assertEqual("READ_SAME_RUN_APP_CALLS", actual["builder"]["next_action"])
+
     def sample(self):
         return {"task": "AI R16 예약 원본과 GitHub Slack 교차 검증",
                 "references": [
@@ -116,3 +160,4 @@ class BotTeamR16Tests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
