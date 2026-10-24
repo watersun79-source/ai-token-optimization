@@ -19,5 +19,43 @@ jobs:
     steps:
       - name: Checkout code with pinned action
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Profile ephemeral public GitHub runner (no external API)
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, platform, shutil, subprocess, sys
+          def show_version(binary):
+              if not shutil.which(binary): return "NOT_INSTALLED"
+              command=[binary, "-version"] if binary == "java" else [binary, "--version"]
+              r=subprocess.run(command, capture_output=True, text=True, timeout=8, check=False)
+              return (r.stdout.strip() or r.stderr.strip()).splitlines()[0][:140]
+          total_mem_kib = None
+          with open("/proc/meminfo", encoding="utf8") as f:
+              for line in f:
+                  if line.startswith("MemTotal:"):
+                      total_mem_kib = int(line.split()[1])
+                      break
+          free = shutil.disk_usage(".")
+          info = {
+              "kind": "RUNNER_PROFILE_NOT_PERMANENT_VM",
+              "logical_cpus": os.cpu_count(),
+              "affinity_cpus": len(os.sched_getaffinity(0)),
+              "mem_total_gib": round(total_mem_kib/1024/1024, 2) if total_mem_kib else None,
+              "disk_total_gib": round(free.total/1024**3, 2),
+              "disk_free_gib": round(free.free/1024**3, 2),
+              "architecture": platform.machine(),
+              "python": sys.version.split()[0],
+              "node": show_version("node"),
+              "java": show_version("java"),
+              "external_llm_calls": 0,
+          }
+          print("R16_V81_RUNNER_PROFILE="+json.dumps(info,sort_keys=True))
+          path=os.environ.get("GITHUB_STEP_SUMMARY")
+          if path:
+              with open(path,"a",encoding="utf8") as out:
+                  out.write("## Isolated v8.1 runner profile (read-only)\\n\\n")
+                  for key,val in info.items():
+                      out.write(f"- {key}: {val}\\n")
+          PY
       - name: Run offline, no-network synthetic guard tests
         run: python3 -m unittest discover -s tests -p test_v81_provenance_gate.py -v
