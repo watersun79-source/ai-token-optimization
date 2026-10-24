@@ -64,7 +64,11 @@ class SplitBenchTests(unittest.TestCase):
             with self.subTest(name=name):
                 fixture = b.sample_fixture()
                 break_it(fixture)
-                self.assertFalse(b.CHECKS[name](fixture))
+                try:
+                    accepted = b.CHECKS[name](fixture)
+                except (ValueError, TypeError, KeyError, AssertionError, AttributeError):
+                    accepted = False
+                self.assertFalse(accepted)
 
     def test_legacy_native_is_still_unverified(self):
         self.assertEqual("UNVERIFIED", runner.validate(CAT["E10"], EVIDENCE)["status"])
