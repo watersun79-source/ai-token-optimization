@@ -99,7 +99,7 @@ def l07(s):
 def l08(s):
     return all(v.get("thread_ts") is None or
                (bool(TS.fullmatch(v["thread_ts"]))
-                and float(v["thread_ts"]) <= float(v["ts"])) for v in messages(s))
+                and v["thread_ts"] <= v["ts"]) for v in messages(s))
 
 
 def l09(s):
