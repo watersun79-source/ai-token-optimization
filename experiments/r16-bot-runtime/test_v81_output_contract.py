@@ -18,6 +18,8 @@ class OutputContractTests(unittest.TestCase):
         out=contract.compare_results(self._output())
         self.assertEqual(100,out["record_field_schemas_exact"])
         self.assertEqual(10,out["groups_total"])
+        self.assertEqual(10,out["matched_groups"])
+        self.assertTrue(out["original_output_digest_exact"])
         self.assertEqual(100,out["adapter_output_total"])
         self.assertFalse(out["native_chatgpt_scheduler_verified"])
     def test_100_ids_have_no_duplicates(self):
