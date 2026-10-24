@@ -83,9 +83,31 @@ class SpeedOrchestratorTests(unittest.TestCase):
         self.assertEqual({"b":"UNVERIFIED","c":"FAIL"},result["changed"])
         self.assertEqual("UNVERIFIED",result["unattended_native_run"])
 
+    def test_sealed_snapshot_reuse_is_fast_and_origin_limited(self):
+        snap=fast.SealedInputs(CAT,EV,SHA)
+        runner=fast.AdaptiveOfflineRunner()
+        first=runner.run_prepared(snap)
+        self.assertEqual(20,first["fast_checks"])
+        again=runner.run_prepared(snap)
+        self.assertEqual("REUSED_FAST_SEALED_LOCAL",again["mode"])
+        self.assertEqual(0,again["full_checks"])
+        self.assertFalse(again["native_chatgpt_verified"])
+
+    def test_sealed_snapshot_preserves_original_inputs(self):
+        ev=copy.deepcopy(EV)
+        snap=fast.SealedInputs(CAT,ev,SHA)
+        first=snap.fingerprint
+        ev["new_field"]=1
+        self.assertEqual(first,snap.fingerprint)
+        self.assertNotEqual(first,fast.SealedInputs(CAT,ev,SHA).fingerprint)
+        with self.assertRaises(TypeError):
+            fast.AdaptiveOfflineRunner().run_prepared({"fingerprint":first})
+
     def test_benchmark_never_reports_official_proof(self):
         r=fast.bench(5)
         self.assertTrue(r["mock_io_only"])
+        self.assertEqual("SEALED_SNAPSHOT_SAME_PROCESS_ONLY",r["cache_scope"])
+        self.assertGreaterEqual(r["one_time_snapshot_prepare_ms"],0)
         self.assertFalse(r["native_chatgpt_same_run_proven"])
         self.assertEqual(0,r["paid_model_calls"])
 

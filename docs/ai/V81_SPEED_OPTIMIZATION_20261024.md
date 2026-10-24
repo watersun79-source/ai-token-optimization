@@ -9,3 +9,5 @@
 - No private original ZIP, provider secrets, paid API, deploy, workflow schedule or new cloud resources.
 
 - CI-driven fix: initial isolated push CI #40066451975 had fast-job failure because it attempted full 100 checks without Java/Python/JS receipts; full job itself passed. Fixed by keeping full 100 only in the existing full-regression job and explicit UNVERIFIED in fast cache.
+
+- Performance correction: raw repeated SHA/JSON recomputation was **slower than 20-rule check** in CI #40066577257; it is not selected as a performance optimization. `SealedInputs` hashes a frozen JSON snapshot ONCE. `run_prepared()` safely reuses the exact same snapshot within one process. A new snapshot must be constructed after any input change, and no cross-run/provider authenticity is inferred. This avoids repeated fingerprint serialization while preserving cache invalidation boundaries.
