@@ -157,6 +157,42 @@ class OriginalBehaviorVectors(unittest.TestCase):
         outcomes = adapter_outcomes(sample)
         self.assertEqual("PASS", outcomes["L08"])
 
+    def test_l08_malformed_comparable_timestamps_remain_unverified(self):
+        # All these inputs used to be FAIL because float() could parse them.
+        for changes in (
+            {"ts": "1700000000.00001"},
+            {"thread_ts": "not-a-ts"},
+            {"thread_ts": "1700000000.00001"},
+            {"ts": "1.7e9"},
+        ):
+            with self.subTest(changes=changes):
+                sample = fixture()
+                sample["slack"]["messages"][0].update(changes)
+                self.assertEqual("UNVERIFIED", adapter_outcomes(sample)["L08"])
+
+    def test_l08_malformed_earlier_message_does_not_hide_valid_order(self):
+        sample = fixture()
+        sample["slack"]["messages"][0]["ts"] = "1.7e9"
+        sample["slack"]["messages"].append({
+            "channel": "C0000000000", "text": "synthetic",
+            "ts": "1700000000.000002", "thread_ts": "1700000000.000001"
+        })
+        self.assertEqual("UNVERIFIED", adapter_outcomes(sample)["L08"])
+
+    def test_l08_proven_reverse_dominates_unverified_message(self):
+        sample = fixture()
+        sample["slack"]["messages"][0]["ts"] = "1.7e9"
+        sample["slack"]["messages"].append({
+            "channel": "C0000000000", "text": "synthetic",
+            "ts": "9999999999.000001", "thread_ts": "9999999999.000002"
+        })
+        self.assertEqual("FAIL", adapter_outcomes(sample)["L08"])
+
+    def test_l08_valid_message_without_thread_is_not_reversed(self):
+        sample = fixture()
+        sample["slack"]["messages"][0].pop("thread_ts")
+        self.assertEqual("PASS", adapter_outcomes(sample)["L08"])
+
     def test_fixture_contains_no_production_identifiers(self):
         s = fixture()
         self.assertEqual("C0000000000", s["slack"]["messages"][0]["channel"])

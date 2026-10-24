@@ -98,16 +98,34 @@ def l07(s):
 
 def l08(s):
     def valid_order(v):
-        if v.get("thread_ts") is None:
+        ts = v["ts"]
+        thread_ts = v.get("thread_ts")
+        if not isinstance(ts, str) or not TS.fullmatch(ts):
+            # Keep explicit non-ASCII digit hardening; other malformed
+            # evidence must be UNVERIFIED, not mistaken for reversed time.
+            if isinstance(ts, str) and any(ch.isdecimal() and not ch.isascii() for ch in ts):
+                return False
+            raise ValueError("invalid Slack message timestamp")
+        if thread_ts is None:
             return True
-        # Preserve UNVERIFIED for nonnumeric timestamps; use float only
-        # to check parseability, never to compare microsecond ordering.
-        float(v["ts"])
-        return (bool(TS.fullmatch(v["ts"]))
-                and bool(TS.fullmatch(v["thread_ts"]))
-                and v["thread_ts"] <= v["ts"])
+        if not isinstance(thread_ts, str) or not TS.fullmatch(thread_ts):
+            if (isinstance(thread_ts, str)
+                    and any(ch.isdecimal() and not ch.isascii() for ch in thread_ts)):
+                return False
+            raise ValueError("invalid Slack thread timestamp")
+        # Fixed-width ASCII strings retain exact microsecond ordering.
+        return thread_ts <= ts
 
-    return all(valid_order(v) for v in messages(s))
+    unknown = False
+    for item in messages(s):
+        try:
+            if not valid_order(item):
+                return False
+        except (KeyError, ValueError, TypeError, AttributeError):
+            unknown = True
+    if unknown:
+        raise ValueError("cannot verify ordering of all Slack messages")
+    return True
 
 
 def l09(s):
