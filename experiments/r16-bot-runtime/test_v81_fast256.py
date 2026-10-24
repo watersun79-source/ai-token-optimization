@@ -93,7 +93,6 @@ class TestFast256(unittest.TestCase):
         r=compare_64_128_256(2)
         self.assertEqual(9,len(r["rows"]))
         self.assertEqual({64,128,256},set(x["tier"] for x in r["rows"]))
-        self.assertEqual({128},set() if False else {128})  # fixed workload metadata checked below
         self.assertTrue(all(x["completed"]==256 and x["errors"]==0 for x in r["rows"]))
         self.assertEqual(0,r["provider_requests"])
         self.assertFalse(r["provider_quota_verified"])
