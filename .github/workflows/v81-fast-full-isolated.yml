@@ -16,6 +16,9 @@ on:
       - experiments/r16-bot-runtime/test_v81_output_contract_fast.py
       - experiments/r16-bot-runtime/v81_speed_orchestrator.py
       - experiments/r16-bot-runtime/test_v81_speed_orchestrator.py
+      - experiments/r16-bot-runtime/v81_ci_gate.py
+      - experiments/r16-bot-runtime/test_v81_ci_gate.py
+      - docs/ai/V81_FAST_POLICY_20261024.md
       - docs/ai/V81_SOURCE_PARITY_20261024.md
       - docs/ai/V81_FAST_FULL_BENCHMARK_20261024.md
       - .github/workflows/v81-fast-full-isolated.yml
@@ -54,6 +57,10 @@ jobs:
         run: |
           python3 -m unittest -q test_v81_speed_orchestrator
           python3 v81_speed_orchestrator.py --repeats 35
+      - name: Execute adaptive fast-first audit and fail-closed gate tests
+        run: |
+          python3 -m unittest -q test_v81_ci_gate
+          python3 v81_speed_orchestrator.py --ci-fast
       - name: Measure fast 20-rule audit on hosted runner
         run: python3 v81_split_bench.py --mode audit --repeats 150
 
@@ -72,15 +79,26 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+          fetch-depth: 2
+      - name: Fail-closed path gate (skip full only on exact docs-only push)
+        id: change_gate
+        env:
+          V81_PUSH_BEFORE: ${{ github.event.before }}
+        run: python3 v81_ci_gate.py
       - name: Verify original-archive source parity before tests rewrite evidence
+        if: steps.change_gate.outputs.run_full == 'true'
         run: |
           python3 v81_source_parity.py
           python3 -m unittest -q test_v81_source_parity
       - name: Measure pinned local Python Java JavaScript regressions
+        if: steps.change_gate.outputs.run_full == 'true'
         run: python3 measure_runtime.py
       - name: Verify base tests and 18 replacement negative tests
+        if: steps.change_gate.outputs.run_full == 'true'
         run: python3 -m unittest -q test_runtime test_v81_split_bench test_v81_behavior_oracle test_v81_output_contract
       - name: Compare all 100 role output records with private original SHA digests
+        if: steps.change_gate.outputs.run_full == 'true'
         run: python3 v81_output_contract.py
       - name: Measure all 100 BOT rules on hosted runner
+        if: steps.change_gate.outputs.run_full == 'true'
         run: python3 v81_split_bench.py --mode all --repeats 150

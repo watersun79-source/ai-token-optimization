@@ -128,6 +128,26 @@ def compact_report(previous: dict, current: dict) -> dict:
             "unattended_native_run": "UNVERIFIED"}
 
 
+def ci_fast(head_sha: str) -> dict:
+    """Fast audit integrated into isolated CI; no remote calls or fake full PASS.
+    Execute 20 checks, then prove only the SAME sealed snapshot is reusable.
+    """
+    catalog = json.loads((ROOT/"catalog.json").read_text(encoding="utf-8"))
+    evidence = json.loads((ROOT/"evidence.json").read_text(encoding="utf-8"))
+    snapshot = SealedInputs(catalog, evidence, head_sha)
+    runner = AdaptiveOfflineRunner()
+    first = runner.run_prepared(snapshot)
+    reuse = runner.run_prepared(snapshot)
+    if first["fast_checks"] != 20 or reuse["mode"] != "REUSED_FAST_SEALED_LOCAL":
+        raise ValueError("fast-first execution or same-snapshot dedup failed")
+    result = {"kind": "ISOLATED_CI_FAST_NOT_NATIVE",
+              "sha": head_sha, "fast_checks": 20, "duplicates_skipped": 20,
+              "full_check_run": False, "native_run_verified": False,
+              "external_model_calls": 0}
+    print("R16_V81_ADAPTIVE_FAST="+json.dumps(result,sort_keys=True))
+    return result
+
+
 def bench(repeats=35):
     if not 5 <= repeats <= 150:
         raise ValueError("repeats out of bounds")
@@ -184,5 +204,10 @@ if __name__ == "__main__":
     import argparse
     p=argparse.ArgumentParser()
     p.add_argument("--repeats",type=int,default=35)
+    p.add_argument("--ci-fast",action="store_true")
     args=p.parse_args()
-    bench(args.repeats)
+    if args.ci_fast:
+        import os
+        ci_fast(os.environ.get("GITHUB_SHA",""))
+    else:
+        bench(args.repeats)

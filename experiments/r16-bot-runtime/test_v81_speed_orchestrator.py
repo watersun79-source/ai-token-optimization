@@ -103,6 +103,18 @@ class SpeedOrchestratorTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             fast.AdaptiveOfflineRunner().run_prepared({"fingerprint":first})
 
+    def test_ci_fast_real_20_rule_dispatch_and_reuse(self):
+        out=fast.ci_fast(SHA)
+        self.assertEqual(20,out["fast_checks"])
+        self.assertEqual(20,out["duplicates_skipped"])
+        self.assertFalse(out["full_check_run"])
+        self.assertFalse(out["native_run_verified"])
+        self.assertEqual(0,out["external_model_calls"])
+
+    def test_ci_fast_rejects_unverified_sha(self):
+        with self.assertRaises(ValueError):
+            fast.ci_fast("invalid")
+
     def test_benchmark_never_reports_official_proof(self):
         r=fast.bench(5)
         self.assertTrue(r["mock_io_only"])
