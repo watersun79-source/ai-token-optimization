@@ -15,6 +15,7 @@ import v81_parallel_scale_experiment as experiment
 TIERS = (4, 8, 16, 32, 64)
 
 class Fast64:
+    allowed_tiers=TIERS
     """Opt-in LOCAL worker controller. Promotions: two clean full batches.
     For comparable workload and key counts, two >10% regressions or memory
     threshold force a tier downshift and cap it for this controller instance.
@@ -36,7 +37,7 @@ class Fast64:
 
     def observe(self, tier, elapsed_ms, workload_tag, unique, rss_kib):
         """Measurement feedback; caller must use identical workload signatures."""
-        if (tier not in TIERS or not isinstance(workload_tag,str) or not workload_tag
+        if (tier not in self.allowed_tiers or not isinstance(workload_tag,str) or not workload_tag
             or isinstance(elapsed_ms,bool) or not isinstance(elapsed_ms,(int,float))
             or not 0 <= elapsed_ms < 1e9 or not isinstance(unique,int) or unique < 0
             or not isinstance(rss_kib,int) or rss_kib < 0):
