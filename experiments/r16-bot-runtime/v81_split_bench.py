@@ -188,7 +188,7 @@ def e04(s):
 
 def e05(s):
     delay = s.get("max_start_delay_seconds", 3600)
-    return isinstance(delay, int) and delay >= 0 and all(
+    return type(delay) is int and delay >= 0 and all(
         0 <= (iso(v["started_at"]) - iso(v["scheduled_at"])).total_seconds() <= delay
         for v in runs(s))
 

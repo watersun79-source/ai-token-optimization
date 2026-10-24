@@ -193,6 +193,21 @@ class OriginalBehaviorVectors(unittest.TestCase):
         sample["slack"]["messages"][0].pop("thread_ts")
         self.assertEqual("PASS", adapter_outcomes(sample)["L08"])
 
+    def test_e05_boolean_delay_is_invalid_not_zero_or_one(self):
+        # Python bool is a subclass of int. Do not treat True/False as a
+        # configured numeric delay, even when an execution starts on time.
+        for value in (True, False):
+            with self.subTest(value=value):
+                sample = fixture()
+                sample["runs"][0]["started_at"] = sample["runs"][0]["scheduled_at"]
+                sample["max_start_delay_seconds"] = value
+                self.assertEqual("FAIL", adapter_outcomes(sample)["E05"])
+
+        sample = fixture()
+        sample["runs"][0]["started_at"] = sample["runs"][0]["scheduled_at"]
+        sample["max_start_delay_seconds"] = 0
+        self.assertEqual("PASS", adapter_outcomes(sample)["E05"])
+
     def test_fixture_contains_no_production_identifiers(self):
         s = fixture()
         self.assertEqual("C0000000000", s["slack"]["messages"][0]["channel"])
