@@ -117,7 +117,8 @@ def benchmark(repeats=3):
     rss_kib=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     mem_kib=None
     try:
-        line=next(l for l in open("/proc/meminfo",encoding="utf-8") if l.startswith("MemTotal:"))
+        with open("/proc/meminfo",encoding="utf-8") as source_file:
+            line=next(l for l in source_file if l.startswith("MemTotal:"))
         mem_kib=int(line.split()[1])
     except (OSError,StopIteration,ValueError,IndexError):
         pass

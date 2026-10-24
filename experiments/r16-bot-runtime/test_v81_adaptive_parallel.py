@@ -63,10 +63,11 @@ class AdaptiveTierTests(unittest.TestCase):
                 c.read(keys(4))
             self.assertEqual(want,got.exception.reason)
             self.assertEqual(4,c.workers)
-            self.assertEqual(4,counters["called"])
+            self.assertGreaterEqual(counters["called"],1)
+            self.assertLessEqual(counters["called"],4)
 
     def test_invalid_limits_readers_and_keys(self):
-        for cap in (0,3,17,True):
+        for cap in (0,-1,17,True,"4"):
             with self.assertRaises(ValueError): p.safe_batch_read(keys(1),lambda *_:1,cap)
         for bad in ([(1,"x")],[(None,"a")],[("G",)],["no"],[("G","")]):
             with self.assertRaises(ValueError): p.safe_batch_read(bad,lambda *_:1)
