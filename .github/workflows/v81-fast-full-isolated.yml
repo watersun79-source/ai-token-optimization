@@ -10,6 +10,7 @@ on:
       - experiments/r16-bot-runtime/test_v81_split_bench.py
       - experiments/r16-bot-runtime/v81_source_parity.py
       - experiments/r16-bot-runtime/test_v81_source_parity.py
+      - experiments/r16-bot-runtime/test_v81_behavior_oracle.py
       - docs/ai/V81_SOURCE_PARITY_20261024.md
       - docs/ai/V81_FAST_FULL_BENCHMARK_20261024.md
       - .github/workflows/v81-fast-full-isolated.yml
@@ -43,7 +44,7 @@ jobs:
           python3 v81_source_parity.py
           python3 -m unittest -q test_v81_source_parity
       - name: Verify 18 replacement checks incl. negative test cases
-        run: python3 -m unittest -q test_v81_split_bench
+        run: python3 -m unittest -q test_v81_split_bench test_v81_behavior_oracle
       - name: Measure fast 20-rule audit on hosted runner
         run: python3 v81_split_bench.py --mode audit --repeats 150
 
@@ -69,6 +70,6 @@ jobs:
       - name: Measure pinned local Python Java JavaScript regressions
         run: python3 measure_runtime.py
       - name: Verify base tests and 18 replacement negative tests
-        run: python3 -m unittest -q test_runtime test_v81_split_bench
+        run: python3 -m unittest -q test_runtime test_v81_split_bench test_v81_behavior_oracle
       - name: Measure all 100 BOT rules on hosted runner
         run: python3 v81_split_bench.py --mode all --repeats 150
