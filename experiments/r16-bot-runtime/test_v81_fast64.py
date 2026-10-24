@@ -1,6 +1,6 @@
 """Tests for local-only 64-cap adaptive FAST, controlled regression and RSS failure."""
 import unittest
-from unittest.mock import patch
+import time
 import v81_fast64 as f
 import v81_adaptive_parallel as inherited
 
@@ -9,7 +9,10 @@ def keys(count=128):
 
 class TestFast64(unittest.TestCase):
     def test_ramp_stops_at_64(self):
-        obj=f.Fast64(lambda _,k:k)
+        def io_bound(_, key):
+            time.sleep(0.008)
+            return key
+        obj=f.Fast64(io_bound)
         used=[]
         for _ in range(14):
             result=obj.read(keys(),workload_tag="constant")
