@@ -210,6 +210,11 @@ CHECKS = {
 }
 assert set(CHECKS) == REPLACEMENTS
 
+# Original v8.1's non-identifying names for the 18 fixture-only roles.
+# Do not replace legacy source catalog or upload original source/fixture.
+ORIGINAL_REPLACEMENT_NAMES = {"A07":"Activepieces 노드 ID 중복 검사","A08":"Activepieces 연결 대상 참조 검사","A09":"Activepieces DAG 순환 탐지","E01":"실행 증거 스키마 버전 검사","E02":"실행 회차 ID 중복 검사","E03":"실행 시각 타임존 검증","E04":"실행 시작·종료 시각 선후 검사","E05":"예정 대비 시작 지연 검사","E06":"실행 이벤트 시간 순서 검사","E07":"실행 로그 레벨·유형 검사","E08":"실행 로그 SHA-256 일치 검사","E09":"증거 파일 경로 순회 공격 검사","E10":"모의 증거의 실운영 인증 오판 차단","L06":"Slack 페이로드 필수 필드 검사","L07":"Slack 메시지 timestamp 형식 검사","L08":"Slack 스레드 timestamp 선후 검사","L09":"Slack 메시지 UTF-8 용량 검사","L10":"Slack 메시지 비밀키 노출 탐지"}
+assert set(ORIGINAL_REPLACEMENT_NAMES) == REPLACEMENTS
+
 
 def execute(catalog: list, evidence: dict, mode: str, fixture: dict | None = None) -> dict:
     """Use pinned pre-existing rules for 82 and v8.1-style local replacements for 18."""
@@ -236,9 +241,16 @@ def execute(catalog: list, evidence: dict, mode: str, fixture: dict | None = Non
                 status = "UNVERIFIED"
             record = {
                 "id": name,
-                "status": status,
-                "scope": "SYNTHETIC_LOCAL_FIXTURE_ONLY",
+                "category": role["category"],
+                "name": ORIGINAL_REPLACEMENT_NAMES[name],
+                "scope": "LOCAL_FIXTURE_ONLY",
                 "source": "SYNTHETIC_LOCAL_FIXTURE_NOT_PROVIDER_EVIDENCE",
+                "status": status,
+                "detail": ("offline synthetic fixture rule passed; never authenticates real scheduling"
+                           if status == "PASS" else
+                           "offline synthetic fixture rule failed"
+                           if status == "FAIL" else
+                           "fixture missing/malformed; cannot run local check"),
             }
         details.append(record)
     counts = dict(Counter(x["status"] for x in details))
