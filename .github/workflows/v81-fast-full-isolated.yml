@@ -18,6 +18,9 @@ on:
       - experiments/r16-bot-runtime/test_v81_speed_orchestrator.py
       - experiments/r16-bot-runtime/v81_adaptive_parallel.py
       - experiments/r16-bot-runtime/test_v81_adaptive_parallel.py
+      - experiments/r16-bot-runtime/v81_parallel_scale_experiment.py
+      - experiments/r16-bot-runtime/test_v81_parallel_scale_experiment.py
+      - docs/ai/V81_PARALLEL_SCALING_20261024.md
       - docs/ai/V81_ADAPTIVE_PARALLEL_20261024.md
       - experiments/r16-bot-runtime/v81_ci_gate.py
       - experiments/r16-bot-runtime/test_v81_ci_gate.py
@@ -68,6 +71,10 @@ jobs:
         run: |
           python3 -m unittest -q test_v81_adaptive_parallel
           python3 v81_adaptive_parallel.py
+      - name: Profile offline 4-8-16-32-64-128 parallel scaling
+        run: |
+          python3 -m unittest -q test_v81_parallel_scale_experiment
+          python3 v81_parallel_scale_experiment.py
       - name: Measure fast 20-rule audit on hosted runner
         run: python3 v81_split_bench.py --mode audit --repeats 150
 
