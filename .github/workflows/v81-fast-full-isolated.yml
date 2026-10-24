@@ -8,6 +8,9 @@ on:
     paths:
       - experiments/r16-bot-runtime/v81_split_bench.py
       - experiments/r16-bot-runtime/test_v81_split_bench.py
+      - experiments/r16-bot-runtime/v81_source_parity.py
+      - experiments/r16-bot-runtime/test_v81_source_parity.py
+      - docs/ai/V81_SOURCE_PARITY_20261024.md
       - docs/ai/V81_FAST_FULL_BENCHMARK_20261024.md
       - .github/workflows/v81-fast-full-isolated.yml
   workflow_dispatch:
@@ -35,6 +38,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+      - name: Verify source SHA comparison (not verbatim v8.1)
+        run: |
+          python3 v81_source_parity.py
+          python3 -m unittest -q test_v81_source_parity
       - name: Verify 18 replacement checks incl. negative test cases
         run: python3 -m unittest -q test_v81_split_bench
       - name: Measure fast 20-rule audit on hosted runner
@@ -55,6 +62,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+      - name: Verify original-archive source parity before tests rewrite evidence
+        run: |
+          python3 v81_source_parity.py
+          python3 -m unittest -q test_v81_source_parity
       - name: Measure pinned local Python Java JavaScript regressions
         run: python3 measure_runtime.py
       - name: Verify base tests and 18 replacement negative tests
