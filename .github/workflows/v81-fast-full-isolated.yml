@@ -26,6 +26,9 @@ on:
       - experiments/r16-bot-runtime/test_v81_fast128.py
       - experiments/r16-bot-runtime/v81_fast256.py
       - experiments/r16-bot-runtime/test_v81_fast256.py
+      - experiments/r16-bot-runtime/v81_fast_auto.py
+      - experiments/r16-bot-runtime/test_v81_fast_auto.py
+      - docs/ai/V81_FAST_AUTO_20261024.md
       - docs/ai/V81_FAST256_20261024.md
       - docs/ai/V81_FAST128_20261024.md
       - docs/ai/V81_FAST64_20261024.md
@@ -96,6 +99,8 @@ jobs:
         run: |
           python3 -m unittest -q test_v81_fast256
           python3 v81_fast256.py
+      - name: Verify evidence-gated FAST auto local ceiling
+        run: python3 -m unittest -q test_v81_fast_auto
       - name: Measure fast 20-rule audit on hosted runner
         run: python3 v81_split_bench.py --mode audit --repeats 150
 
