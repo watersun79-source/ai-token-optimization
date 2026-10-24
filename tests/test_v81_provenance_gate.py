@@ -43,6 +43,11 @@ class GateTest(unittest.TestCase):
     def test_synthetic_scope_forgery_rejected(self):
         x=example();next(r for r in x['results'] if r['id']=='E01')['scope']='OFFICIAL_CHATGPT_RUN'
         with self.assertRaises(gate.EvidenceError):gate.inspect_local_report(x)
+    def test_fake_native_raw_ledger_rejected(self):
+        x=example()
+        x['official_same_run_raw_ledger']='PROVIDED'
+        with self.assertRaises(gate.EvidenceError):
+            gate.inspect_local_report(x)
     def test_missing_hash_rejected(self):
         x=example();x['input_sha256'].pop('catalog.json')
         with self.assertRaises(gate.EvidenceError):gate.inspect_local_report(x)
