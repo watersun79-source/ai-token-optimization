@@ -24,6 +24,9 @@ on:
       - experiments/r16-bot-runtime/test_v81_fast64.py
       - experiments/r16-bot-runtime/v81_fast128.py
       - experiments/r16-bot-runtime/test_v81_fast128.py
+      - experiments/r16-bot-runtime/v81_fast256.py
+      - experiments/r16-bot-runtime/test_v81_fast256.py
+      - docs/ai/V81_FAST256_20261024.md
       - docs/ai/V81_FAST128_20261024.md
       - docs/ai/V81_FAST64_20261024.md
       - docs/ai/V81_PARALLEL_SCALING_20261024.md
@@ -89,6 +92,10 @@ jobs:
         run: |
           python3 -m unittest -q test_v81_fast128
           python3 v81_fast128.py
+      - name: Test opt-in FAST256 and profile 64 vs 128 vs 256 locally
+        run: |
+          python3 -m unittest -q test_v81_fast256
+          python3 v81_fast256.py
       - name: Measure fast 20-rule audit on hosted runner
         run: python3 v81_split_bench.py --mode audit --repeats 150
 
