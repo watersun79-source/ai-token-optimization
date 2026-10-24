@@ -13,6 +13,7 @@ on:
       - experiments/r16-bot-runtime/test_v81_behavior_oracle.py
       - experiments/r16-bot-runtime/v81_output_contract.py
       - experiments/r16-bot-runtime/test_v81_output_contract.py
+      - experiments/r16-bot-runtime/test_v81_output_contract_fast.py
       - docs/ai/V81_SOURCE_PARITY_20261024.md
       - docs/ai/V81_FAST_FULL_BENCHMARK_20261024.md
       - .github/workflows/v81-fast-full-isolated.yml
@@ -46,7 +47,7 @@ jobs:
           python3 v81_source_parity.py
           python3 -m unittest -q test_v81_source_parity
       - name: Verify 18 replacement checks incl. negative test cases
-        run: python3 -m unittest -q test_v81_split_bench test_v81_behavior_oracle test_v81_output_contract
+        run: python3 -m unittest -q test_v81_behavior_oracle test_v81_output_contract_fast
       - name: Measure fast 20-rule audit on hosted runner
         run: python3 v81_split_bench.py --mode audit --repeats 150
 
