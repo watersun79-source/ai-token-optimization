@@ -140,6 +140,23 @@ class OriginalBehaviorVectors(unittest.TestCase):
                 self.assertEqual({"L07": "FAIL", "L08": "FAIL"}, differences)
                 self.assertEqual({}, ORIGINAL_NON_PASS[name])
 
+    def test_slack_microsecond_order_fail_closed(self):
+        # Deliberate security hardening: the original v8.1 uses float(ts)
+        # and accepts this reversed order near the end of 10-digit epochs.
+        sample = fixture()
+        sample["slack"]["messages"][0].update(
+            ts="9999999999.000001", thread_ts="9999999999.000002")
+        outcomes = adapter_outcomes(sample)
+        self.assertEqual("PASS", outcomes["L07"])
+        self.assertEqual("FAIL", outcomes["L08"])
+
+    def test_slack_microsecond_valid_order(self):
+        sample = fixture()
+        sample["slack"]["messages"][0].update(
+            ts="9999999999.000002", thread_ts="9999999999.000001")
+        outcomes = adapter_outcomes(sample)
+        self.assertEqual("PASS", outcomes["L08"])
+
     def test_fixture_contains_no_production_identifiers(self):
         s = fixture()
         self.assertEqual("C0000000000", s["slack"]["messages"][0]["channel"])
