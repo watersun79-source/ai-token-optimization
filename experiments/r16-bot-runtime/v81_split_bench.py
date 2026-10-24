@@ -97,9 +97,17 @@ def l07(s):
 
 
 def l08(s):
-    return all(v.get("thread_ts") is None or
-               (bool(TS.fullmatch(v["thread_ts"]))
-                and v["thread_ts"] <= v["ts"]) for v in messages(s))
+    def valid_order(v):
+        if v.get("thread_ts") is None:
+            return True
+        # Preserve UNVERIFIED for nonnumeric timestamps; use float only
+        # to check parseability, never to compare microsecond ordering.
+        float(v["ts"])
+        return (bool(TS.fullmatch(v["ts"]))
+                and bool(TS.fullmatch(v["thread_ts"]))
+                and v["thread_ts"] <= v["ts"])
+
+    return all(valid_order(v) for v in messages(s))
 
 
 def l09(s):
