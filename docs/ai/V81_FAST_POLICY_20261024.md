@@ -17,3 +17,7 @@ cd experiments/r16-bot-runtime
 python3 -m unittest -q test_v81_ci_gate test_v81_speed_orchestrator
 python3 v81_speed_orchestrator.py --ci-fast  # requires GITHUB_SHA on CI
 ```
+
+## Real workflow verification
+- First isolated code-change push: Actions [40068842236](https://github.com/watersun79-source/ai-token-optimization/actions/runs/40068842236), SHA `bb79bdbcc6c7175e7488420b3fd3b73cb6b7ee3f`, fast and full jobs completed/success, gate `run_full=true`, verified from raw logs. This proves conditional full regression for changed runtime/workflow only, not native task success.
+- This documentation-only append is a controlled experiment of the opposite gate branch. The next workflow run is expected to emit `reason=docs_only_single_commit, run_full=false` and skip actual 100-rule steps. Only confirmed CI logs, not this expectation, establish that result.
