@@ -47,18 +47,20 @@ class AdaptiveOfflineRunner:
     def run(self, catalog, evidence, head_sha: str):
         key = fingerprint(catalog, evidence, head_sha)
         if key in self._cache:
-            return {"mode": "REUSED_LOCAL_PASS", "input_sha256": key,
+            return {"mode": "REUSED_FAST_LOCAL", "input_sha256": key,
                     "fast_checks": 0, "full_checks": 0,
+                    "full_regression_verified": False,
                     "native_chatgpt_verified": False, "provider_call_count": 0}
         quick = adapter.execute(catalog, evidence, "audit")
         if quick["selected_count"] != 20 or quick["statuses"] != GOOD:
             raise ValueError("fail-closed: quick audit did not pass")
-        full = adapter.execute(catalog, evidence, "all")
-        if full["selected_count"] != 100 or full["statuses"] != ALL_GOOD:
-            raise ValueError("fail-closed: full regression did not pass")
-        self._cache[key] = True
-        return {"mode": "FAST_THEN_FULL_LOCAL", "input_sha256": key,
-                "fast_checks": 20, "full_checks": 100,
+        # The fast job does NOT create the Java/Python/JS receipts needed by the
+        # 100-rule full check. The pre-existing independent full-regression CI
+        # job measures those receipts before it runs its full 100 checks.
+        self._cache[key] = "FAST_ONLY"
+        return {"mode": "FAST_ONLY_LOCAL", "input_sha256": key,
+                "fast_checks": 20, "full_checks": 0,
+                "full_regression_verified": False,
                 "native_chatgpt_verified": False, "provider_call_count": 0}
 
 
@@ -97,15 +99,15 @@ def bench(repeats=35):
     baseline, cached = [], []
     runner = AdaptiveOfflineRunner()
     first = runner.run(catalog, evidence, sha)
-    assert first["fast_checks"] == 20 and first["full_checks"] == 100
+    assert first["fast_checks"] == 20 and first["full_checks"] == 0
     for _ in range(repeats):
         t = time.perf_counter_ns()
-        out = adapter.execute(catalog, evidence, "all")
-        assert out["statuses"] == ALL_GOOD
+        out = adapter.execute(catalog, evidence, "audit")
+        assert out["statuses"] == GOOD
         baseline.append((time.perf_counter_ns()-t)/1e6)
         t = time.perf_counter_ns()
         reused = runner.run(catalog, evidence, sha)
-        assert reused["mode"] == "REUSED_LOCAL_PASS"
+        assert reused["mode"] == "REUSED_FAST_LOCAL"
         cached.append((time.perf_counter_ns()-t)/1e6)
     requests=[("GitHub","head"),("GitHub","head"),("Slack","thread"),
               ("GitHub","ci"),("Slack","thread"),("GitHub","file")]
@@ -123,8 +125,8 @@ def bench(repeats=35):
         parallel_ms.append((time.perf_counter_ns()-t)/1e6)
     result={"kind":"ISOLATED_OFFLINE_SPEED_PROOF_NOT_NATIVE_SCHEDULER",
             "samples_local_rule_eval":repeats,
-            "full_100_median_ms":round(statistics.median(baseline),4),
-            "unchanged_sha_reuse_median_ms":round(statistics.median(cached),4),
+            "fast_20_median_ms":round(statistics.median(baseline),4),
+            "unchanged_fast_reuse_median_ms":round(statistics.median(cached),4),
             "local_reuse_ratio":round(statistics.median(baseline)/statistics.median(cached),2),
             "mock_io_samples":8,
             "mock_serial_median_ms":round(statistics.median(serial_ms),3),

@@ -27,10 +27,11 @@ class SpeedOrchestratorTests(unittest.TestCase):
     def test_fast_first_then_reuse_same_inputs(self):
         r=fast.AdaptiveOfflineRunner()
         first=r.run(CAT,EV,SHA)
-        self.assertEqual((20,100),(first["fast_checks"],first["full_checks"]))
+        self.assertEqual((20,0),(first["fast_checks"],first["full_checks"]))
         self.assertFalse(first["native_chatgpt_verified"])
+        self.assertFalse(first["full_regression_verified"])
         again=r.run(CAT,EV,SHA)
-        self.assertEqual("REUSED_LOCAL_PASS",again["mode"])
+        self.assertEqual("REUSED_FAST_LOCAL",again["mode"])
         self.assertEqual((0,0),(again["fast_checks"],again["full_checks"]))
 
     def test_changed_inputs_invalidate_local_cache(self):
@@ -38,8 +39,8 @@ class SpeedOrchestratorTests(unittest.TestCase):
         r.run(CAT,EV,SHA)
         e=copy.deepcopy(EV);e["marker"]="changed"
         fresh=r.run(CAT,e,SHA)
-        self.assertEqual("FAST_THEN_FULL_LOCAL",fresh["mode"])
-        self.assertEqual(100,fresh["full_checks"])
+        self.assertEqual("FAST_ONLY_LOCAL",fresh["mode"])
+        self.assertEqual(0,fresh["full_checks"])
 
     def test_changed_head_invalidates_local_cache(self):
         r=fast.AdaptiveOfflineRunner()
