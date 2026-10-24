@@ -1,0 +1,23 @@
+name: AI R16 v8.1 isolated provenance regression
+on:
+  push:
+    branches:
+      - 'ai/r16-v81-provenance-gate-2026-10-24'
+    paths:
+      - 'scripts/v81_provenance_gate.py'
+      - 'tests/test_v81_provenance_gate.py'
+      - '.github/workflows/v81-provenance-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  provenance-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code with pinned action
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Run offline, no-network synthetic guard tests
+        run: python3 -m unittest discover -s tests -p test_v81_provenance_gate.py -v
