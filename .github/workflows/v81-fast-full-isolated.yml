@@ -16,6 +16,9 @@ on:
       - experiments/r16-bot-runtime/test_v81_output_contract_fast.py
       - experiments/r16-bot-runtime/v81_speed_orchestrator.py
       - experiments/r16-bot-runtime/test_v81_speed_orchestrator.py
+      - experiments/r16-bot-runtime/v81_adaptive_parallel.py
+      - experiments/r16-bot-runtime/test_v81_adaptive_parallel.py
+      - docs/ai/V81_ADAPTIVE_PARALLEL_20261024.md
       - experiments/r16-bot-runtime/v81_ci_gate.py
       - experiments/r16-bot-runtime/test_v81_ci_gate.py
       - docs/ai/V81_FAST_POLICY_20261024.md
@@ -61,6 +64,10 @@ jobs:
         run: |
           python3 -m unittest -q test_v81_ci_gate
           python3 v81_speed_orchestrator.py --ci-fast
+      - name: Verify staged 4-8-16 adaptive parallel reads and auto-backoff
+        run: |
+          python3 -m unittest -q test_v81_adaptive_parallel
+          python3 v81_adaptive_parallel.py
       - name: Measure fast 20-rule audit on hosted runner
         run: python3 v81_split_bench.py --mode audit --repeats 150
 

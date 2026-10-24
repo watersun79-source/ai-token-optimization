@@ -103,19 +103,11 @@ class AdaptiveOfflineRunner:
 
 
 def batch_read(requests, reader, max_workers=4):
-    """Deduplicate exact read-only keys and overlap independent lookups.
-    Reader is caller supplied; not a credentialed connector or network client.
+    """Read-only exact-key dedup; 4 default, explicit cap <=16 local threads.
+    External provider quota is NOT inferred from this isolated Python routine.
     """
-    if not isinstance(requests, list) or not 1 <= max_workers <= 4:
-        raise ValueError("invalid batch")
-    uniq = list(dict.fromkeys(requests))
-    if not all(isinstance(k, tuple) and len(k) == 2 and all(isinstance(x, str) and x for x in k) for k in uniq):
-        raise ValueError("only nonempty (tool, locator) read keys supported")
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        replies = list(pool.map(lambda k: reader(*k), uniq))
-    return {"results": dict(zip(uniq, replies)), "requested": len(requests),
-            "unique": len(uniq), "skipped_duplicates": len(requests)-len(uniq),
-            "native_provider_authenticity": "UNVERIFIED"}
+    from v81_adaptive_parallel import safe_batch_read
+    return safe_batch_read(requests,reader,max_workers)
 
 
 def compact_report(previous: dict, current: dict) -> dict:
