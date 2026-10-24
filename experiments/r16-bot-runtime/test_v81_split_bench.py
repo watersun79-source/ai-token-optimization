@@ -74,7 +74,7 @@ class SplitBenchTests(unittest.TestCase):
         self.assertEqual("UNVERIFIED", runner.validate(CAT["E10"], EVIDENCE)["status"])
         out = b.execute(CATALOG, EVIDENCE, "audit")
         self.assertEqual("PASS", next(x for x in out["details"] if x["id"] == "E10")["status"])
-        self.assertEqual("SYNTHETIC_LOCAL_FIXTURE_ONLY",
+        self.assertEqual("LOCAL_FIXTURE_ONLY",
                          next(x for x in out["details"] if x["id"] == "E10")["scope"])
 
     def test_no_native_authentication_claim(self):
