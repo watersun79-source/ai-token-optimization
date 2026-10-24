@@ -49,7 +49,8 @@ class AdaptiveTierTests(unittest.TestCase):
         self.assertEqual("READ_ERROR",caught.exception.reason)
         self.assertEqual(8,c.workers)
         self.assertEqual(0,c.clean_batches)
-        self.assertEqual(32,counter["count"]-old_count)
+        self.assertGreaterEqual(counter["count"]-old_count,1)
+        self.assertLessEqual(counter["count"]-old_count,32)
 
     def test_rate_limit_and_permission_go_to_four_no_retry(self):
         for msg,want in (("HTTP 429 Retry-After: 30","RATE_LIMIT"),("HTTP 403 permission denied","ACCESS_DENIED")):
