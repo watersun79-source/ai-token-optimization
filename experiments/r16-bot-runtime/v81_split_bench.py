@@ -277,6 +277,43 @@ def execute(catalog: list, evidence: dict, mode: str, fixture: dict | None = Non
     }
 
 
+
+def github_cloud_context(environ=None):
+    """Bounded GitHub Actions environment evidence, NOT external attestation.
+
+    No network, secrets, billing API, or scheduled platform claims.
+    """
+    env = os.environ if environ is None else environ
+    active = env.get("GITHUB_ACTIONS") == "true"
+    sha = env.get("GITHUB_SHA")
+    run_id = env.get("GITHUB_RUN_ID")
+    valid_sha = isinstance(sha, str) and bool(re.fullmatch(r"[0-9a-f]{40}", sha))
+    valid_run = isinstance(run_id, str) and bool(re.fullmatch(r"[1-9][0-9]{0,19}", run_id))
+    expected = (
+        active
+        and env.get("GITHUB_REPOSITORY") == "watersun79-source/ai-token-optimization"
+        and env.get("GITHUB_REF") == "refs/heads/ai/r16-v81-fast-full-ci-20261024"
+        and env.get("RUNNER_ENVIRONMENT") == "github-hosted"
+        and env.get("RUNNER_OS") == "Linux"
+        and env.get("GITHUB_EVENT_NAME") in ("push", "workflow_dispatch")
+        and env.get("GITHUB_JOB") in ("fast-audit", "full-regression")
+        and valid_sha and valid_run
+    )
+    return {
+        "source": "SELF_REPORTED_RUNNER_ENV_NOT_GITHUB_API_ATTESTATION",
+        "status": ("GITHUB_HOSTED_CONTEXT_REPORTED" if expected
+                   else "UNVERIFIED" if active else "LOCAL_ONLY"),
+        "run_id": run_id if expected else None,
+        "trigger_sha": sha if expected else None,
+        "runner_environment": "github-hosted" if expected else "UNVERIFIED",
+        "job": env.get("GITHUB_JOB") if expected else None,
+        "job_conclusion": "UNVERIFIED",
+        "official_chatgpt_same_run_calls": "UNVERIFIED",
+        "account_billing": "UNVERIFIED",
+    }
+
+
+
 def benchmark(mode: str, repeats: int) -> dict:
     catalog = json.loads((ROOT / "catalog.json").read_text(encoding="utf8"))
     evidence = json.loads((ROOT / "evidence.json").read_text(encoding="utf8"))
@@ -306,6 +343,7 @@ def benchmark(mode: str, repeats: int) -> dict:
         "actual_v81_archive_on_runner": False,
         "native_run_proven": False,
         "external_model_calls": 0,
+        "github_cloud": github_cloud_context(),
     }
     print("R16_V81_BENCH=" + json.dumps(output, sort_keys=True))
     summary = os.environ.get("GITHUB_STEP_SUMMARY")

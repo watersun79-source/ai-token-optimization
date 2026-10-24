@@ -104,5 +104,82 @@ class SplitBenchTests(unittest.TestCase):
                               if x["id"] == "E03")["status"])
 
 
+    def test_github_cloud_local_has_no_success_claim(self):
+        result = b.github_cloud_context({})
+        self.assertEqual("LOCAL_ONLY", result["status"])
+        self.assertIsNone(result["run_id"])
+        self.assertEqual("UNVERIFIED", result["job_conclusion"])
+
+    def test_github_cloud_expected_runner_is_only_self_reported(self):
+        env = {
+            "GITHUB_ACTIONS": "true",
+            "GITHUB_REPOSITORY": "watersun79-source/ai-token-optimization",
+            "GITHUB_REF": "refs/heads/ai/r16-v81-fast-full-ci-20261024",
+            "RUNNER_ENVIRONMENT": "github-hosted",
+            "RUNNER_OS": "Linux",
+            "GITHUB_EVENT_NAME": "push",
+            "GITHUB_JOB": "fast-audit",
+            "GITHUB_SHA": "a" * 40,
+            "GITHUB_RUN_ID": "40054659817",
+            "SECRET_KEY": "DONT_OUTPUT_THIS",
+        }
+        result = b.github_cloud_context(env)
+        self.assertEqual("GITHUB_HOSTED_CONTEXT_REPORTED", result["status"])
+        self.assertEqual("40054659817", result["run_id"])
+        self.assertEqual("a" * 40, result["trigger_sha"])
+        self.assertEqual("UNVERIFIED", result["job_conclusion"])
+        self.assertEqual("UNVERIFIED", result["account_billing"])
+        self.assertEqual("UNVERIFIED", result["official_chatgpt_same_run_calls"])
+        self.assertNotIn("DONT_OUTPUT_THIS", json.dumps(result))
+
+    def test_github_cloud_foreign_or_self_hosted_is_unverified(self):
+        env = {
+            "GITHUB_ACTIONS": "true",
+            "GITHUB_REPOSITORY": "watersun79-source/ai-token-optimization",
+            "GITHUB_REF": "refs/heads/ai/r16-v81-fast-full-ci-20261024",
+            "RUNNER_ENVIRONMENT": "github-hosted",
+            "RUNNER_OS": "Linux",
+            "GITHUB_EVENT_NAME": "push",
+            "GITHUB_JOB": "full-regression",
+            "GITHUB_SHA": "f" * 40,
+            "GITHUB_RUN_ID": "1234",
+        }
+        for key, value in (
+            ("GITHUB_REPOSITORY", "other/repo"),
+            ("RUNNER_ENVIRONMENT", "self-hosted"),
+            ("GITHUB_REF", "refs/heads/main"),
+            ("GITHUB_JOB", "deploy"),
+        ):
+            with self.subTest(key=key):
+                actual = b.github_cloud_context(dict(env, **{key: value}))
+                self.assertEqual("UNVERIFIED", actual["status"])
+                self.assertIsNone(actual["run_id"])
+
+    def test_github_cloud_rejects_malformed_run_and_sha(self):
+        env = {
+            "GITHUB_ACTIONS": "true",
+            "GITHUB_REPOSITORY": "watersun79-source/ai-token-optimization",
+            "GITHUB_REF": "refs/heads/ai/r16-v81-fast-full-ci-20261024",
+            "RUNNER_ENVIRONMENT": "github-hosted",
+            "RUNNER_OS": "Linux",
+            "GITHUB_EVENT_NAME": "push",
+            "GITHUB_JOB": "fast-audit",
+            "GITHUB_SHA": "b" * 40,
+            "GITHUB_RUN_ID": "123",
+        }
+        for key, bad in (
+            ("GITHUB_SHA", "not-a-sha"),
+            ("GITHUB_SHA", "Ｂ" * 40),
+            ("GITHUB_RUN_ID", "١٢٣"),
+            ("GITHUB_RUN_ID", "0"),
+            ("GITHUB_RUN_ID", "-1"),
+        ):
+            with self.subTest(key=key, bad=bad):
+                actual = b.github_cloud_context(dict(env, **{key: bad}))
+                self.assertEqual("UNVERIFIED", actual["status"])
+                self.assertIsNone(actual["trigger_sha"])
+
+
+
 if __name__ == "__main__":
     unittest.main()
