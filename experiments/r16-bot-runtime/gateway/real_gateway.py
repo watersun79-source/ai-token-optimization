@@ -70,7 +70,7 @@ def execute_role(role: str, message: str, *, code: str = "", network: bool = Fal
                         "repair_applied":False}
             # Only repair a uniquely identified missing final ')' on a print call.
             # Do not evaluate user source, touch files, or guess arbitrary syntax.
-            if re.fullmatch(r"print\\([^()\\n]*", code) and not re.search(r"(?i)(?:sk-[A-Za-z0-9_-]{12,}|api[_-]?key\\s*[=:])", code):
+            if re.fullmatch(r"print\([^()\n]*", code) and not re.search(r"(?i)(?:sk-[A-Za-z0-9_-]{12,}|api[_-]?key\s*[=:])", code):
                 fixed = code + ")"
                 try:
                     ast.parse(fixed)
