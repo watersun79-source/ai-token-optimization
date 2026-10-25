@@ -34,7 +34,7 @@ def github_get(path: str, *, request_fn: Callable[..., Any] = urlopen) -> dict:
     allowed = (
         rf"/repos/{re.escape(REPO)}/contents/{re.escape(MEMORY_PATH)}\?ref=ai%2Fcontinuation-readonly-audit-2026-10-18",
         rf"/repos/{re.escape(REPO)}/actions/runs\?branch=ai%2Fr16-v81-fast-full-ci-20261024&per_page=1",
-        rf"/repos/{re.escape(REPO)}/branches/ai%2Fr16-v81-fast-full-ci-20261024",
+        rf"/repos/{re.escape(REPO)}/branches/ai/r16-v81-fast-full-ci-20261024",
         rf"/repos/{re.escape(REPO)}",
     )
     oss_allowed = tuple(rf"/repos/{re.escape(repo)}" for repo in OSS_ALLOWLIST.values())
@@ -123,7 +123,7 @@ def execute_role(role: str, message: str, *, code: str = "", network: bool = Fal
         if not network:
             return _result(role,"BLOCKED",note="Run with --allow-github-read to inspect last remote CI metadata")
         try:
-            branch=fetch(f"/repos/{REPO}/branches/ai%2Fr16-v81-fast-full-ci-20261024")
+            branch=fetch(f"/repos/{REPO}/branches/ai/r16-v81-fast-full-ci-20261024")
             current_sha=(branch.get("commit") or {}).get("sha")
             if not isinstance(current_sha,str) or not re.fullmatch(r"[0-9a-f]{40}",current_sha):
                 return _result(role,"UNVERIFIED",note="Current branch HEAD SHA unavailable or invalid")

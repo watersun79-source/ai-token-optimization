@@ -189,7 +189,7 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(r['evidence']['id'],42)
         self.assertTrue(r['evidence']['head_match'])
         self.assertEqual(observed, [
-            '/repos/'+REPO+'/branches/ai%2Fr16-v81-fast-full-ci-20261024',
+            '/repos/'+REPO+'/branches/ai/r16-v81-fast-full-ci-20261024',
             '/repos/'+REPO+'/actions/runs?branch=ai%2Fr16-v81-fast-full-ci-20261024&per_page=1'])
 
     def test_ci_stale_success_must_not_verify_current_head(self):
