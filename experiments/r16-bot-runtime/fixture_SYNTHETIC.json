@@ -1,0 +1,48 @@
+{
+  "schema_version": "bot100-v2",
+  "source": "synthetic_fixture",
+  "slack": {
+    "messages": [
+      {
+        "channel": "C0000000000",
+        "ts": "1700000000.000001",
+        "thread_ts": "1700000000.000001",
+        "text": "synthetic example"
+      }
+    ]
+  },
+  "activepieces": {
+    "nodes": [
+      {
+        "id": "trigger",
+        "next": [
+          "process"
+        ]
+      },
+      {
+        "id": "process",
+        "next": []
+      }
+    ]
+  },
+  "max_start_delay_seconds": 600,
+  "runs": [
+    {
+      "id": "fixture-run-001",
+      "source": "synthetic_fixture",
+      "scheduled_at": "2026-10-24T08:00:00+09:00",
+      "started_at": "2026-10-24T08:00:03+09:00",
+      "ended_at": "2026-10-24T08:00:09+09:00",
+      "events": [
+        {
+          "at": "2026-10-24T08:00:05+09:00",
+          "level": "INFO",
+          "type": "fixture"
+        }
+      ],
+      "raw_log": "{\"event\":\"completed\",\"result\":\"synthetic\"}",
+      "raw_log_sha256": "04552dc610688b60fc5c45911d072137a79bdf2a94304dfac61962e8fe331ca4",
+      "artifact_path": "logs/synthetic.json"
+    }
+  ]
+}

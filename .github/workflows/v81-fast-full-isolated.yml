@@ -37,6 +37,7 @@ on:
       - experiments/r16-bot-runtime/v81_source_parity.py
       - experiments/r16-bot-runtime/replacement_bots.py
       - experiments/r16-bot-runtime/test_v81_replacement_bridge.py
+      - experiments/r16-bot-runtime/fixture_SYNTHETIC.json
       - experiments/r16-bot-runtime/test_v81_source_parity.py
       - experiments/r16-bot-runtime/test_v81_behavior_oracle.py
       - experiments/r16-bot-runtime/v81_output_contract.py

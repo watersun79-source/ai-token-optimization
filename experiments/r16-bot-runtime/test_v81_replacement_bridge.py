@@ -47,6 +47,18 @@ class ReplacementBridgeTests(unittest.TestCase):
             {"_externally_attested": True}
         ))
 
+    def test_public_fixture_file_matches_safe_generator(self):
+        import json
+        from pathlib import Path
+        path = Path(__file__).resolve().parent / "fixture_SYNTHETIC.json"
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(adapter.sample_fixture(), loaded)
+        self.assertEqual("C0000000000", loaded["slack"]["messages"][0]["channel"])
+        self.assertEqual("synthetic_fixture", loaded["source"])
+        self.assertEqual("synthetic_fixture", loaded["runs"][0]["source"])
+        self.assertEqual({"LOCAL_PASS"}, set(bridge.check_all(loaded).values()))
+        self.assertEqual("UNVERIFIED", bridge.classify_provenance(loaded["runs"][0]))
+
     def test_malformed_synthetic_field_stays_unverified(self):
         sample = adapter.sample_fixture()
         sample["runs"][0].pop("raw_log")
