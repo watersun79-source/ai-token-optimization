@@ -7,6 +7,8 @@ on:
       - ai/r16-v81-fast-full-ci-20261024
     paths:
       - experiments/r16-bot-runtime/v81_split_bench.py
+      - experiments/r16-bot-runtime/v81_swarm.py
+      - experiments/r16-bot-runtime/test_v81_swarm.py
       - experiments/r16-bot-runtime/runner.py
       - experiments/r16-evidence-reconciler/audit_v2.py
       - experiments/r16-evidence-reconciler/tests/test_audit_v2.py
@@ -77,6 +79,10 @@ jobs:
           persist-credentials: false
       - name: Verify optional offline 18-role substitutions (not native attestation)
         run: python3 -m unittest -q test_v81_verifiable_18
+      - name: Coordinate and independently verify local FAST swarm
+        run: |
+          python3 -m unittest -q test_v81_swarm
+          python3 v81_swarm.py --mode audit --workers 4
       - name: Verify self-reported Activepieces checkpoint chronology
         run: python3 -m unittest -q test_v81_activepieces_checkpoint_audit
       - name: Verify scheduled run evidence reconciler rejects non-ASCII Slack timestamps
@@ -155,6 +161,9 @@ jobs:
       - name: Measure pinned local Python Java JavaScript regressions
         if: steps.change_gate.outputs.run_full == 'true'
         run: python3 measure_runtime.py
+      - name: Independently verify 100-role offline swarm
+        if: steps.change_gate.outputs.run_full == 'true'
+        run: python3 v81_swarm.py --mode all --workers 4
       - name: Verify base tests and 18 replacement negative tests
         if: steps.change_gate.outputs.run_full == 'true'
         run: python3 -m unittest -q test_runtime test_v81_split_bench test_v81_behavior_oracle test_v81_output_contract
