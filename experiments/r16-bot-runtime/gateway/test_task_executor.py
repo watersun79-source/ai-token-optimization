@@ -32,6 +32,25 @@ class TaskExecutorTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "credential"):
                     compact("safe\n" + secret + "\n")
 
+    def test_prefixed_environment_secrets_blocked(self):
+        for name in ("OPENAI_API_KEY", "GITHUB_TOKEN",
+                     "SLACK_BOT_TOKEN", "DATABASE_PASSWORD"):
+            with self.subTest(name=name):
+                with self.assertRaisesRegex(ValueError, "credential"):
+                    compact(name + "=notARealSecret1234567")
+
+    def test_authorization_headers_blocked_without_leak(self):
+        for scheme in ("Bearer", "Basic"):
+            credential = "Authorization: " + scheme + " notARealSecret1234567"
+            with self.subTest(scheme=scheme):
+                with self.assertRaisesRegex(ValueError, "credential"):
+                    compact(credential)
+                p = subprocess.run(
+                    [sys.executable, str(Path(__file__).with_name("task_executor.py")), "--stdin"],
+                    input=credential, text=True, capture_output=True, timeout=3)
+                self.assertEqual(p.returncode, 2)
+                self.assertNotIn("notARealSecret1234567", p.stdout)
+
     def test_bad_input_refused(self):
         for value in (""," "*12,"a"*4001,None):
             with self.assertRaises(ValueError):

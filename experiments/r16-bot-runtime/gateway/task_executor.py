@@ -8,8 +8,10 @@ import sys
 MAX_INPUT = 4000
 SECRET = re.compile(
     r"(?i)(?:\bsk-[A-Za-z0-9_-]{12,}|\bgh[pousr]_[A-Za-z0-9_]{20,}|"
-    r"\bgithub_pat_[A-Za-z0-9_]{20,}|\b(?:api[_-]?key|access[_-]?token|"
-    r"auth[_-]?token|token|password|secret)\s*[=:]\s*[^\s]{8,})"
+    r"\bgithub_pat_[A-Za-z0-9_]{20,}|"
+    r"\b(?:[A-Za-z][A-Za-z0-9]*[_-])*(?:api[_-]?key|access[_-]?token|"
+    r"auth[_-]?token|token|password|secret)\s*[=:]\s*[^\s]{8,}|"
+    r"\bAuthorization\s*:\s*(?:Bearer|Basic)\s+[^\s]{8,})"
 )
 # Markdown fence opener/closer: 0..3 spaces, >=3 matching backticks or tildes.
 FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
