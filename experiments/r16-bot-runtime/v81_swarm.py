@@ -37,6 +37,7 @@ def _plan(catalog, mode, max_workers):
                        for x in catalog)
             or {x["id"] for x in catalog} != reference.IDS):
         raise ValueError("complete 100-ID local catalogue required")
+    runner.require_trusted_catalog(catalog)
     groups = {prefix: [] for prefix in sorted(reference.GOALS[mode])}
     for role in catalog:
         if role["id"][0] in groups:

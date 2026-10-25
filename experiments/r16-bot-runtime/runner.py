@@ -21,6 +21,30 @@ NATIVE_ROLE_IDS = frozenset(
     + [f'L{i:02d}' for i in range(6, 11)]
     + [f'A{i:02d}' for i in range(7, 10)]
 )
+# Reviewed public isolated-branch catalog, not the unavailable private ZIP.
+# Any catalog modification must be separately reviewed and this pin updated.
+ISOLATED_CATALOG_SHA256 = "afcef031e77fc517fa7964386d7aeeffadcd9fad09605e2a6d68c278098b2abe"
+
+
+def require_trusted_catalog(catalog):
+    """Reject catalog rule rewrites even when all 100 IDs remain unchanged."""
+    try:
+        source = (ROOT / 'catalog.json').read_bytes()
+        if hashlib.sha256(source).hexdigest() != ISOLATED_CATALOG_SHA256:
+            raise ValueError('unreviewed catalog source digest')
+        baseline = json.loads(source)
+        if (not isinstance(catalog, list) or len(catalog) != 100
+                or not all(isinstance(x, dict) and isinstance(x.get('id'), str)
+                           for x in catalog)):
+            raise ValueError('invalid catalog structure')
+        if (len({x['id'] for x in catalog}) != 100
+                or sorted(catalog, key=lambda x: x['id'])
+                != sorted(baseline, key=lambda x: x['id'])):
+            raise ValueError('catalog rules differ from pinned baseline')
+    except (OSError, json.JSONDecodeError, TypeError, KeyError) as exc:
+        raise ValueError('catalog integrity cannot be verified') from None
+
+
 RECEIPT_INPUT_FILES = (
     'runner.py', 'measure_runtime.py', 'catalog.json', 'test_runtime.py',
     'UtcStrictOracle.java', 'utc_strict_oracle.js', 'utc_strict_oracle_cases.tsv',
@@ -192,6 +216,7 @@ def main(args=None):
     p.add_argument('--evidence',default=str(ROOT/'evidence.json'))
     a=p.parse_args(args)
     catalog=json.loads((ROOT/'catalog.json').read_text(encoding='utf8'))
+    require_trusted_catalog(catalog)
     evidence=json.loads(Path(a.evidence).read_text(encoding='utf8'))
     item=next((x for x in catalog if x['id']==a.bot),None)
     if item is None: p.error('unregistered bot')

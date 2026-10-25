@@ -121,6 +121,20 @@ class SwarmTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             swarm.collaborate(self.catalog, self.evidence, fixture=[])
 
+    def test_redefined_rule_with_same_100_ids_is_blocked(self):
+        forged = json.loads(json.dumps(self.catalog))
+        next(x for x in forged if x["id"] == "S02")["expected"] = False
+        with self.assertRaisesRegex(ValueError, "catalog"):
+            swarm.collaborate(forged, self.evidence, "audit")
+
+    def test_wrong_native_role_metadata_is_blocked(self):
+        forged = json.loads(json.dumps(self.catalog))
+        role = next(x for x in forged if x["id"] == "E10")
+        role.update(field="schedule.enabled", operator="eq",
+                    expected=True, evidence_source="automations.peek")
+        with self.assertRaisesRegex(ValueError, "catalog"):
+            swarm.collaborate(forged, self.evidence, "all")
+
     def test_provider_and_operational_side_effects_remain_zero(self):
         result = swarm.collaborate(self.catalog, self.evidence)
         self.assertEqual("ISOLATED_OFFLINE_SWARM_NOT_NATIVE", result["kind"])

@@ -248,6 +248,7 @@ def execute(catalog: list, evidence: dict, mode: str, fixture: dict | None = Non
         raise ValueError("unsupported mode")
     if len(catalog) != 100 or {v["id"] for v in catalog} != IDS:
         raise ValueError("catalog must contain 100 distinct known BOT IDs")
+    runner.require_trusted_catalog(catalog)
     if not isinstance(evidence, dict):
         raise ValueError("offline evidence must be an object")
     fixture = sample_fixture() if fixture is None else fixture

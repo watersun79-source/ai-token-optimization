@@ -91,6 +91,12 @@ class SplitBenchTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             b.execute(catalog, EVIDENCE, "all")
 
+    def test_rewritten_catalog_metadata_is_rejected_even_with_valid_ids(self):
+        forged = copy.deepcopy(CATALOG)
+        next(x for x in forged if x["id"] == "S02")["expected"] = False
+        with self.assertRaisesRegex(ValueError, "catalog"):
+            b.execute(forged, EVIDENCE, "all")
+
     def test_fake_synthetic_secret_rejected(self):
         fixture = b.sample_fixture()
         fixture["slack"]["messages"][0]["text"] = "token=FAKE_TEST"
