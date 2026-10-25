@@ -40,6 +40,10 @@ REVIEWED_DIFFERENCES = {
         "disposition": "KEEP_BRANCH_HARDENING",
         "reason": "isolated branch retains strict RRULE validation and avoids absent private replacement dependencies",
     },
+    "test_runtime.py": {
+        "disposition": "KEEP_BRANCH_HARDENING",
+        "reason": "isolated branch removes an absent legacy-native file dependency and adds strict RRULE negative coverage while retaining fail-closed native gates",
+    },
 }
 assert set(REVIEWED_DIFFERENCES) <= set(ORIGINAL_SHA256)
 

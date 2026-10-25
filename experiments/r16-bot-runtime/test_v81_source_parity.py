@@ -38,15 +38,17 @@ class SourceParityTests(unittest.TestCase):
             with self.subTest(filename=filename):
                 self.assertEqual("ABSENT", report["files"][filename]["status"])
 
-    def test_runner_difference_is_reviewed_without_claiming_exact(self):
+    def test_reviewed_hardening_differences_do_not_claim_exact(self):
         report = parity.compare()
-        self.assertEqual("DIFFERENT", report["files"]["runner.py"]["status"])
-        self.assertEqual(1, report["reviewed_difference_count"])
-        self.assertEqual(6, report["unresolved_difference_count"])
-        self.assertEqual(
-            "KEEP_BRANCH_HARDENING",
-            report["reviewed_differences"]["runner.py"]["disposition"],
-        )
+        for filename in ("runner.py", "test_runtime.py"):
+            with self.subTest(filename=filename):
+                self.assertEqual("DIFFERENT", report["files"][filename]["status"])
+                self.assertEqual(
+                    "KEEP_BRANCH_HARDENING",
+                    report["reviewed_differences"][filename]["disposition"],
+                )
+        self.assertEqual(2, report["reviewed_difference_count"])
+        self.assertEqual(5, report["unresolved_difference_count"])
         self.assertFalse(report["verbatim_source_match"])
         self.assertFalse(report["full_v81_deployed"])
 
