@@ -32,6 +32,17 @@ ORIGINAL_SHA256 = {
 assert len(ORIGINAL_SHA256) == 10
 assert all(len(x) == 64 and set(x) <= set("0123456789abcdef") for x in ORIGINAL_SHA256.values())
 
+# Reviewed against the authenticated private ZIP without publishing its bytes.
+# A reviewed difference remains DIFFERENT; this only records a fail-closed
+# disposition so it is not repeatedly treated as an unexplained gap.
+REVIEWED_DIFFERENCES = {
+    "runner.py": {
+        "disposition": "KEEP_BRANCH_HARDENING",
+        "reason": "isolated branch retains strict RRULE validation and avoids absent private replacement dependencies",
+    },
+}
+assert set(REVIEWED_DIFFERENCES) <= set(ORIGINAL_SHA256)
+
 
 def compare(root: Path = ROOT) -> dict:
     rows = {}
@@ -51,12 +62,25 @@ def compare(root: Path = ROOT) -> dict:
     counts = {key: sum(row["status"] == key for row in rows.values())
               for key in ("EXACT", "DIFFERENT", "ABSENT")}
     exact = counts["EXACT"] == len(ORIGINAL_SHA256)
+    reviewed = {
+        filename: REVIEWED_DIFFERENCES[filename]
+        for filename, row in rows.items()
+        if row["status"] != "EXACT" and filename in REVIEWED_DIFFERENCES
+    }
+    unresolved = sorted(
+        filename for filename, row in rows.items()
+        if row["status"] != "EXACT" and filename not in reviewed
+    )
     return {
         "kind": "OFFLINE_SOURCE_SHA_COMPARISON_NOT_NATIVE_PLATFORM_EVIDENCE",
         "local_original_zip_sha256": LOCAL_V81_ZIP_SHA256,
         "local_original_archive_available_on_runner": False,
         "file_count": len(rows),
         "counts": counts,
+        "reviewed_differences": reviewed,
+        "reviewed_difference_count": len(reviewed),
+        "unresolved_difference_count": len(unresolved),
+        "unresolved_difference_files": unresolved,
         "verbatim_source_match": exact,
         "full_v81_deployed": False,
         "external_llm_calls": 0,
