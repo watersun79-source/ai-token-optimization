@@ -36,10 +36,18 @@ def compact(text):
         raise ValueError("input must contain 1..4000 characters")
     if SECRET.search(text) or QUOTED_SECRET.search(text) or QUOTED_AUTH.search(text):
         raise ValueError("suspected credential; refuse processing")
+    # Parsed JSON lists/objects are structured data, not duplicate prose.
+    # Preserve array multiplicity and exact serialized bytes.
+    preserve_json = False
+    if text.lstrip().startswith(("{", "[")):
+        try:
+            preserve_json = isinstance(json.loads(text), (dict, list))
+        except json.JSONDecodeError:
+            pass
     seen, kept, removed = set(), [], 0
     in_code = False
     fence_char, fence_len = "", 0
-    lines = text.splitlines()
+    lines = [] if preserve_json else text.splitlines()
     for index, line in enumerate(lines):
         fence = FENCE.match(line)
         if in_code:
@@ -86,7 +94,7 @@ def compact(text):
         kept.append(normalized)
     if in_code:
         raise ValueError("unclosed code fence; refuse lossy compaction")
-    output = "\n".join(kept)
+    output = text if preserve_json else "\n".join(kept)
     original_bytes = len(text.encode("utf-8"))
     output_bytes = len(output.encode("utf-8"))
     return {

@@ -92,6 +92,25 @@ class TaskExecutorTests(unittest.TestCase):
         self.assertIn("BLOCKED", process.stdout)
         self.assertNotIn("fakeValue12345678", process.stdout)
 
+    def test_json_array_repeated_elements_preserved(self):
+        message = '[\n  "task",\n  "task",\n  "done"\n]'
+        report = compact(message)
+        self.assertEqual(report["output"], message)
+        self.assertEqual(json.loads(report["output"]), ["task", "task", "done"])
+        self.assertEqual(report["duplicate_lines_removed"], 0)
+        self.assertEqual(report["bytes_saved"], 0)
+
+    def test_json_object_nested_array_and_whitespace_preserved(self):
+        message = '{\n "steps": [\n  "repeat",\n  "repeat"\n ]\n}\n'
+        report = compact(message)
+        self.assertEqual(report["output"], message)
+        self.assertEqual(json.loads(report["output"])["steps"], ["repeat", "repeat"])
+        self.assertEqual(report["bytes_saved"], 0)
+
+    def test_json_secret_guard_still_precedes_preservation(self):
+        with self.assertRaisesRegex(ValueError, "credential"):
+            compact('{"GITHUB_TOKEN": "fakeValue12345678"}')
+
     def test_noncredential_json_still_allowed(self):
         message = '{"title": "example_value123"}'
         self.assertEqual(compact(message)["output"], message)
