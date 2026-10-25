@@ -228,7 +228,7 @@ class LiveCollectorTests(unittest.TestCase):
                 data = base64.b64decode(obj["content"]).decode()
                 data = data.replace(
                     "    - cron: '15 * * * *'",
-                    "    - cron: '15 * * * *'\\n    - cron: '30 * * * *'")
+                    "    - cron: '15 * * * *'\n    - cron: '30 * * * *'")
                 obj["content"] = base64.b64encode(data.encode()).decode()
                 return json.dumps(obj)
             return raw
