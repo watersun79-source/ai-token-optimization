@@ -219,6 +219,23 @@ class LiveCollectorTests(unittest.TestCase):
             resolve_main_target(altered, REPO)
         self.assertEqual("PROTECTED_HOURLY_CRON_MISMATCH", str(ex.exception))
 
+    def test_auto_rejects_second_cron_even_when_protected_slot_exists(self):
+        fetch, _ = fake_api()
+        def altered(endpoint):
+            raw = fetch(endpoint)
+            if "/contents/" in endpoint:
+                obj = json.loads(raw)
+                data = base64.b64decode(obj["content"]).decode()
+                data = data.replace(
+                    "    - cron: '15 * * * *'",
+                    "    - cron: '15 * * * *'\\n    - cron: '30 * * * *'")
+                obj["content"] = base64.b64encode(data.encode()).decode()
+                return json.dumps(obj)
+            return raw
+        with self.assertRaises(GitHubReadError) as ex:
+            resolve_main_target(altered, REPO)
+        self.assertEqual("PROTECTED_HOURLY_CRON_MISMATCH", str(ex.exception))
+
     def test_auto_rejects_duplicate_checkout_ref(self):
         fetch, _ = fake_api()
         def altered(endpoint):
