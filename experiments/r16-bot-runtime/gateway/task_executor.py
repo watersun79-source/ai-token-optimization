@@ -26,6 +26,8 @@ QUOTED_AUTH = re.compile(
 )
 # Markdown fence opener/closer: 0..3 spaces, >=3 matching backticks or tildes.
 FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
+# Preserve top-level function calls: repeated invocations may have side effects.
+CALL_LINE = re.compile(r"^ {0,3}[A-Za-z_$][\w.$]*\(.*\)\s*;?$")
 # Structural Markdown tokens are semantic blocks, not redundant prose.
 STRUCTURAL = re.compile(r"^ {0,3}(?:#{1,6}(?:[ \t]|$)|[-+*][ \t]|\d{1,9}[.)][ \t]|>|[|]|(?:[-*_][ \t]*){3,}$)")
 
@@ -61,6 +63,10 @@ def compact(text):
             continue
         if STRUCTURAL.match(line):
             # Repeated headings, tasks, table rows or quotations must survive.
+            kept.append(line)
+            continue
+        if CALL_LINE.match(line):
+            # Unfenced executable-looking calls are not redundant prose.
             kept.append(line)
             continue
         normalized = re.sub(r"\s+", " ", line).strip()
