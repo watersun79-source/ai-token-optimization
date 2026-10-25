@@ -26,6 +26,10 @@ REPO = "watersun79-source/ai-token-optimization"
 MEMORY_REF = "ai/continuation-readonly-audit-2026-10-18"
 MEMORY_PATH = "docs/ai/AI_CURRENT_HANDOFF_2026-10-22.md"
 OSS_ALLOWLIST = {"langgraph":"langchain-ai/langgraph", "crewai":"crewAIInc/crewAI", "agent_framework":"microsoft/agent-framework"}
+APPROVED_CI_WORKFLOWS = frozenset((
+    ".github/workflows/r16-v81-guard-fast.yml",
+    ".github/workflows/v81-fast-full-isolated.yml",
+))
 MAX_MESSAGE, MAX_CODE = 4000, 10000
 
 
@@ -33,7 +37,7 @@ def github_get(path: str, *, request_fn: Callable[..., Any] = urlopen) -> dict:
     """Allowlist paths for trusted GitHub public REST reads; never send a token."""
     allowed = (
         rf"/repos/{re.escape(REPO)}/contents/{re.escape(MEMORY_PATH)}\?ref=ai%2Fcontinuation-readonly-audit-2026-10-18",
-        rf"/repos/{re.escape(REPO)}/actions/runs\?branch=ai%2Fr16-v81-fast-full-ci-20261024&per_page=1",
+        rf"/repos/{re.escape(REPO)}/actions/runs\?branch=ai%2Fr16-v81-fast-full-ci-20261024&per_page=10",
         rf"/repos/{re.escape(REPO)}/branches/ai/r16-v81-fast-full-ci-20261024",
         rf"/repos/{re.escape(REPO)}",
     )
@@ -152,25 +156,50 @@ def execute_role(role: str, message: str, *, code: str = "", network: bool = Fal
             current_sha=(branch.get("commit") or {}).get("sha")
             if not isinstance(current_sha,str) or not re.fullmatch(r"[0-9a-f]{40}",current_sha):
                 return _result(role,"UNVERIFIED",note="Current branch HEAD SHA unavailable or invalid")
-            data=fetch(f"/repos/{REPO}/actions/runs?branch=ai%2Fr16-v81-fast-full-ci-20261024&per_page=1")
-            runs=data.get("workflow_runs")
-            if not isinstance(runs,list) or not runs or not isinstance(runs[0],dict):
-                return _result(role,"UNVERIFIED",note="No valid current-branch CI run metadata")
-            run=runs[0]
-            receipt={"id":run.get("id"),"status":run.get("status"),
-                     "conclusion":run.get("conclusion"),"head_sha":run.get("head_sha"),
-                     "branch_head_sha":current_sha,"html_url":run.get("html_url"),
-                     "head_match":run.get("head_sha")==current_sha,
-                     "source":"GITHUB_RUN_METADATA_ONLY_NO_JOB_LOGS"}
-            if not receipt["head_match"]:
-                return _result(role,"UNVERIFIED",evidence=receipt,note="Newest CI run is for a stale HEAD; no current SHA result")
-            if run.get("status")!="completed":
-                return _result(role,"UNVERIFIED",evidence=receipt,note="Current HEAD CI has not completed")
-            if run.get("conclusion")=="success":
-                return _result(role,"PARTIAL",evidence=receipt,note="Current HEAD CI metadata succeeded; job/raw logs still unverified")
-            if run.get("conclusion") in ("failure","timed_out","cancelled"):
-                return _result(role,"FAIL",evidence=receipt,note="Current HEAD CI failed or cancelled; inspect job/raw logs")
-            return _result(role,"UNVERIFIED",evidence=receipt,note="Current HEAD CI conclusion is not a proven success")
+            data=fetch(f"/repos/{REPO}/actions/runs?branch=ai%2Fr16-v81-fast-full-ci-20261024&per_page=10")
+            runs=data.get("workflow_runs") if isinstance(data, dict) else None
+            if not isinstance(runs,list) or not runs or len(runs)>10:
+                return _result(role,"UNVERIFIED",note="No bounded current-branch CI run page")
+            matching=[
+                run for run in runs
+                if (isinstance(run,dict)
+                    and type(run.get("id")) is int and run["id"]>0
+                    and run.get("head_sha")==current_sha
+                    and run.get("event")=="push"
+                    and run.get("path") in APPROVED_CI_WORKFLOWS)
+            ]
+            receipt={
+                "branch_head_sha":current_sha,
+                "head_match":bool(matching),
+                "verified_workflow_count":len(matching),
+                "runs":[{
+                    "id":run["id"],"path":run["path"],
+                    "status":run.get("status"),
+                    "conclusion":run.get("conclusion"),
+                    "head_sha":run["head_sha"],
+                    "event":run["event"],"html_url":run.get("html_url"),
+                } for run in matching],
+                "native_chatgpt_run_verified":False,
+                "source":"GITHUB_RUN_METADATA_ONLY_NO_JOB_LOGS",
+            }
+            if not matching:
+                return _result(role,"UNVERIFIED",evidence=receipt,
+                               note="No approved push workflow at current HEAD in recent runs")
+            newest=matching[0]
+            receipt.update(id=newest["id"],status=newest.get("status"),
+                           conclusion=newest.get("conclusion"),
+                           head_sha=newest["head_sha"],html_url=newest.get("html_url"))
+            if any(run.get("status")=="completed" and
+                   run.get("conclusion") in ("failure","timed_out","cancelled")
+                   for run in matching):
+                return _result(role,"FAIL",evidence=receipt,
+                               note="Approved current-SHA workflow failed; inspect job/raw logs")
+            if any(run.get("status")!="completed" or
+                   run.get("conclusion")!="success" for run in matching):
+                return _result(role,"UNVERIFIED",evidence=receipt,
+                               note="Approved current-SHA workflows incomplete or not proven")
+            return _result(role,"PARTIAL",evidence=receipt,
+                           note="Approved current-SHA workflow metadata succeeded; raw logs unverified")
         except Exception as exc:
             return _result(role,"BLOCKED",note="CI metadata read failed: "+type(exc).__name__)
     if role == "ai-github-management":

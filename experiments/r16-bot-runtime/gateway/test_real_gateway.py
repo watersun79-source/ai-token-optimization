@@ -250,14 +250,14 @@ class GatewayTests(unittest.TestCase):
         def stub(path):
             observed.append(path)
             if '/branches/' in path: return {'commit': {'sha':head}}
-            return {'workflow_runs':[{'id':42,'conclusion':'success','status':'completed','head_sha':head}]}
+            return {'workflow_runs':[{'id':42,'conclusion':'success','status':'completed','head_sha':head,'path':'.github/workflows/r16-v81-guard-fast.yml','event':'push'}]}
         r=execute_role('ai-code-verification','CI 확인',network=True,fetch=stub)
         self.assertEqual(r['status'],'PARTIAL')
         self.assertEqual(r['evidence']['id'],42)
         self.assertTrue(r['evidence']['head_match'])
         self.assertEqual(observed, [
             '/repos/'+REPO+'/branches/ai/r16-v81-fast-full-ci-20261024',
-            '/repos/'+REPO+'/actions/runs?branch=ai%2Fr16-v81-fast-full-ci-20261024&per_page=1'])
+            '/repos/'+REPO+'/actions/runs?branch=ai%2Fr16-v81-fast-full-ci-20261024&per_page=10'])
 
     def test_ci_stale_success_must_not_verify_current_head(self):
         def stub(path):
@@ -277,13 +277,91 @@ class GatewayTests(unittest.TestCase):
             with self.subTest(state=state, conclusion=conclusion):
                 def stub(path):
                     if '/branches/' in path: return {'commit': {'sha':'a'*40}}
-                    return {'workflow_runs':[{'id':44,'status':state,'conclusion':conclusion,'head_sha':'a'*40}]}
+                    return {'workflow_runs':[{'id':44,'status':state,'conclusion':conclusion,'head_sha':'a'*40,'path':'.github/workflows/r16-v81-guard-fast.yml','event':'push'}]}
                 r=execute_role('ai-code-verification','CI 확인',network=True,fetch=stub)
                 self.assertEqual(r['status'],expected)
 
     def test_ci_missing_current_sha_fails_closed(self):
         r=execute_role('ai-code-verification','CI 확인',network=True,fetch=lambda _: {'commit': {'sha':'abc'}})
         self.assertEqual(r['status'],'UNVERIFIED')
+
+
+    def test_ci_unrelated_workflow_success_not_promoted(self):
+        def stub(path):
+            if '/branches/' in path: return {'commit': {'sha': 'a'*40}}
+            return {'workflow_runs':[{'id':45,'head_sha':'a'*40,'status':'completed',
+                                      'conclusion':'success','event':'push',
+                                      'path':'.github/workflows/unrelated.yml'}]}
+        report=execute_role('ai-code-verification','CI 확인',network=True,fetch=stub)
+        self.assertEqual('UNVERIFIED',report['status'])
+        self.assertEqual(0,report['evidence']['verified_workflow_count'])
+
+    def test_ci_manual_dispatch_success_not_promoted(self):
+        def stub(path):
+            if '/branches/' in path: return {'commit': {'sha': 'a'*40}}
+            return {'workflow_runs':[{'id':46,'head_sha':'a'*40,'status':'completed',
+                                      'conclusion':'success','event':'workflow_dispatch',
+                                      'path':'.github/workflows/r16-v81-guard-fast.yml'}]}
+        report=execute_role('ai-code-verification','CI 확인',network=True,fetch=stub)
+        self.assertEqual('UNVERIFIED',report['status'])
+
+    def test_ci_mixed_guard_success_and_policy_failure_not_green(self):
+        head='a'*40
+        def stub(path):
+            if '/branches/' in path: return {'commit': {'sha': head}}
+            return {'workflow_runs':[
+                {'id':47,'head_sha':head,'status':'completed','conclusion':'success',
+                 'event':'push','path':'.github/workflows/r16-v81-guard-fast.yml'},
+                {'id':48,'head_sha':head,'status':'completed','conclusion':'failure',
+                 'event':'push','path':'.github/workflows/v81-fast-full-isolated.yml'}]}
+        report=execute_role('ai-code-verification','CI 확인',network=True,fetch=stub)
+        self.assertEqual('FAIL',report['status'])
+        self.assertEqual(2,report['evidence']['verified_workflow_count'])
+        self.assertFalse(report['evidence']['native_chatgpt_run_verified'])
+
+    def test_ci_stale_first_current_second_selected(self):
+        head='a'*40
+        def stub(path):
+            if '/branches/' in path: return {'commit': {'sha':head}}
+            return {'workflow_runs':[
+                {'id':49,'head_sha':'b'*40,'status':'completed','conclusion':'success',
+                 'event':'push','path':'.github/workflows/r16-v81-guard-fast.yml'},
+                {'id':50,'head_sha':head,'status':'completed','conclusion':'success',
+                 'event':'push','path':'.github/workflows/r16-v81-guard-fast.yml'}]}
+        report=execute_role('ai-code-verification','CI 확인',network=True,fetch=stub)
+        self.assertEqual('PARTIAL',report['status'])
+        self.assertEqual(50,report['evidence']['id'])
+
+    def test_ci_incomplete_peer_prevents_premature_success(self):
+        head='a'*40
+        def stub(path):
+            if '/branches/' in path: return {'commit': {'sha':head}}
+            return {'workflow_runs':[
+                {'id':51,'head_sha':head,'status':'completed','conclusion':'success',
+                 'event':'push','path':'.github/workflows/r16-v81-guard-fast.yml'},
+                {'id':52,'head_sha':head,'status':'in_progress','conclusion':None,
+                 'event':'push','path':'.github/workflows/v81-fast-full-isolated.yml'}]}
+        report=execute_role('ai-code-verification','CI 확인',network=True,fetch=stub)
+        self.assertEqual('UNVERIFIED',report['status'])
+
+    def test_ci_boolean_run_id_does_not_count(self):
+        def stub(path):
+            if '/branches/' in path: return {'commit': {'sha':'a'*40}}
+            return {'workflow_runs':[{'id':True,'head_sha':'a'*40,
+                                      'status':'completed','conclusion':'success',
+                                      'event':'push','path':'.github/workflows/r16-v81-guard-fast.yml'}]}
+        report=execute_role('ai-code-verification','CI 확인',network=True,fetch=stub)
+        self.assertEqual('UNVERIFIED',report['status'])
+
+    def test_ci_rejects_over_limit_run_page(self):
+        def stub(path):
+            if '/branches/' in path: return {'commit': {'sha':'a'*40}}
+            return {'workflow_runs':[{'id':i+1,'head_sha':'a'*40,
+                                      'status':'completed','conclusion':'success',
+                                      'event':'push','path':'.github/workflows/r16-v81-guard-fast.yml'}
+                                     for i in range(11)]}
+        report=execute_role('ai-code-verification','CI 확인',network=True,fetch=stub)
+        self.assertEqual('UNVERIFIED',report['status'])
 
     def test_repo_info_success(self):
         r=execute_role('ai-github-management','브랜치',network=True,fetch=lambda x:{'full_name':REPO,'default_branch':'main'})
