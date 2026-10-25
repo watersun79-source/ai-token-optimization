@@ -28,6 +28,11 @@ QUOTED_AUTH = re.compile(
 FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
 # Preserve top-level function calls: repeated invocations may have side effects.
 CALL_LINE = re.compile(r"^ {0,3}[A-Za-z_$][\w.$]*\(.*\)\s*;?$")
+# Bare assignments (including +=) may invoke code or change mutable state.
+ASSIGNMENT_LINE = re.compile(
+    r"^ {0,3}(?:(?:const|let|var)\s+)?[A-Za-z_$][\w.$]*"
+    r"(?:\[[^\]\n]+\])?\s*(?::=|[+\-*/%&|^]?=)\s*\S"
+)
 # Structural Markdown tokens are semantic blocks, not redundant prose.
 STRUCTURAL = re.compile(r"^ {0,3}(?:#{1,6}(?:[ \t]|$)|[-+*][ \t]|\d{1,9}[.)][ \t]|>|[|]|(?:[-*_][ \t]*){3,}$)")
 
@@ -75,6 +80,10 @@ def compact(text):
             continue
         if CALL_LINE.match(line):
             # Unfenced executable-looking calls are not redundant prose.
+            kept.append(line)
+            continue
+        if ASSIGNMENT_LINE.match(line):
+            # Repeated assignments can have side effects or accumulate state.
             kept.append(line)
             continue
         normalized = re.sub(r"\s+", " ", line).strip()

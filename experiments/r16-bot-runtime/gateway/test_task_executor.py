@@ -174,6 +174,37 @@ class TaskExecutorTests(unittest.TestCase):
         self.assertEqual(report["output"], "send()\nsend()\nnote")
         self.assertEqual(report["duplicate_lines_removed"], 1)
 
+    def test_unfenced_repeated_assignments_preserve_effects(self):
+        message = ("result = send()\nresult = send()\n"
+                   "count += 1\ncount += 1\n"
+                   "note\nnote")
+        report = compact(message)
+        self.assertEqual(
+            report["output"],
+            "result = send()\nresult = send()\ncount += 1\ncount += 1\nnote",
+        )
+        self.assertEqual(report["duplicate_lines_removed"], 1)
+
+    def test_unfenced_javascript_and_indexed_assignments_preserved(self):
+        for expression in ("const job = enqueue();", "let value = get();",
+                           "items[0] = pop()", "total -= 1"):
+            with self.subTest(expression=expression):
+                message = expression + "\n" + expression + "\nplain\nplain"
+                report = compact(message)
+                self.assertEqual(report["output"],
+                                 expression + "\n" + expression + "\nplain")
+                self.assertEqual(report["duplicate_lines_removed"], 1)
+
+    def test_cli_assignment_dedup_is_fail_safe(self):
+        message = "count += 1\ncount += 1\nordinary\nordinary"
+        p = subprocess.run(
+            [sys.executable, str(Path(__file__).with_name("task_executor.py")), "--stdin"],
+            input=message, text=True, capture_output=True, timeout=3)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        result = json.loads(p.stdout.split("R16_TASK_EXECUTOR=", 1)[1])
+        self.assertEqual(result["output"], "count += 1\ncount += 1\nordinary")
+        self.assertEqual(result["duplicate_lines_removed"], 1)
+
     def test_plain_prose_dedup_unchanged(self):
         message = "한 줄\n한 줄\n마지막"
         result = compact(message)
