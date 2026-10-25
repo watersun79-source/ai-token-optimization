@@ -116,6 +116,11 @@ def audit_checkpoints(rows: list[dict], first_slot: str, last_slot: str) -> dict
             elif at_ns < (slot.astimezone(timezone.utc), 0):
                 status, reason = "FAIL", "PRE_SLOT_OBSERVATION"
                 delta = delay_seconds_ns(at_ns, slot)
+            elif at_ns >= ((slot + timedelta(hours=1)).astimezone(timezone.utc), 0):
+                # A later hourly slot might explain this self-reported record.
+                # Never promote ambiguous cross-slot evidence to PASS.
+                status, reason = "UNVERIFIED", "CROSS_SLOT_OBSERVATION"
+                delta = delay_seconds_ns(at_ns, slot)
             elif task_id is None:
                 status, reason, delta = "UNVERIFIED", "TASK_ID_NOT_INCLUDED", None
             elif level != SELF_REPORTED:

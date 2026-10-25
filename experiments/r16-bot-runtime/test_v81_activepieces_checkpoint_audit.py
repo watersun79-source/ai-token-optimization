@@ -134,6 +134,28 @@ class CheckpointAuditTests(unittest.TestCase):
         self.assertEqual("FAIL", checked["slots"][0]["checkpoint_status"])
         self.assertEqual("INVALID_OBSERVED_TIME", checked["slots"][0]["reason"])
 
+    def test_cross_slot_checkpoint_is_not_silent_pass(self):
+        boundary_cases = (
+            ("2026-10-21T15:59:59.999999999Z", "PASS", "CHECKPOINT_CHRONOLOGY_ONLY"),
+            ("2026-10-21T16:00:00.000000000Z", "UNVERIFIED", "CROSS_SLOT_OBSERVATION"),
+            ("2026-10-21T16:00:00.000000001Z", "UNVERIFIED", "CROSS_SLOT_OBSERVATION"),
+            ("2026-10-22T15:00:00Z", "UNVERIFIED", "CROSS_SLOT_OBSERVATION"),
+        )
+        for observation, expected_status, expected_reason in boundary_cases:
+            with self.subTest(observed=observation):
+                row = {"cells": {
+                    "automationId": AUTOMATION_ID,
+                    "scheduledSlotKst": FIRST,
+                    "observedAtUtc": observation,
+                    "evidenceLevel": SELF_REPORTED,
+                }}
+                checked = audit_checkpoints([row], FIRST, FIRST)
+                slot = checked["slots"][0]
+                self.assertEqual(expected_status, slot["checkpoint_status"])
+                self.assertEqual(expected_reason, slot["reason"])
+                self.assertFalse(slot["native_execution_proven"])
+                self.assertFalse(checked["official_native_run_id_verified"])
+
     def test_parsers_reject_bad_timezone_and_fraction(self):
         self.assertIsNone(parse_slot("2026-10-22 00:00 UTC"))
         self.assertIsNone(parse_utc("2026-10-21T15:00:00+09:00"))
