@@ -21,6 +21,19 @@ class JavaScriptFixtureCoverageTests(unittest.TestCase):
     def rows(self):
         return (ROOT / "utc_strict_oracle_cases.tsv").read_text(encoding="utf8").splitlines()
 
+    def test_script_reads_fixture_relative_to_its_own_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shutil.copyfile(ROOT / "utc_strict_oracle.js", root / "utc_strict_oracle.js")
+            (root / "utc_strict_oracle_cases.tsv").write_text(
+                "\n".join(self.rows()) + "\n", encoding="utf8")
+            with tempfile.TemporaryDirectory() as other_dir:
+                result = subprocess.run(
+                    ["node", str(root / "utc_strict_oracle.js")],
+                    cwd=other_dir, capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("PASS 20/20", result.stdout)
+
     def test_added_passing_case_is_counted(self):
         result = self.run_fixture(self.rows() + ["2026-10-24T05:00:00Z\tPASS"])
         self.assertEqual(result.returncode, 0, result.stderr)

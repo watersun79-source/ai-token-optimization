@@ -1,5 +1,6 @@
 "use strict";
 const fs=require('node:fs');
+const path=require('node:path');
 function strictUtc(s){
   const m=/^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})(?:\.([0-9]{1,9}))?(Z|([+-])([0-9]{2}):([0-9]{2}))$/.exec(s);
   if(!m)return false;
@@ -10,7 +11,7 @@ function strictUtc(s){
   const d=new Date(0);d.setUTCFullYear(year,mon-1,day);d.setUTCHours(hh,mm,ss,0);
   return d.getUTCFullYear()===year&&d.getUTCMonth()===mon-1&&d.getUTCDate()===day&&d.getUTCHours()===hh&&d.getUTCMinutes()===mm&&d.getUTCSeconds()===ss;
 }
-const raw=fs.readFileSync('utc_strict_oracle_cases.tsv','utf8');
+const raw=fs.readFileSync(path.join(__dirname,'utc_strict_oracle_cases.tsv'),'utf8');
 const lines=raw.replace(/\r?\n$/, '').split(/\r?\n/);
 if(lines.length<2 || lines[0]!=='value\texpected')throw Error('invalid or empty fixture');
 const rows=lines.slice(1);

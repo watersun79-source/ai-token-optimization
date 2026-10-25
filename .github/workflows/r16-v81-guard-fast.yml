@@ -24,6 +24,7 @@ on:
       - experiments/r16-bot-runtime/test_runtime.py
       - experiments/r16-bot-runtime/UtcStrictOracle.java
       - experiments/r16-bot-runtime/utc_strict_oracle.js
+      - experiments/r16-bot-runtime/test_javascript_fixture_coverage.py
       - experiments/r16-bot-runtime/utc_strict_oracle_cases.tsv
   workflow_dispatch:
     inputs:
@@ -107,7 +108,9 @@ jobs:
       - name: Report original ZIP fingerprint gaps before generated receipt changes
         run: python3 v81_source_parity.py
       - name: Refresh local regression receipt from Python Java and Node
-        run: python3 measure_runtime.py
+        run: |
+          python3 measure_runtime.py
+          python3 -m unittest -q test_javascript_fixture_coverage
       - name: Full 100 synthetic roles after FAST passes
         run: python3 v81_swarm.py --mode all --workers 4
       - name: Execute real bounded Python worker gateway and HTTP integration tests
