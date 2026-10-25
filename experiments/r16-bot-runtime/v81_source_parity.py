@@ -45,6 +45,11 @@ REVIEWED_DIFFERENCES = {
         "reason": "isolated branch removes an absent legacy-native file dependency and adds strict RRULE negative coverage while retaining fail-closed native gates",
     },
 }
+    "utc_strict_oracle.js": {
+        "disposition": "KEEP_BRANCH_HARDENING",
+        "reason": "isolated branch resolves the fixture beside the script and rejects empty, malformed, or invalid-result rows fail-closed",
+    },
+}
 assert set(REVIEWED_DIFFERENCES) <= set(ORIGINAL_SHA256)
 
 
