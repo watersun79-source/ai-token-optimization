@@ -126,7 +126,7 @@ jobs:
           python3 - <<'PY'
           import json, os
           from task_executor import compact
-          sample = 'repeat\\nunique\\nrepeat\\n'
+          sample = chr(10).join(['repeat', 'unique', 'repeat'])
           report = compact(sample)
           assert report['duplicate_lines_removed'] == 1
           print('R16_REAL_COMPACTION_SAMPLE=' + json.dumps({
