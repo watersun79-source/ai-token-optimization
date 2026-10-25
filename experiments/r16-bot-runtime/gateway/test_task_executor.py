@@ -51,6 +51,31 @@ class TaskExecutorTests(unittest.TestCase):
                 self.assertEqual(p.returncode, 2)
                 self.assertNotIn("notARealSecret1234567", p.stdout)
 
+    def test_quoted_config_credential_refused(self):
+        cases = (
+            '{"OPENAI_API_KEY": "fakeValue12345678"}',
+            '{"GITHUB_TOKEN": "fakeValue12345678"}',
+            "{'SLACK_BOT_TOKEN': 'fakeValue12345678'}",
+            '{"DATABASE_PASSWORD":"fakeValue12345678"}',
+        )
+        for message in cases:
+            with self.subTest(name=message.split(":")[0]):
+                with self.assertRaisesRegex(ValueError, "credential"):
+                    compact(message)
+
+    def test_quoted_config_cli_does_not_echo_secret(self):
+        message = '{"OPENAI_API_KEY": "fakeValue12345678"}'
+        p = subprocess.run(
+            [sys.executable, str(Path(__file__).with_name("task_executor.py")), "--stdin"],
+            input=message, text=True, capture_output=True, timeout=3)
+        self.assertEqual(p.returncode, 2)
+        self.assertIn("BLOCKED", p.stdout)
+        self.assertNotIn("fakeValue12345678", p.stdout)
+
+    def test_noncredential_json_still_allowed(self):
+        message = '{"title": "example_value123"}'
+        self.assertEqual(compact(message)["output"], message)
+
     def test_bad_input_refused(self):
         for value in (""," "*12,"a"*4001,None):
             with self.assertRaises(ValueError):
