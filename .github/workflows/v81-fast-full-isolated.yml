@@ -15,6 +15,8 @@ on:
       - experiments/r16-bot-runtime/test_v81_swarm.py
       - experiments/r16-bot-runtime/v81_schedule_provenance.py
       - experiments/r16-bot-runtime/v81_unified_schedule_provenance.py
+      - experiments/r16-bot-runtime/v81_live_schedule_collector.py
+      - experiments/r16-bot-runtime/test_v81_live_schedule_collector.py
       - experiments/r16-bot-runtime/test_v81_unified_schedule_provenance.py
       - experiments/r16-bot-runtime/test_v81_schedule_provenance.py
       - experiments/r16-bot-runtime/runner.py
@@ -64,6 +66,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: ai-r16-v81-fast-full-isolated
@@ -95,6 +98,16 @@ jobs:
         run: python3 -m unittest -q test_v81_schedule_provenance
       - name: Independently exercise unified schedule provenance fail-closed fixture cases
         run: python3 -m unittest -q test_v81_unified_schedule_provenance
+      - name: Verify live schedule collector with mocked API negative cases
+        run: python3 -m unittest -q test_v81_live_schedule_collector
+      - name: Read official GitHub schedule API and correlate unified evidence (read-only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 v81_live_schedule_collector.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --expected-workflow-sha "923c281f82023cc6b49f3844bad17f508f1ab203" \
+            --expected-source-sha "a88c7993c27404da43cba84a8f69e01a917315a6"
       - name: Verify self-reported Activepieces checkpoint chronology
         run: python3 -m unittest -q test_v81_activepieces_checkpoint_audit
       - name: Verify scheduled run evidence reconciler rejects non-ASCII Slack timestamps
