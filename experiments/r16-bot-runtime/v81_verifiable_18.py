@@ -57,17 +57,21 @@ def event_from_log(log: str | None, predicate) -> dict | None:
     """Parse one exact JSON object from a timestamp-prefixed Actions log line."""
     if log is None:
         return None
+    observed = []
     for line in log.splitlines():
-        left = line.find("{")
-        if left < 0:
+        match = re.fullmatch(
+            r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}"
+            r"(?:\.[0-9]{1,9})?Z (\{.*\})", line)
+        if match is None:
             continue
         try:
-            item = json.loads(line[left:])
+            item = json.loads(match.group(1))
         except (ValueError, TypeError):
             continue
         if isinstance(item, dict) and predicate(item):
-            return item
-    return None
+            observed.append(item)
+    # Multiple matching records are ambiguous, even if a first record looked valid.
+    return observed[0] if len(observed) == 1 else None
 
 
 def evaluate(snapshot: dict) -> dict:
@@ -128,8 +132,15 @@ def evaluate(snapshot: dict) -> dict:
     check(12, (created is not None and started is not None and finished is not None
                and created <= started <= finished)
           if run and job else None, "time order created <= job start <= job end")
-    check(13, (f"git checkout --progress --force {PINNED_SHA}" in log and
-               f"ref: {PINNED_SHA}" in log)
+    # Only an emitted checkout trace counts, not an echo/command that merely
+    # prints the pinned SHA or contains its literal text.
+    checkout_line = re.compile(
+        rf"(?m)^[0-9]{{4}}-[0-9]{{2}}-[0-9]{{2}}T[0-9]{{2}}:[0-9]{{2}}:[0-9]{{2}}"
+        rf"(?:\.[0-9]{{1,9}})?Z (?:\[command\]/usr/bin/)?git checkout --progress --force {PINNED_SHA}\s*$")
+    ref_line = re.compile(
+        rf"(?m)^[0-9]{{4}}-[0-9]{{2}}-[0-9]{{2}}T[0-9]{{2}}:[0-9]{{2}}:[0-9]{{2}}"
+        rf"(?:\.[0-9]{{1,9}})?Z +ref: {PINNED_SHA}\s*$")
+    check(13, bool(checkout_line.search(log) and ref_line.search(log))
           if log is not None else None, "pinned SHA corroborated in raw checkout log")
 
     counts = measured.get("counts") if measured else None

@@ -156,6 +156,48 @@ class Substitutes(unittest.TestCase):
         )
         self.assertEqual("PASS", statuses(s)["V18"])
 
+    def test_v13_rejects_echoed_checkout_commands(self):
+        s = fake_snapshot()
+        s["raw_job_log"] = s["raw_job_log"].replace(
+            "2026-10-25T01:35:32Z ref: "+v.PINNED_SHA,
+            "2026-10-25T01:35:32Z Run echo 'ref: "+v.PINNED_SHA+"'")
+        self.assertEqual("FAIL", statuses(s)["V13"])
+        s = fake_snapshot()
+        s["raw_job_log"] = s["raw_job_log"].replace(
+            "2026-10-25T01:35:36Z git checkout --progress --force "+v.PINNED_SHA,
+            "2026-10-25T01:35:36Z Run echo 'git checkout --progress --force "+v.PINNED_SHA+"'")
+        self.assertEqual("FAIL", statuses(s)["V13"])
+
+    def test_log_payload_rejects_echoed_json_not_emitted_json(self):
+        for identifier, token in (("V14", '"source": "local_measured_tests"'),
+                                  ("V17", '"mode": "OFFLINE_SINGLE_PROCESS_100_RULE_CHECKS_NOT_100_LLM_MODELS"'),
+                                  ("V18", '"kind": "OFFLINE_BACKGROUND_LOOP_NOT_NATIVE_RESERVATION"')):
+            with self.subTest(identifier=identifier):
+                s = fake_snapshot()
+                lines = s["raw_job_log"].splitlines()
+                lines = [line.replace("Z {", "Z Run echo '{") + "'" if token in line else line
+                         for line in lines]
+                s["raw_job_log"] = "\n".join(lines)
+                self.assertEqual("UNVERIFIED", statuses(s)[identifier])
+
+    def test_log_duplicate_measured_event_is_ambiguous(self):
+        s = fake_snapshot()
+        original_line = next(x for x in s["raw_job_log"].splitlines() if '"source": "local_measured_tests"' in x)
+        conflicting = original_line.replace('"passed": 22', '"passed": 21')
+        s["raw_job_log"] += "\n" + conflicting
+        self.assertEqual("UNVERIFIED", statuses(s)["V14"])
+        self.assertEqual("UNVERIFIED", statuses(s)["V15"])
+
+    def test_v13_accepts_actual_github_checkout_trace_format(self):
+        s = fake_snapshot()
+        s["raw_job_log"] = s["raw_job_log"].replace(
+            "2026-10-25T01:35:32Z ref: "+v.PINNED_SHA,
+            "2026-10-25T01:35:35.7066869Z   ref: "+v.PINNED_SHA)
+        s["raw_job_log"] = s["raw_job_log"].replace(
+            "2026-10-25T01:35:36Z git checkout --progress --force "+v.PINNED_SHA,
+            "2026-10-25T01:35:36.5999912Z [command]/usr/bin/git checkout --progress --force "+v.PINNED_SHA)
+        self.assertEqual("PASS", statuses(s)["V13"])
+
     def test_malformed_log_json_reports_unverified(self):
         s=fake_snapshot();s["raw_job_log"]="{not valid JSON"
         self.assertEqual("UNVERIFIED", statuses(s)["V17"])
