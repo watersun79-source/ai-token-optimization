@@ -1,6 +1,7 @@
 """Negative and positive byte-level provenance checks; no external service calls."""
 import hashlib
 import json
+import zipfile
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -134,6 +135,106 @@ class SourceParityTests(unittest.TestCase):
             self.assertFalse(result["verbatim_source_match"])
             self.assertFalse(result["native_chatgpt_scheduled_calls_verified"])
             self.assertEqual(0, result["external_llm_calls"])
+
+
+    @staticmethod
+    def _fake_archive(root, members):
+        path = root / "only-local.zip"
+        with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as z:
+            for name, content in members:
+                z.writestr(name, content)
+        return path, hashlib.sha256(path.read_bytes()).hexdigest()
+
+    def test_local_private_zip_synthetic_happy_path_without_leak(self):
+        with TemporaryDirectory() as d:
+            root = Path(d)
+            source = b"private synthetic fake contents"
+            z, digest = self._fake_archive(
+                root, [("AI_R16_100_BOT_v8/runner.py", source)])
+            report = parity.verify_private_zip_local(
+                z, expected_zip_sha256=digest,
+                expected_hashes={"runner.py": hashlib.sha256(source).hexdigest()})
+            self.assertEqual("PASS", report["status"])
+            self.assertEqual(1, report["member_sha256_verified"])
+            self.assertFalse(report["private_bytes_published"])
+            self.assertFalse(report["native_chatgpt_run_verified"])
+            self.assertFalse(report["full_v81_deployed"])
+            self.assertNotIn(source.decode(), str(report))
+
+    def test_local_private_zip_rejects_wrong_archive_sha(self):
+        with TemporaryDirectory() as d:
+            root = Path(d)
+            z, _ = self._fake_archive(
+                root, [("AI_R16_100_BOT_v8/runner.py", b"test")])
+            with self.assertRaisesRegex(ValueError, "PRIVATE_ZIP_SHA256_MISMATCH"):
+                parity.verify_private_zip_local(z)
+
+    def test_local_private_zip_rejects_member_sha_mismatch(self):
+        with TemporaryDirectory() as d:
+            root = Path(d)
+            z, digest = self._fake_archive(
+                root, [("AI_R16_100_BOT_v8/runner.py", b"altered")])
+            with self.assertRaisesRegex(ValueError, "PRIVATE_ZIP_MEMBER_SHA256_MISMATCH"):
+                parity.verify_private_zip_local(
+                    z, expected_zip_sha256=digest,
+                    expected_hashes={"runner.py": hashlib.sha256(b"real").hexdigest()})
+
+    def test_local_private_zip_rejects_missing_expected_source(self):
+        with TemporaryDirectory() as d:
+            root = Path(d)
+            z, digest = self._fake_archive(
+                root, [("AI_R16_100_BOT_v8/other.py", b"test")])
+            with self.assertRaisesRegex(ValueError, "PRIVATE_ZIP_EXPECTED_FILE_MISSING"):
+                parity.verify_private_zip_local(
+                    z, expected_zip_sha256=digest,
+                    expected_hashes={"runner.py": hashlib.sha256(b"test").hexdigest()})
+
+    def test_local_private_zip_rejects_duplicate_and_traversal_entries(self):
+        with TemporaryDirectory() as d:
+            root = Path(d)
+            for suffix, entry in enumerate((
+                    "AI_R16_100_BOT_v8/../runner.py",
+                    "/AI_R16_100_BOT_v8/runner.py",
+                    "AI_R16_100_BOT_v8\\runner.py")):
+                z, digest = self._fake_archive(
+                    root, [("AI_R16_100_BOT_v8/runner.py", b"test"),
+                           (entry, b"bad")])
+                with self.subTest(suffix=suffix), self.assertRaisesRegex(
+                        ValueError, "PRIVATE_ZIP_UNSAFE_ENTRY"):
+                    parity.verify_private_zip_local(
+                        z, expected_zip_sha256=digest,
+                        expected_hashes={"runner.py": hashlib.sha256(b"test").hexdigest()})
+            z, digest = self._fake_archive(
+                root, [("AI_R16_100_BOT_v8/runner.py", b"one"),
+                       ("AI_R16_100_BOT_v8/runner.py", b"two")])
+            with self.assertRaisesRegex(ValueError, "PRIVATE_ZIP_UNSAFE_ENTRY"):
+                parity.verify_private_zip_local(
+                    z, expected_zip_sha256=digest,
+                    expected_hashes={"runner.py": hashlib.sha256(b"one").hexdigest()})
+
+    def test_local_private_zip_rejects_symlink_archive(self):
+        with TemporaryDirectory() as d:
+            root = Path(d)
+            z, digest = self._fake_archive(
+                root, [("AI_R16_100_BOT_v8/runner.py", b"test")])
+            link = root / "linked.zip"
+            link.symlink_to(z)
+            with self.assertRaisesRegex(ValueError, "PRIVATE_ZIP_NOT_REGULAR_FILE"):
+                parity.verify_private_zip_local(
+                    link, expected_zip_sha256=digest,
+                    expected_hashes={"runner.py": hashlib.sha256(b"test").hexdigest()})
+
+    def test_local_private_zip_cli_fails_closed_without_source(self):
+        with TemporaryDirectory() as d:
+            missing = Path(d) / "unavailable-private.zip"
+            import contextlib
+            import io
+            from unittest.mock import patch
+            with patch("sys.argv", ["v81_source_parity.py", "--verify-private-zip-local",
+                                    str(missing)]), contextlib.redirect_stdout(io.StringIO()) as out:
+                self.assertEqual(2, parity.main())
+            self.assertIn('"status": "UNVERIFIED"', out.getvalue())
+            self.assertNotIn(str(missing), out.getvalue())
 
 
 if __name__ == "__main__":

@@ -10,6 +10,8 @@ import argparse
 import hashlib
 import json
 import os
+import stat
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -72,6 +74,88 @@ REVIEWED_DIFFERENCES = {
 assert set(REVIEWED_DIFFERENCES) <= set(ORIGINAL_SHA256)
 
 
+def verify_private_zip_local(path: Path, *, expected_zip_sha256: str = LOCAL_V81_ZIP_SHA256,
+                             expected_hashes: dict | None = None) -> dict:
+    """Validate a *local-only* archive without extraction, execution or publication.
+
+    Overrideable fingerprints are for synthetic offline tests only; CLI fixes
+    both expected values to the independently measured private fingerprints.
+    """
+    hashes = ORIGINAL_SHA256 if expected_hashes is None else expected_hashes
+    if (not isinstance(expected_zip_sha256, str) or
+        len(expected_zip_sha256) != 64 or
+        any(c not in "0123456789abcdef" for c in expected_zip_sha256) or
+        not isinstance(hashes, dict) or not hashes or
+        any(not isinstance(k, str) or "/" in k or "\\" in k or
+            k in ("", ".", "..") or not isinstance(v, str) or
+            len(v) != 64 or any(c not in "0123456789abcdef" for c in v)
+            for k, v in hashes.items())):
+        raise ValueError("INVALID_EXPECTED_FINGERPRINTS")
+    if not isinstance(path, Path):
+        raise ValueError("INVALID_LOCAL_PATH")
+    if path.is_symlink() or not path.is_file():
+        raise ValueError("PRIVATE_ZIP_NOT_REGULAR_FILE")
+    if not 0 < path.stat().st_size <= 32 * 1024 * 1024:
+        raise ValueError("PRIVATE_ZIP_SIZE_LIMIT")
+    outer = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(65536), b""):
+            outer.update(chunk)
+    if outer.hexdigest() != expected_zip_sha256:
+        raise ValueError("PRIVATE_ZIP_SHA256_MISMATCH")
+
+    prefix = "AI_R16_100_BOT_v8/"
+    with zipfile.ZipFile(path) as archive:
+        infos = archive.infolist()
+        if not 0 < len(infos) <= 256:
+            raise ValueError("PRIVATE_ZIP_ENTRY_LIMIT")
+        seen = set()
+        total_size = 0
+        for entry in infos:
+            name = entry.filename
+            parts = name.split("/")
+            if (not name or "\\" in name or name.startswith("/") or
+                any(part in ("", ".", "..") for part in parts[:-1]) or
+                (parts[-1] in ("", ".", "..") and not entry.is_dir()) or
+                name in seen or entry.flag_bits & 1 or
+                (entry.create_system == 3 and
+                 stat.S_IFMT(entry.external_attr >> 16) == stat.S_IFLNK)):
+                raise ValueError("PRIVATE_ZIP_UNSAFE_ENTRY")
+            seen.add(name)
+            if entry.file_size > 4 * 1024 * 1024 or entry.file_size < 0:
+                raise ValueError("PRIVATE_ZIP_MEMBER_SIZE_LIMIT")
+            total_size += entry.file_size
+            if total_size > 64 * 1024 * 1024:
+                raise ValueError("PRIVATE_ZIP_TOTAL_SIZE_LIMIT")
+        for filename, expected_hash in hashes.items():
+            path_in_zip = prefix + filename
+            if path_in_zip not in seen:
+                raise ValueError("PRIVATE_ZIP_EXPECTED_FILE_MISSING")
+            entry = archive.getinfo(path_in_zip)
+            if entry.is_dir():
+                raise ValueError("PRIVATE_ZIP_EXPECTED_FILE_INVALID")
+            digest = hashlib.sha256()
+            total = 0
+            with archive.open(entry, "r") as member:
+                for chunk in iter(lambda: member.read(65536), b""):
+                    total += len(chunk)
+                    if total > 4 * 1024 * 1024:
+                        raise ValueError("PRIVATE_ZIP_MEMBER_SIZE_LIMIT")
+                    digest.update(chunk)
+            if digest.hexdigest() != expected_hash:
+                raise ValueError("PRIVATE_ZIP_MEMBER_SHA256_MISMATCH")
+    return {
+        "kind": "PRIVATE_ORIGINAL_ZIP_LOCAL_FINGERPRINT_CHECK_NOT_DEPLOYMENT",
+        "status": "PASS",
+        "archive_sha256_verified": True,
+        "member_sha256_verified": len(hashes),
+        "private_bytes_published": False,
+        "extracted_or_executed": False,
+        "native_chatgpt_run_verified": False,
+        "full_v81_deployed": False,
+    }
+
+
 def compare(root: Path = ROOT) -> dict:
     rows = {}
     for filename, original_hash in ORIGINAL_SHA256.items():
@@ -126,7 +210,19 @@ def require_verbatim(report: dict) -> None:
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--require-verbatim", action="store_true", help="fail if any original file differs or is absent")
+    p.add_argument("--verify-private-zip-local", type=Path, default=None,
+                   help="LOCAL DEVICE ONLY: validate trusted original ZIP; never use in public CI")
     a = p.parse_args()
+    if a.verify_private_zip_local is not None:
+        try:
+            local_report = verify_private_zip_local(a.verify_private_zip_local)
+        except (OSError, ValueError, RuntimeError, zipfile.BadZipFile):
+            print("R16_V81_PRIVATE_ZIP_LOCAL_CHECK=" +
+                  json.dumps({"status": "UNVERIFIED", "reason": "PRIVATE_ZIP_VALIDATION_FAILED",
+                              "private_bytes_published": False,
+                              "native_chatgpt_run_verified": False}))
+            return 2
+        print("R16_V81_PRIVATE_ZIP_LOCAL_CHECK=" + json.dumps(local_report, sort_keys=True))
     result = compare()
     print("R16_V81_SOURCE_PARITY=" + json.dumps(result, sort_keys=True, ensure_ascii=False))
     summary = os.getenv("GITHUB_STEP_SUMMARY")
