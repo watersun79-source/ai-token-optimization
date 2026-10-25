@@ -3,13 +3,14 @@
 No network, shell, GitHub writes, repo modification or arbitrary paths.
 """
 from __future__ import annotations
+import ast
 import hashlib
 import os
 from pathlib import Path
 import re
 import tempfile
 
-_ALLOWED = re.compile(r"[a-zA-Z0-9_-]{1,64}\.txt\Z")
+_ALLOWED = re.compile(r"[a-zA-Z0-9_-]{1,64}\.(?:txt|py)\Z")
 _MAX_BYTES = 8192
 
 def sha256(data: bytes) -> str:
@@ -19,7 +20,7 @@ def apply_patch(scratch_root: str | Path, filename: str, *, expected_sha256: str
                 old: str, new: str) -> dict:
     """Replace exactly one literal match in a scratch .txt file, atomically."""
     if not isinstance(filename, str) or not _ALLOWED.fullmatch(filename):
-        raise ValueError("only flat .txt fixture names allowed")
+        raise ValueError("only flat .txt or .py fixture names allowed")
     if not isinstance(expected_sha256, str) or not re.fullmatch(r"[a-f0-9]{64}", expected_sha256):
         raise ValueError("valid SHA256 precondition required")
     if not isinstance(old, str) or not old or not isinstance(new, str):
@@ -43,6 +44,9 @@ def apply_patch(scratch_root: str | Path, filename: str, *, expected_sha256: str
     patched = text.replace(old, new, 1).encode("utf-8")
     if len(patched) > _MAX_BYTES:
         raise ValueError("patched file too large")
+    if filename.endswith(".py"):
+        # Never execute user code; refuse a syntax-breaking patch before writing.
+        ast.parse(patched.decode("utf-8"), filename=filename)
     fd, temp_name = tempfile.mkstemp(prefix=".patch-", suffix=".tmp", dir=root)
     try:
         with os.fdopen(fd, "wb") as f:
