@@ -13,7 +13,9 @@ import re
 WORKFLOW = ".github/workflows/ai-r16-hourly.yml"
 JOB = "hourly-offline-audit"
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
-CHECKOUT = re.compile(r"HEAD is now at ([0-9a-f]{7,40})(?:\s|$)")
+CHECKOUT = re.compile(r"\[command\]/usr/bin/git checkout --progress --force ([0-9a-f]{40})(?:\s|$)")
+SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+MAX_LOG_CHARS = 2_000_000
 SWARM = re.compile(r"R16_V81_SWARM=(\{[^\r\n]*\})")
 
 
@@ -56,7 +58,8 @@ def verify_schedule(run, jobs, log, *, workflow_sha, source_sha):
         out["reason"] = "MISSING_JOB_METADATA"
         return out
     matches = [j for j in jobs if isinstance(j, dict) and
-               j.get("name") == JOB and j.get("run_id") == run_id]
+               j.get("name") == JOB and type(j.get("run_id")) is int and
+               j.get("run_id") == run_id]
     if len(matches) != 1:
         out["reason"] = "JOB_NOT_UNIQUELY_LINKED_TO_RUN"
         return out
@@ -71,11 +74,11 @@ def verify_schedule(run, jobs, log, *, workflow_sha, source_sha):
         out.update(status="FAIL" if job.get("conclusion") else "UNVERIFIED",
                    reason="JOB_NOT_SUCCESSFUL")
         return out
-    if not isinstance(log, str) or not log:
-        out["reason"] = "MISSING_OFFICIAL_JOB_LOG"
+    if not isinstance(log, str) or not log or len(log) > MAX_LOG_CHARS:
+        out["reason"] = "MISSING_OR_OVERSIZE_OFFICIAL_JOB_LOG"
         return out
-    if not any(source_sha.startswith(pin) for pin in CHECKOUT.findall(log)):
-        out["reason"] = "CHECKOUT_SHA_NOT_PROVEN"
+    if CHECKOUT.findall(log) != [source_sha]:
+        out["reason"] = "CHECKOUT_SHA_NOT_UNIQUELY_PROVEN"
         return out
     receipts = []
     for raw in SWARM.findall(log):
@@ -84,20 +87,37 @@ def verify_schedule(run, jobs, log, *, workflow_sha, source_sha):
         except ValueError:
             out["reason"] = "MALFORMED_SWARM_RECEIPT"
             return out
-    for mode, count, groups in (("audit", 20, 2), ("all", 100, 10)):
+    if len(receipts) != 2:
+        out["reason"] = "SWARM_RECEIPT_COUNT_INVALID"
+        return out
+    input_hashes = []
+    for mode, count, groups, workers in (("audit", 20, 2, 2), ("all", 100, 10, 4)):
         found = [r for r in receipts if isinstance(r, dict) and r.get("mode") == mode]
         if len(found) != 1:
             out["reason"] = "MISSING_OR_DUPLICATE_SWARM_RECEIPT"
             return out
         r = found[0]
-        if (r.get("selected_roles") != count or r.get("group_count") != groups or
+        exact_ints = (("selected_roles", count), ("group_count", groups),
+                      ("effective_worker_cap", workers), ("external_model_calls", 0),
+                      ("external_provider_calls", 0), ("production_changes", 0))
+        if (r.get("kind") != "ISOLATED_OFFLINE_SWARM_NOT_NATIVE" or
+                any(type(r.get(k)) is not int or r[k] != v for k, v in exact_ints) or
                 r.get("status") != "PASS" or
+                r.get("status_counts") != {"PASS": count} or
                 r.get("independent_serial_oracle_match") is not True or
-                r.get("external_model_calls") != 0 or
                 r.get("native_chatgpt_run_verified") is not False or
-                r.get("production_changes") != 0):
+                r.get("same_run_github_slack_proven") is not False or
+                r.get("original_v81_source_deployed") is not False):
             out.update(status="FAIL", reason="SWARM_RECEIPT_NOT_PASS")
             return out
+        digest = r.get("input_sha256")
+        if type(digest) is not str or SHA256.fullmatch(digest) is None:
+            out.update(status="FAIL", reason="SWARM_INPUT_HASH_INVALID")
+            return out
+        input_hashes.append(digest)
+    if input_hashes[0] != input_hashes[1]:
+        out.update(status="FAIL", reason="FAST_FULL_INPUT_HASH_MISMATCH")
+        return out
     required = ("R16_HOURLY_OFFLINE_RECEIPT_VALIDATED",
                 "OFFLINE_SINGLE_PROCESS_100_RULE_CHECKS_NOT_100_LLM_MODELS",
                 "Ran 10 tests", "Ran 8 tests",

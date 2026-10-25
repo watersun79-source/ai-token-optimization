@@ -19,12 +19,17 @@ JOBS = [{"id": 121069999999, "run_id": RUN["id"], "name": "hourly-offline-audit"
 def log_fixture():
     def record(mode, count, groups):
         return "R16_V81_SWARM=" + json.dumps({
+            "kind": "ISOLATED_OFFLINE_SWARM_NOT_NATIVE",
             "mode": mode, "selected_roles": count, "group_count": groups,
+            "effective_worker_cap": 2 if mode == "audit" else 4,
+            "status_counts": {"PASS": count}, "input_sha256": "a" * 64,
             "independent_serial_oracle_match": True, "status": "PASS",
-            "external_model_calls": 0, "native_chatgpt_run_verified": False,
-            "production_changes": 0})
+            "external_model_calls": 0, "external_provider_calls": 0,
+            "native_chatgpt_run_verified": False,
+            "same_run_github_slack_proven": False,
+            "original_v81_source_deployed": False, "production_changes": 0})
     return "\n".join((
-        "HEAD is now at " + SOURCE[:7] + " checked source",
+        "[command]/usr/bin/git checkout --progress --force " + SOURCE,
         "OFFLINE_SINGLE_PROCESS_100_RULE_CHECKS_NOT_100_LLM_MODELS",
         "R16_HOURLY_OFFLINE_RECEIPT_VALIDATED", "Ran 10 tests in 0.067s",
         record("audit", 20, 2), record("all", 100, 10),
@@ -88,6 +93,29 @@ class ProvenanceTests(unittest.TestCase):
     def test_missing_log_unverified(self):
         self.assertEqual("UNVERIFIED", verify_schedule(
             RUN, JOBS, None, workflow_sha=WORKFLOW, source_sha=SOURCE)["status"])
+
+    def test_partial_sha_and_duplicate_checkout_are_unverified(self):
+        original = log_fixture()
+        self.assertEqual("UNVERIFIED", verify(log=original.replace(SOURCE, SOURCE[:7]))["status"])
+        self.assertEqual("UNVERIFIED", verify(log=original + "\n" +
+            "[command]/usr/bin/git checkout --progress --force " + SOURCE)["status"])
+
+    def test_swarm_input_sha_parity_and_status_counts_fail_closed(self):
+        original = log_fixture()
+        self.assertEqual("FAIL", verify(log=original.replace('"input_sha256": "' + "a"*64 + '"',
+            '"input_sha256": "' + "b"*64 + '"', 1))["status"])
+        self.assertEqual("FAIL", verify(log=original.replace('"status_counts": {"PASS": 20}',
+            '"status_counts": {"PASS": 19, "UNVERIFIED": 1}', 1))["status"])
+
+    def test_bool_counts_and_external_provider_calls_fail_closed(self):
+        original = log_fixture()
+        self.assertEqual("FAIL", verify(log=original.replace('"external_provider_calls": 0',
+            '"external_provider_calls": 1', 1))["status"])
+        self.assertEqual("FAIL", verify(log=original.replace('"selected_roles": 20',
+            '"selected_roles": true', 1))["status"])
+
+    def test_job_run_id_boolean_is_not_valid_official_id(self):
+        self.assertEqual("UNVERIFIED", verify(jobs=[dict(JOBS[0], run_id=True)])["status"])
 
     def test_cli_json(self):
         with TemporaryDirectory() as d:
