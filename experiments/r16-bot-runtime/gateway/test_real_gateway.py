@@ -113,6 +113,22 @@ class GatewayTests(unittest.TestCase):
         self.assertTrue(report["evidence"]["suspected_secret_in_code"])
         self.assertNotIn(secret, json.dumps(report))
 
+    def test_quoted_credential_checks_fail_closed_without_echo(self):
+        # Centralized compactor already blocks these; gateway must do the same.
+        samples = (
+            '{"api_key": "fake_only_abcdefghijklmnopqrstuvwxyz"}',
+            '{"authorization": "Bearer fake_only_abcdefghijklmnopqrstuvwxyz"}',
+        )
+        for payload in samples:
+            with self.subTest(field=payload.split(':', 1)[0]):
+                debug = run_message("에러 고쳐", code=payload)
+                self.assertEqual("BLOCKED", debug["status"])
+                self.assertTrue(debug["workers"][0]["evidence"]["suspected_secret"])
+                self.assertNotIn(payload, json.dumps(debug))
+                safety = execute_role("ai-cost-security", "비용 보안", code=payload)
+                self.assertTrue(safety["evidence"]["suspected_secret_in_code"])
+                self.assertNotIn(payload, json.dumps(safety))
+
     def test_wont_execute_untrusted_source(self):
         code='__import__("os").system("touch /tmp/should_not_exist_AI_GATEWAY")'
         x=run_message('에러 고쳐',code=code)

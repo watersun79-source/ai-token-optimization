@@ -20,7 +20,7 @@ from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 from auto_dispatch import dispatch
-from task_executor import SECRET, compact
+from task_executor import SECRET, QUOTED_SECRET, QUOTED_AUTH, compact
 
 REPO = "watersun79-source/ai-token-optimization"
 MEMORY_REF = "ai/continuation-readonly-audit-2026-10-18"
@@ -31,6 +31,11 @@ APPROVED_CI_WORKFLOWS = frozenset((
     ".github/workflows/v81-fast-full-isolated.yml",
 ))
 MAX_MESSAGE, MAX_CODE = 4000, 10000
+
+
+def _contains_credential(source: str) -> bool:
+    """Use every centralized secret signature before inspecting or echoing code."""
+    return any(pattern.search(source) for pattern in (SECRET, QUOTED_SECRET, QUOTED_AUTH))
 
 
 def github_get(path: str, *, request_fn: Callable[..., Any] = urlopen) -> dict:
@@ -67,7 +72,7 @@ def execute_role(role: str, message: str, *, code: str = "", network: bool = Fal
             return _result(role,"NEEDS_INPUT",note="Provide Python source separately to analyze; no code executed")
         # Do not return an auto-repaired source containing GitHub/API tokens.
         # Reuse the bounded worker's centralized credential detector.
-        if SECRET.search(code):
+        if _contains_credential(code):
             return _result(role,"BLOCKED",
                            evidence={"suspected_secret": True,
                                      "executed_user_code": False,
@@ -99,7 +104,7 @@ def execute_role(role: str, message: str, *, code: str = "", network: bool = Fal
             return _result(role,"BLOCKED",evidence=evidence,
                            note="SyntaxError detected; no safe repair applied; user code not executed")
     if role == "ai-cost-security":
-        unsafe = bool(SECRET.search(code))
+        unsafe = _contains_credential(code)
         return _result(role,"DONE",evidence={"suspected_secret_in_code":unsafe,"external_model_calls":0,"billing_used":False},note="No secret contents returned")
     if role == "ai-optimization":
         chunks = [s.strip() for s in re.split(r"[.!?\n]+",message) if s.strip()]
