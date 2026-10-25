@@ -103,6 +103,44 @@ jobs:
         run: python3 measure_runtime.py
       - name: Full 100 synthetic roles after FAST passes
         run: python3 v81_swarm.py --mode all --workers 4
+      - name: Publish actionable operator dashboard to GitHub run summary
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess, sys
+          root = pathlib.Path.cwd()
+          result = subprocess.run([sys.executable, 'v81_swarm.py', '--mode', 'all', '--workers', '4'], capture_output=True, text=True)
+          prefix = 'R16_V81_SWARM='
+          line = next((s for s in result.stdout.splitlines() if s.startswith(prefix)), None)
+          if not line:
+              raise SystemExit('No full BOT result; refuse to publish success')
+          data = json.loads(line[len(prefix):])
+          status = data.get('status', 'UNVERIFIED')
+          failed = data.get('failed_or_unknown_roles', [])
+          summary = [
+              '# AI BOT v8.1 · Isolated Operator Dashboard',
+              '',
+              '| Field | Verified result |',
+              '| --- | --- |',
+              f'| Offline rule execution | {status} |',
+              f'| Executed rule count | {data.get("selected_roles", "UNVERIFIED")} |',
+              f'| Local worker count | {data.get("effective_worker_cap", "UNVERIFIED")} |',
+              f'| Failed/unknown IDs | {", ".join(failed) if failed else "None in offline fixture"} |',
+              '| Original v8.1 production deployment | NOT VERIFIED |',
+              '| ChatGPT native unattended run | UNVERIFIED |',
+              '',
+              '## Next operational action',
+              'Supply and authenticate original v8.1 ZIP to resolve 5 differing and 2 absent source files.'
+              if not failed else 'Fix only the failed/unknown IDs on this isolated branch.',
+              '',
+              'Offline synthetic execution is not a real external LLM or native ChatGPT task.',
+          ]
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as f:
+              f.write('\\n'.join(summary) + '\\n')
+          if result.returncode != 0 or status != 'PASS':
+              raise SystemExit('Full BOT execution did not pass')
+          PY
       - name: Scope guard
         run: |
           echo 'ISOLATED_OFFLINE_FAST_AND_FULL_ONLY=PASS'
