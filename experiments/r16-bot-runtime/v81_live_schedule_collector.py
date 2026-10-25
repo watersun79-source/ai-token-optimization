@@ -155,8 +155,15 @@ def main():
     parser.add_argument("--expected-workflow-sha", required=True)
     parser.add_argument("--expected-source-sha", required=True)
     args = parser.parse_args()
-    result = collect(gh_read, args.repository,
+    completed_gets = []
+    def observed_get(path):
+        payload = gh_read(path)
+        completed_gets.append(path)
+        return payload
+    result = collect(observed_get, args.repository,
                      args.expected_workflow_sha, args.expected_source_sha)
+    if completed_gets:
+        result["official_github_api_get_attempted"] = True
     print("R16_V81_LIVE_SCHEDULE_CHECK=" +
           json.dumps(result, sort_keys=True, ensure_ascii=False))
     return 1 if result["status"] == "FAIL" else 0

@@ -2,10 +2,12 @@
 import copy
 import json
 import unittest
+from io import StringIO
+from contextlib import redirect_stdout
 from unittest.mock import patch
 
 from test_v81_unified_schedule_provenance import build, WORKFLOW, SOURCE
-from v81_live_schedule_collector import collect, gh_read, GitHubReadError
+from v81_live_schedule_collector import collect, gh_read, GitHubReadError, main
 
 REPO = "watersun79-source/ai-token-optimization"
 BASE = "/repos/" + REPO
@@ -148,6 +150,20 @@ class LiveCollectorTests(unittest.TestCase):
                 return json.dumps({"jobs": []})
             return fetch(path)
         self.assertEqual("UNVERIFIED", collect(invalid, REPO, WORKFLOW, SOURCE)["status"])
+
+    def test_cli_marks_successful_official_get_even_before_new_schedule(self):
+        fetch, seen = fake_api(mode="old")
+        argv = ["v81_live_schedule_collector.py", "--repository", REPO,
+                "--expected-workflow-sha", WORKFLOW,
+                "--expected-source-sha", SOURCE]
+        with patch("sys.argv", argv), patch(
+                "v81_live_schedule_collector.gh_read", side_effect=fetch), redirect_stdout(StringIO()) as output:
+            self.assertEqual(0, main())
+        raw = output.getvalue().split("R16_V81_LIVE_SCHEDULE_CHECK=", 1)[1]
+        result = json.loads(raw)
+        self.assertEqual("NOT_APPLICABLE", result["status"])
+        self.assertTrue(result["official_github_api_get_attempted"])
+        self.assertEqual(1, len(seen))
 
     def test_json_corruption_unverified(self):
         def corrupt(_):
