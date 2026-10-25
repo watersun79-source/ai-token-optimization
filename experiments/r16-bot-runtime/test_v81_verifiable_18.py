@@ -142,6 +142,20 @@ class Substitutes(unittest.TestCase):
             x["run"]["created_at"] = "2026-10-25T01:35:29."+fraction+"Z"
             self.assertEqual("PASS", statuses(x)["V06"])
 
+    def test_v18_requires_actual_receipt_output_not_command_echo(self):
+        s = fake_snapshot()
+        s["raw_job_log"] = s["raw_job_log"].replace(
+            "2026-10-25T01:35:39Z R16_HOURLY_OFFLINE_RECEIPT_VALIDATED",
+            "2026-10-25T01:35:39Z Run python -c 'print(\"R16_HOURLY_OFFLINE_RECEIPT_VALIDATED\")'"
+        )
+        self.assertEqual("FAIL", statuses(s)["V18"])
+        s = fake_snapshot()
+        s["raw_job_log"] = s["raw_job_log"].replace(
+            "2026-10-25T01:35:39Z R16_HOURLY_OFFLINE_RECEIPT_VALIDATED",
+            "2026-10-25T01:35:39.8553230Z R16_HOURLY_OFFLINE_RECEIPT_VALIDATED"
+        )
+        self.assertEqual("PASS", statuses(s)["V18"])
+
     def test_malformed_log_json_reports_unverified(self):
         s=fake_snapshot();s["raw_job_log"]="{not valid JSON"
         self.assertEqual("UNVERIFIED", statuses(s)["V17"])

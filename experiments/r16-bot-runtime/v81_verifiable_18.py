@@ -149,7 +149,7 @@ def evaluate(snapshot: dict) -> dict:
     check(18, (receipt.get("official_unattended_app_call_success") == "UNVERIFIED" and
                receipt.get("selected_outcome") == "UNVERIFIED" and
                receipt.get("kind") == "OFFLINE_BACKGROUND_LOOP_NOT_NATIVE_RESERVATION" and
-               "R16_HOURLY_OFFLINE_RECEIPT_VALIDATED" in log)
+               bool(re.search(r"(?m)^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,9})?Z R16_HOURLY_OFFLINE_RECEIPT_VALIDATED\s*$", log)))
           if receipt and log else None, "fail closed: never convert offline receipt to native success")
     assert len(results) == 18
     totals = {s: sum(row["status"] == s for row in results) for s in ("PASS", "FAIL", "UNVERIFIED")}
