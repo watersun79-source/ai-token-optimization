@@ -59,11 +59,20 @@ def gh_read(endpoint):
         raise GitHubReadError("ENDPOINT_NOT_ALLOWLISTED")
     if not os.environ.get("GH_TOKEN"):
         raise GitHubReadError("GITHUB_READ_TOKEN_UNAVAILABLE")
+    # GitHub's job-log REST API redirects to a short-lived plain-text URL.
+    # GitHub CLI handles that download itself; keep the job ID/repo allowlisted.
+    log_match = re.fullmatch(
+        r"/repos/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/actions/jobs/([1-9][0-9]*)/logs",
+        endpoint)
+    if log_match:
+        command = ["gh", "run", "view", "--job", log_match.group(2),
+                   "--log", "--repo", log_match.group(1)]
+    else:
+        command = ["gh", "api", "--method", "GET", "-H",
+                   "Accept: application/vnd.github+json", endpoint]
     try:
         proc = subprocess.run(
-            ["gh", "api", "--method", "GET", "-H",
-             "Accept: application/vnd.github+json", endpoint],
-            capture_output=True, text=True, timeout=35, check=False)
+            command, capture_output=True, text=True, timeout=35, check=False)
     except (OSError, subprocess.TimeoutExpired, ValueError):
         raise GitHubReadError("GITHUB_API_UNAVAILABLE") from None
     if proc.returncode:

@@ -166,6 +166,48 @@ class LiveCollectorTests(unittest.TestCase):
             self.assertNotIn("dummy-test-token", repr(args))
             self.assertFalse(proc.call_args.kwargs.get("shell", False))
 
+    def test_job_log_download_uses_official_gh_run_view(self):
+        endpoint = BASE + "/actions/jobs/123456789/logs"
+        class Proc:
+            returncode = 0
+            stdout = "R16_HOURLY_OFFLINE_RECEIPT_VALIDATED\n"
+        with patch.dict("os.environ", {"GH_TOKEN": "secret-must-not-appear"}), patch(
+                "v81_live_schedule_collector.subprocess.run",
+                return_value=Proc()) as proc:
+            self.assertEqual(Proc.stdout, gh_read(endpoint))
+            args = proc.call_args.args[0]
+            self.assertEqual(
+                ["gh", "run", "view", "--job", "123456789",
+                 "--log", "--repo", REPO], args)
+            self.assertNotIn("secret-must-not-appear", str(args))
+            self.assertFalse(proc.call_args.kwargs.get("shell", False))
+
+    def test_job_log_path_injection_is_rejected_before_cli(self):
+        for value in (
+            BASE + "/actions/jobs/0/logs",
+            BASE + "/actions/jobs/123/../../logs",
+            BASE + "/actions/jobs/123;echo-NO/logs",
+        ):
+            with self.subTest(value=value), patch.dict(
+                    "os.environ", {"GH_TOKEN": "dummy"}), patch(
+                        "v81_live_schedule_collector.subprocess.run") as proc:
+                with self.assertRaisesRegex(
+                        GitHubReadError, "^ENDPOINT_NOT_ALLOWLISTED$"):
+                    gh_read(value)
+                proc.assert_not_called()
+
+    def test_failed_job_log_cli_download_remains_unverified(self):
+        class Proc:
+            returncode = 1
+            stdout = ""
+            stderr = "gh: HTTP 403: withheld token=DO_NOT_LEAK"
+        with patch.dict("os.environ", {"GH_TOKEN": "dummy"}), patch(
+                "v81_live_schedule_collector.subprocess.run",
+                return_value=Proc()):
+            with self.assertRaisesRegex(
+                    GitHubReadError, "^GITHUB_API_HTTP_403$"):
+                gh_read(BASE + "/actions/jobs/123456789/logs")
+
     def test_gh_http_error_classification_is_redacted(self):
         endpoint = BASE + "/actions/runs?event=schedule&per_page=20"
         class Proc:
