@@ -32,7 +32,7 @@ ROLE_TITLES = (
 NEW_IDS = tuple(f"V{i:02d}" for i in range(1, 19))
 assert len(OLD_NATIVE_IDS) == len(set(OLD_NATIVE_IDS)) == 18
 assert len(ROLE_TITLES) == 18
-UTC_STAMP = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?Z\Z")
+UTC_STAMP = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,9})?Z\Z")
 SHA = re.compile(r"[0-9a-f]{40}\Z")
 
 

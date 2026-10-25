@@ -131,16 +131,18 @@ class Substitutes(unittest.TestCase):
                 x["raw_job_log"] = x["raw_job_log"].replace(before, after)
                 self.assertEqual("FAIL", statuses(x)["V17"])
 
-    def test_v06_rejects_excessive_fractional_precision(self):
-        for fraction in ("1" * 7, "1" * 30):
-            with self.subTest(length=len(fraction)):
+    def test_v06_accepts_nine_digit_precision_and_rejects_excess(self):
+        # Match the repository's strict Java/JS UTC 1..9 fractional digit contract.
+        for fraction in ("1", "123456", "1234567", "123456789"):
+            with self.subTest(accepted_digits=len(fraction)):
+                x = fake_snapshot()
+                x["run"]["created_at"] = "2026-10-25T01:35:29."+fraction+"Z"
+                self.assertEqual("PASS", statuses(x)["V06"])
+        for fraction in ("1" * 10, "1" * 30):
+            with self.subTest(rejected_digits=len(fraction)):
                 x = fake_snapshot()
                 x["run"]["created_at"] = "2026-10-25T01:35:29."+fraction+"Z"
                 self.assertEqual("FAIL", statuses(x)["V06"])
-        for fraction in ("1", "123456"):
-            x = fake_snapshot()
-            x["run"]["created_at"] = "2026-10-25T01:35:29."+fraction+"Z"
-            self.assertEqual("PASS", statuses(x)["V06"])
 
     def test_v18_requires_actual_receipt_output_not_command_echo(self):
         s = fake_snapshot()
