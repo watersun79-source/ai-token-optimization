@@ -21,6 +21,12 @@ SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 CHECKOUT = re.compile(r"\[command\]/usr/bin/git checkout --progress --force ([0-9a-f]{40})(?:\s|$)")
 RECEIPT_PREFIX = "R16_V81_UNIFIED_EVIDENCE="
 COUNTS = {"python": 23, "java": 20, "js": 20, "c": 20}
+# Unified V1 must attest every expected source file, not just any hash.
+SOURCE_FILES = frozenset((
+    "v81_unified_evidence.py", "v81_swarm.py", "catalog.json",
+    "utc_strict_oracle.c", "utc_strict_oracle_cases.tsv",
+    "UtcStrictOracle.java", "utc_strict_oracle.js", "test_runtime.py",
+))
 LIMIT = 2_000_000
 
 
@@ -127,7 +133,7 @@ def verify(run, jobs, log, *, workflow_sha, source_sha):
             env.get("github_sha") != workflow_sha or env.get("github_event") != "schedule":
         return stop("FAIL", "RUNNER_ENV_DIFFERENT_OFFICIAL_RUN")
     sources = evidence.get("source_sha256")
-    if not isinstance(sources, dict) or not sources or any(
+    if not isinstance(sources, dict) or set(sources) != SOURCE_FILES or any(
             type(x) is not str or SHA256.fullmatch(x) is None
             for x in sources.values()):
         return stop("FAIL", "SOURCE_HASHES_MISSING")

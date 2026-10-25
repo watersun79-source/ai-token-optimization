@@ -20,7 +20,10 @@ def receipt():
             "fast_pass": 20, "full_pass": 100, "groups": 10, "worker_cap": 4,
             "independent_serial_oracle_match": True, "input_sha256": "a" * 64,
         },
-        "source_sha256": {"v81_swarm.py": "b" * 64},
+        "source_sha256": {name: "b" * 64 for name in (
+            "v81_unified_evidence.py", "v81_swarm.py", "catalog.json",
+            "utc_strict_oracle.c", "utc_strict_oracle_cases.tsv",
+            "UtcStrictOracle.java", "utc_strict_oracle.js", "test_runtime.py")},
         "runner_context_self_reported": {
             "github_run_id": str(ID), "github_sha": WORKFLOW,
             "github_event": "schedule",
@@ -136,6 +139,23 @@ class UnifiedScheduledProofTests(unittest.TestCase):
             x, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
         _, _, log = build(rec=x)
         self.assertEqual("FAIL", self.verify(log=log)["status"])
+
+    def test_missing_or_extra_source_hash_recomputed_digest_fails(self):
+        for missing in (True, False):
+            obj = receipt()
+            if missing:
+                obj["source_sha256"].pop("utc_strict_oracle.c")
+            else:
+                obj["source_sha256"]["unexpected_source.py"] = "b" * 64
+            obj.pop("evidence_sha256")
+            obj["evidence_sha256"] = hashlib.sha256(json.dumps(
+                obj, sort_keys=True, ensure_ascii=False, separators=(",", ":"),
+                allow_nan=False).encode("utf-8")).hexdigest()
+            _, _, log = build(rec=obj)
+            with self.subTest(missing=missing):
+                result = self.verify(log=log)
+                self.assertEqual("FAIL", result["status"])
+                self.assertEqual("SOURCE_HASHES_MISSING", result["reason"])
 
     def test_native_attestation_spoof_is_rejected(self):
         x = receipt()
