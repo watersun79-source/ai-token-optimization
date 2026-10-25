@@ -22,20 +22,31 @@ ROLE_TRIGGERS: dict[str, tuple[str, ...]] = {
 }
 DIRECT_CHAT_PREFIXES = ("안녕", "고마워", "오늘 날씨", "내일 날씨", "번역해", "음식 추천", "생일 축하")
 PROJECT_CONTEXT = ("ai 프로젝트", "ai project", "3봇", "ai bot", "ai 봇", "bot team")
+# A short continuation command must be explicitly scoped to an AI project.
+# This is NOT a ChatGPT-wide composer interception.
+CONTINUE_INTENT = re.compile(r"(?:계속\s*진행|실제로?\s*실행\s*시켜|^진행[.!\s]*$)")
 SENSITIVE_ACTIONS = ("삭제", "결제", "유료", "main 병합", "운영 변경", "프로덕션", "api 키")
 
 
-def dispatch(message: str, max_roles: int = 3) -> dict[str, Any]:
+def dispatch(message: str, max_roles: int = 3, *, project_context: bool = False) -> dict[str, Any]:
     if not isinstance(message, str) or not message.strip() or len(message) > 4000:
         raise ValueError("message must have 1-4000 characters")
     if not isinstance(max_roles, int) or isinstance(max_roles, bool) or not 1 <= max_roles <= 10:
         raise ValueError("max_roles must be an integer in 1..10")
+    if type(project_context) is not bool:
+        raise ValueError("project_context must be a boolean")
     normalized = re.sub(r"\s+", " ", message.casefold()).strip()
     direct = normalized.startswith(DIRECT_CHAT_PREFIXES)
     matches = {role: [term for term in terms if term in normalized] for role, terms in ROLE_TRIGGERS.items()}
     candidates = sorted((role for role, hits in matches.items() if hits and not direct),
                         key=lambda role: (-len(matches[role]), list(ROLE_TRIGGERS).index(role)))
     generic_project = any(x in normalized for x in PROJECT_CONTEXT)
+    if project_context and not direct and CONTINUE_INTENT.search(normalized):
+        # Run only an approved offline queued task; native task stays unverified.
+        candidates = list(dict.fromkeys(["ai-operator-continuation", "ai-scheduled-audit"] + candidates))
+        matches["ai-operator-continuation"] = ["explicit_project_context+continue"]
+        if not matches["ai-scheduled-audit"]:
+            matches["ai-scheduled-audit"] = ["native_provenance_unverified"]
     route = "SPECIALISTS" if candidates else "THREE_ROLE_WORKFLOW" if generic_project and not direct else "DIRECT_CHAT"
     return {
         "route": route,

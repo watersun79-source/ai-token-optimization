@@ -184,6 +184,35 @@ jobs:
         run: |
           python3 -m unittest discover -s gateway -p test_queued_task_worker.py -q
           python3 gateway/queued_task_worker.py
+      - name: Execute user continuation on approved project-context offline gateway
+        env:
+          PYTHONPATH: gateway
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python3 - <<'PY'
+          import json
+          from real_gateway import run_message
+          out = run_message("이제는 실제로 실행 시켜. 진행. 계속 진행.",
+                            project_context=True)
+          assert out["status"] == "PARTIAL", out["status"]
+          assert out["selected_roles"] == ["ai-operator-continuation", "ai-scheduled-audit"]
+          local, native = out["workers"]
+          assert local["status"] == "DONE"
+          assert local["evidence"]["status"] == "PASS"
+          assert not local["evidence"]["native_chatgpt_run_verified"]
+          assert native["status"] == "UNVERIFIED"
+          receipt = local["evidence"]
+          print("R16_USER_CONTINUATION=" + json.dumps({
+              "status": out["status"],
+              "task_id": receipt["task_id"],
+              "input_sha256": receipt["input_sha256"],
+              "output_sha256": receipt["output_sha256"],
+              "bytes_saved": receipt["bytes_saved"],
+              "external_model_calls": receipt["external_model_calls"],
+              "native_chatgpt_run_verified": False,
+              "production_writes": receipt["production_writes"],
+          }, sort_keys=True))
+          PY
       - name: Execute actual SHA-guarded local code patch
         env:
           PYTHONPATH: gateway

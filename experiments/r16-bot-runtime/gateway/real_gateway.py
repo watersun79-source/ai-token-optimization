@@ -115,6 +115,23 @@ def execute_role(role: str, message: str, *, code: str = "", network: bool = Fal
     if role == "ai-automation-design":
         steps = ["triage", "research", "bounded_action", "verify", "report"]
         return _result(role,"DONE",evidence={"plan_steps":steps,"operational_flows_modified":0},note="Drafted workflow only; no existing Activepieces flow executed")
+    if role == "ai-operator-continuation":
+        # A genuine bounded Python task on the local SHA-bound queue, not
+        # a native ChatGPT execution or remote deployment.
+        try:
+            from queued_task_worker import QUEUE_PATH, execute
+            payload = QUEUE_PATH.read_bytes()
+            if len(payload) > 4096:
+                raise ValueError("queued task exceeds size limit")
+            receipt = execute(json.loads(payload))
+            if (receipt.get("kind") != "REAL_ISOLATED_GITHUB_HOSTED_PYTHON_TASK_NOT_NATIVE_CHATGPT"
+                    or receipt.get("status") != "PASS"
+                    or receipt.get("native_chatgpt_run_verified") is not False):
+                raise ValueError("invalid offline execution receipt")
+        except (OSError, ValueError, TypeError, ImportError):
+            return _result(role,"BLOCKED",note="Approved SHA-bound offline task unavailable or invalid")
+        return _result(role,"DONE",evidence=receipt,
+                       note="Executed bounded SHA-checked offline worker; native scheduled execution not verified")
     if role == "ai-scheduled-audit":
         return _result(role,"UNVERIFIED",note="This gateway has no ChatGPT official scheduled-run ID or original invocation logs")
     if role == "ai-cross-model-review":
@@ -178,12 +195,13 @@ def execute_role(role: str, message: str, *, code: str = "", network: bool = Fal
 
 
 def run_message(message: str, *, code: str = "", network: bool = False,
-                fetch: Callable[[str],dict] = github_get) -> dict:
+                fetch: Callable[[str],dict] = github_get,
+                project_context: bool = False) -> dict:
     if not isinstance(message,str) or not message.strip() or len(message)>MAX_MESSAGE:
         raise ValueError("message must have 1–4000 characters")
     if not isinstance(code,str) or len(code)>MAX_CODE:
         raise ValueError("code must have at most 10000 characters")
-    choice=dispatch(message,max_roles=3)
+    choice=dispatch(message,max_roles=3,project_context=project_context)
     roles=choice["roles"]
     if choice["route"]=="DIRECT_CHAT":
         return {"route":"DIRECT_CHAT","workers":[],"status":"DIRECT", "message":"이 메시지는 일반 대화야. 전문 봇 실행이 필요하지 않아.","chatgpt_composer_hook":False}
@@ -205,7 +223,7 @@ def run_message(message: str, *, code: str = "", network: bool = False,
 _PAGE="""<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>AI 실제 봇 실행</title><style>body{font:16px system-ui;max-width:760px;margin:auto;padding:20px;background:#fafafa;color:#181818}textarea{width:100%;min-height:80px;box-sizing:border-box}button{padding:10px 20px;margin:10px 0}pre{white-space:pre-wrap;word-wrap:break-word;background:white;padding:16px;border:1px solid #ddd;border-radius:10px}.msg{padding:8px;border-bottom:1px solid #ddd}label{display:block;margin-top:16px;font-weight:600}</style><h2>AI 자동 봇 실행기 — 로컬 데모</h2><p>이 페이지에서는 메시지 전송 시 Python 워커가 실제 실행돼. 공식 ChatGPT 앱의 채팅이 아니야.</p><label>메시지</label><textarea id="msg" aria-label="메시지">에러 고쳐</textarea><label>검사할 Python 코드(선택)</label><textarea id="code" aria-label="파이썬 코드">print(1)</textarea><button id="send">자동 분석·실행</button><pre id="out">메시지 전송을 눌러 봐.</pre><script>document.getElementById('send').onclick=async()=>{const out=document.getElementById('out');out.textContent='실행 중';try{const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:document.getElementById('msg').value,code:document.getElementById('code').value})});out.textContent=JSON.stringify(await r.json(),null,2)}catch(e){out.textContent=String(e)}}</script></html>"""
 
 
-def make_handler(*, network: bool = False):
+def make_handler(*, network: bool = False, project_context: bool = False):
     class Handler(BaseHTTPRequestHandler):
         def _response(self, code:int, data:bytes, content_type:str):
             self.send_response(code)
@@ -232,7 +250,8 @@ def make_handler(*, network: bool = False):
                 if not 1<=length<=16000:raise ValueError("body too large or empty")
                 d=json.loads(self.rfile.read(length))
                 if not isinstance(d,dict):raise ValueError("expected object")
-                x=run_message(d.get("message"),code=d.get("code",""),network=network)
+                x=run_message(d.get("message"),code=d.get("code",""),network=network,
+                              project_context=project_context)
                 self._response(200,json.dumps(x,ensure_ascii=False).encode(),"application/json; charset=utf-8")
             except (ValueError,TypeError,json.JSONDecodeError) as exc:
                 self._response(400,json.dumps({"error":str(exc)},ensure_ascii=False).encode(),"application/json; charset=utf-8")
@@ -247,17 +266,20 @@ def main() -> int:
     group.add_argument("--serve",action="store_true")
     parser.add_argument("--code",default="")
     parser.add_argument("--allow-github-read",action="store_true",help="perform bounded public GitHub REST GETs")
+    parser.add_argument("--project-context",action="store_true",help="treat continuation commands as this approved local AI project")
     parser.add_argument("--port",type=int,default=8765)
     args=parser.parse_args()
     if args.serve:
         # Loopback only; never expose this unauthenticated demo on 0.0.0.0.
-        server=ThreadingHTTPServer(("127.0.0.1",args.port),make_handler(network=args.allow_github_read))
+        server=ThreadingHTTPServer(("127.0.0.1",args.port),make_handler(network=args.allow_github_read,
+                                                                         project_context=args.project_context))
         print("http://127.0.0.1:"+str(server.server_port),flush=True)
         try:server.serve_forever()
         except KeyboardInterrupt:pass
         finally:server.server_close()
     else:
-        try:result=run_message(args.message,code=args.code,network=args.allow_github_read)
+        try:result=run_message(args.message,code=args.code,network=args.allow_github_read,
+                               project_context=args.project_context)
         except ValueError as exc:
             print(json.dumps({"error":str(exc)},ensure_ascii=False));return 2
         print(json.dumps(result,ensure_ascii=False,indent=2))

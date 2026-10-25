@@ -21,6 +21,50 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(x['route'],'DIRECT_CHAT')
         self.assertEqual(x['workers'],[])
 
+    def test_short_continuation_is_not_global_auto_hook(self):
+        report = run_message("이제는 실제로 실행 시켜. 진행. 계속 진행.")
+        self.assertEqual("DIRECT_CHAT", report["route"])
+        self.assertEqual([], report["workers"])
+
+    def test_project_scoped_continuation_runs_real_local_queue(self):
+        report = run_message("이제는 실제로 실행 시켜. 진행. 계속 진행.",
+                             project_context=True)
+        self.assertEqual("SPECIALISTS", report["route"])
+        self.assertEqual(["ai-operator-continuation", "ai-scheduled-audit"],
+                         report["selected_roles"])
+        self.assertEqual("PARTIAL", report["status"])
+        worker = report["workers"][0]
+        self.assertEqual("DONE", worker["status"])
+        evidence = worker["evidence"]
+        self.assertEqual("PASS", evidence["status"])
+        self.assertEqual(
+            "REAL_ISOLATED_GITHUB_HOSTED_PYTHON_TASK_NOT_NATIVE_CHATGPT",
+            evidence["kind"])
+        self.assertGreater(evidence["bytes_saved"], 0)
+        self.assertEqual(1, evidence["duplicate_lines_removed"])
+        self.assertFalse(evidence["native_chatgpt_run_verified"])
+        self.assertEqual("UNVERIFIED", report["workers"][1]["status"])
+        self.assertEqual(0, report["production_writes"])
+        self.assertEqual(0, report["external_llm_calls"])
+
+    def test_project_scoped_continuation_cli_executes_bounded_worker(self):
+        import subprocess
+        proc = subprocess.run(
+            [sys.executable, str(ROOT / "gateway" / "real_gateway.py"),
+             "--message", "계속 진행", "--project-context"],
+            capture_output=True, text=True, timeout=8, check=True)
+        report = json.loads(proc.stdout)
+        self.assertEqual("PARTIAL", report["status"])
+        self.assertEqual("DONE", report["workers"][0]["status"])
+        self.assertFalse(
+            report["workers"][0]["evidence"]["native_chatgpt_run_verified"])
+
+    def test_non_project_request_never_inherits_context(self):
+        self.assertEqual(
+            "DIRECT_CHAT", run_message("안녕", project_context=True)["route"])
+        with self.assertRaises(ValueError):
+            run_message("계속 진행", project_context="true")
+
     def test_syntax_error_is_executed_as_ast_check(self):
         x=run_message('에러 고쳐',code='print(')
         self.assertEqual(x['status'],'DONE')

@@ -1,6 +1,6 @@
 {
-  "task_id": "r16-20261025-1713",
+  "task_id": "r16-20261025-2027",
   "mode": "bounded_offline_optimize",
-  "message": "프롬프트 압축 실행\n반복 작업 생략\n반복 작업 생략\n증분 처리 우선",
-  "expected_input_sha256": "83f7125e8e5b23535df7a2d6feda2b9358b300daa4d87830ebf9048947564b53"
+  "message": "프롬프트 압축 실행\n미완료: ChatGPT 공식 개별 회차 증거 확보\n미완료: ChatGPT 공식 개별 회차 증거 확보\n보호: 정각 예약·main·운영 플로우 불변\n다음: 공식 실행 ID 없이 성공 판정 금지",
+  "expected_input_sha256": "7a440bd26a3bf78bc3a2ee78998138a3a75a9ae808046aa5be31d3397561c9ab"
 }
