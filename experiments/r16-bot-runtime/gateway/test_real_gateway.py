@@ -178,10 +178,14 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(r['evidence']['content_sha'],'verified_mock_sha')
 
     def test_ci_metadata_is_only_partial(self):
-        def stub(_): return {'workflow_runs':[{'id':42,'conclusion':'success','status':'completed','head_sha':'abc'}]}
+        observed = []
+        def stub(path):
+            observed.append(path)
+            return {'workflow_runs':[{'id':42,'conclusion':'success','status':'completed','head_sha':'abc'}]}
         r=execute_role('ai-code-verification','CI 확인',network=True,fetch=stub)
         self.assertEqual(r['status'],'PARTIAL')
         self.assertEqual(r['evidence']['id'],42)
+        self.assertEqual(observed, ['/repos/'+REPO+'/actions/runs?branch=ai%2Fr16-v81-fast-full-ci-20261024&per_page=1'])
 
     def test_repo_info_success(self):
         r=execute_role('ai-github-management','브랜치',network=True,fetch=lambda x:{'full_name':REPO,'default_branch':'main'})
@@ -208,6 +212,8 @@ class GatewayTests(unittest.TestCase):
         with self.assertRaises(ValueError): github_get('/repos/attacker/private')
         with self.assertRaises(ValueError): github_get('/repos/'+REPO+'/contents/../../../.env')
         with self.assertRaises(ValueError): github_get('/repos/'+REPO+'/actions/runs?per_page=100')
+        with self.assertRaises(ValueError):
+            github_get('/repos/'+REPO+'/actions/runs?branch=ai%2Ftop10-role-sandbox-2026-10-22&per_page=1')
 
     def test_github_read_uses_no_token(self):
         class Resp:

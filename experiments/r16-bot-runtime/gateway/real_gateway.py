@@ -33,7 +33,7 @@ def github_get(path: str, *, request_fn: Callable[..., Any] = urlopen) -> dict:
     """Allowlist paths for trusted GitHub public REST reads; never send a token."""
     allowed = (
         rf"/repos/{re.escape(REPO)}/contents/{re.escape(MEMORY_PATH)}\?ref=ai%2Fcontinuation-readonly-audit-2026-10-18",
-        rf"/repos/{re.escape(REPO)}/actions/runs\?branch=ai%2Ftop10-role-sandbox-2026-10-22&per_page=1",
+        rf"/repos/{re.escape(REPO)}/actions/runs\?branch=ai%2Fr16-v81-fast-full-ci-20261024&per_page=1",
         rf"/repos/{re.escape(REPO)}",
     )
     oss_allowed = tuple(rf"/repos/{re.escape(repo)}" for repo in OSS_ALLOWLIST.values())
@@ -122,7 +122,7 @@ def execute_role(role: str, message: str, *, code: str = "", network: bool = Fal
         if not network:
             return _result(role,"BLOCKED",note="Run with --allow-github-read to inspect last remote CI metadata")
         try:
-            d=fetch(f"/repos/{REPO}/actions/runs?branch=ai%2Ftop10-role-sandbox-2026-10-22&per_page=1")
+            d=fetch(f"/repos/{REPO}/actions/runs?branch=ai%2Fr16-v81-fast-full-ci-20261024&per_page=1")
             runs=d.get("workflow_runs") or []
             if not runs: return _result(role,"UNVERIFIED",note="No matching CI run metadata")
             x=runs[0]
