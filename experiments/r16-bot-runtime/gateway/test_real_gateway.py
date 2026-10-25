@@ -77,6 +77,12 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(report["workers"][0]["status"], "BLOCKED")
         self.assertNotIn(secret, json.dumps(report))
 
+    def test_natural_language_compression_dispatch_executes(self):
+        report = run_message("압축 실행\n중복\n중복")
+        self.assertEqual(report["status"], "DONE")
+        self.assertEqual(report["workers"][0]["role"], "ai-optimization")
+        self.assertEqual(report["workers"][0]["evidence"]["duplicate_lines_removed"], 1)
+
     def test_automation_plan_not_flow_run(self):
         r=execute_role('ai-automation-design','워크플로 구성')
         self.assertEqual(r['status'],'DONE')
