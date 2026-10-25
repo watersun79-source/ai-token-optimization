@@ -161,6 +161,36 @@ class SourceParityTests(unittest.TestCase):
             self.assertFalse(report["full_v81_deployed"])
             self.assertNotIn(source.decode(), str(report))
 
+    def test_local_private_zip_snapshot_survives_path_replacement(self):
+        # Simulate a swap precisely between digest validation and ZIP parsing.
+        # Old two-open implementations parse the swapped, unauthenticated file.
+        from unittest.mock import patch
+        import io
+        with TemporaryDirectory() as d:
+            root = Path(d)
+            secret = b"synthetic-only-authenticated-contents"
+            z, digest = self._fake_archive(
+                root, [("AI_R16_100_BOT_v8/runner.py", secret)])
+            actual_zip_class = zipfile.ZipFile
+            inputs = []
+
+            def swap_before_parsing(source, *args, **kwargs):
+                inputs.append(isinstance(source, io.BytesIO))
+                z.replace(root / "previous.zip")
+                z.write_bytes(b"swapped-during-parsing")
+                return actual_zip_class(source, *args, **kwargs)
+
+            with patch.object(parity.zipfile, "ZipFile",
+                              side_effect=swap_before_parsing):
+                result = parity.verify_private_zip_local(
+                    z, expected_zip_sha256=digest,
+                    expected_hashes={"runner.py": hashlib.sha256(secret).hexdigest()})
+            self.assertEqual("PASS", result["status"])
+            self.assertEqual([True], inputs)
+            self.assertEqual(b"swapped-during-parsing", z.read_bytes())
+            self.assertFalse(result["private_bytes_published"])
+            self.assertFalse(result["full_v81_deployed"])
+
     def test_local_private_zip_rejects_wrong_archive_sha(self):
         with TemporaryDirectory() as d:
             root = Path(d)

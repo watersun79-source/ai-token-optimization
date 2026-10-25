@@ -8,6 +8,7 @@ itself and its private fixtures are NOT present or executable in this CI.
 from __future__ import annotations
 import argparse
 import hashlib
+import io
 import json
 import os
 import stat
@@ -93,19 +94,33 @@ def verify_private_zip_local(path: Path, *, expected_zip_sha256: str = LOCAL_V81
         raise ValueError("INVALID_EXPECTED_FINGERPRINTS")
     if not isinstance(path, Path):
         raise ValueError("INVALID_LOCAL_PATH")
-    if path.is_symlink() or not path.is_file():
+    # Open once: the bytes authenticated by SHA must be the exact bytes parsed
+    # by ZipFile. Reopening a mutable path here creates a TOCTOU integrity gap.
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NONBLOCK", 0)
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    elif path.is_symlink():  # Best-effort fallback on platforms without O_NOFOLLOW.
         raise ValueError("PRIVATE_ZIP_NOT_REGULAR_FILE")
-    if not 0 < path.stat().st_size <= 32 * 1024 * 1024:
-        raise ValueError("PRIVATE_ZIP_SIZE_LIMIT")
-    outer = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(65536), b""):
-            outer.update(chunk)
-    if outer.hexdigest() != expected_zip_sha256:
+    try:
+        descriptor = os.open(path, flags)
+    except OSError:
+        raise ValueError("PRIVATE_ZIP_NOT_REGULAR_FILE") from None
+    with os.fdopen(descriptor, "rb") as stream:
+        meta = os.fstat(stream.fileno())
+        if not stat.S_ISREG(meta.st_mode):
+            raise ValueError("PRIVATE_ZIP_NOT_REGULAR_FILE")
+        if not 0 < meta.st_size <= 32 * 1024 * 1024:
+            raise ValueError("PRIVATE_ZIP_SIZE_LIMIT")
+        # Bounded immutable snapshot prevents path swaps and in-place writes
+        # from changing the ZIP data after its SHA has been authenticated.
+        archive_bytes = stream.read(32 * 1024 * 1024 + 1)
+        if len(archive_bytes) != meta.st_size:
+            raise ValueError("PRIVATE_ZIP_CHANGED_DURING_READ")
+    if hashlib.sha256(archive_bytes).hexdigest() != expected_zip_sha256:
         raise ValueError("PRIVATE_ZIP_SHA256_MISMATCH")
 
     prefix = "AI_R16_100_BOT_v8/"
-    with zipfile.ZipFile(path) as archive:
+    with zipfile.ZipFile(io.BytesIO(archive_bytes)) as archive:
         infos = archive.infolist()
         if not 0 < len(infos) <= 256:
             raise ValueError("PRIVATE_ZIP_ENTRY_LIMIT")
