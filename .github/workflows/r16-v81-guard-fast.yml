@@ -26,6 +26,12 @@ on:
       - experiments/r16-bot-runtime/utc_strict_oracle.js
       - experiments/r16-bot-runtime/utc_strict_oracle_cases.tsv
   workflow_dispatch:
+    inputs:
+      task_message:
+        description: 'Bounded offline worker task (no secrets or credentials)'
+        required: true
+        type: string
+        default: '토큰 최적화'
 
 permissions:
   contents: read
@@ -111,6 +117,27 @@ jobs:
         run: |
           python3 -m unittest discover -s gateway -p test_real_gateway.py -q
           python3 gateway/real_gateway.py --message '에러 고쳐' --code 'print('
+      - name: Execute user-selected bounded task on manual dispatch
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          PYTHONPATH: gateway
+          TASK_MESSAGE: ${{ inputs.task_message }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from real_gateway import run_message
+          report = run_message(os.environ['TASK_MESSAGE'])
+          safe = {
+              'route': report['route'],
+              'status': report['status'],
+              'roles': report.get('selected_roles', []),
+              'external_llm_calls': report.get('external_llm_calls', 0),
+              'production_writes': report.get('production_writes', 0),
+          }
+          print('R16_REAL_GATEWAY=' + json.dumps(safe, ensure_ascii=False))
+          if report['status'] not in ('DONE', 'PARTIAL'):
+              raise SystemExit('Worker could not execute requested task')
+          PY
       - name: Publish actionable operator dashboard to GitHub run summary
         env:
           PYTHONDONTWRITEBYTECODE: '1'
