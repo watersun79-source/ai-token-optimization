@@ -14,6 +14,17 @@ import subprocess
 from v81_unified_schedule_provenance import verify, WORKFLOW
 
 REPOSITORY = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
+API_PATH = re.compile(
+    r"/repos/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)/actions/"
+    r"(?:runs\?event=schedule&per_page=20|"
+    r"runs/[1-9][0-9]*/jobs\?per_page=100|"
+    r"jobs/[1-9][0-9]*/logs)\Z"
+)
+
+
+def valid_repository(value):
+    return (type(value) is str and REPOSITORY.fullmatch(value) is not None
+            and all(part not in (".", "..") for part in value.split("/")))
 SHA40 = re.compile(r"[0-9a-f]{40}\Z")
 LOG_LIMIT = 2_000_000
 RUNS_LIMIT = 20
@@ -25,10 +36,8 @@ class GitHubReadError(Exception):
 
 def gh_read(endpoint):
     """Fetch allowlisted GitHub GET paths without exposing token/errors."""
-    if not isinstance(endpoint, str) or not endpoint.startswith("/repos/"):
-        raise GitHubReadError("INVALID_ENDPOINT")
-    if not (endpoint.endswith("/logs") or endpoint.endswith("/jobs?per_page=100") or
-            endpoint.endswith("/runs?event=schedule&per_page=20")):
+    match = API_PATH.fullmatch(endpoint) if isinstance(endpoint, str) else None
+    if match is None or not valid_repository(match.group(1) + "/" + match.group(2)):
         raise GitHubReadError("ENDPOINT_NOT_ALLOWLISTED")
     if not os.environ.get("GH_TOKEN"):
         raise GitHubReadError("GITHUB_READ_TOKEN_UNAVAILABLE")
@@ -71,7 +80,7 @@ def _json_obj(fetch, endpoint, label):
 
 def collect(fetch, repository, workflow_sha, source_sha):
     """Verify same-run API objects; fetch is real gh_read or a test double."""
-    if (type(repository) is not str or REPOSITORY.fullmatch(repository) is None or
+    if (not valid_repository(repository) or
         type(workflow_sha) is not str or SHA40.fullmatch(workflow_sha) is None or
         type(source_sha) is not str or SHA40.fullmatch(source_sha) is None):
         return unverified("INVALID_REPOSITORY_OR_SHA")

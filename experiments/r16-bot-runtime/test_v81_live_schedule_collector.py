@@ -89,6 +89,13 @@ class LiveCollectorTests(unittest.TestCase):
         self.assertEqual("UNVERIFIED", collect(fetch, "../evil", WORKFLOW, SOURCE)["status"])
         self.assertEqual([], seen)
 
+    def test_direct_get_path_traversal_blocked(self):
+        with patch.dict("os.environ", {"GH_TOKEN": "dummy-test-token"}), patch(
+                "v81_live_schedule_collector.subprocess.run") as proc:
+            with self.assertRaises(GitHubReadError):
+                gh_read("/repos/../evil/actions/runs?event=schedule&per_page=20")
+            proc.assert_not_called()
+
     def test_missing_token_no_process(self):
         with patch.dict("os.environ", {"GH_TOKEN": ""}), patch(
                 "v81_live_schedule_collector.subprocess.run") as proc:
