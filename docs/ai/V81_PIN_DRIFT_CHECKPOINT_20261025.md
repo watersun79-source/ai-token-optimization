@@ -117,3 +117,26 @@ Once the user's private archive is actually available on a local device, run the
 - The change does NOT prove real original ZIP available: source parity remains `EXACT 2 / DIFFERENT 8 / ABSENT 0`, `verbatim_source_match=false`, `full_v81_deployed=false`. ChatGPT native per-run same-execution GitHub/Slack evidence remains **UNVERIFIED**.
 
 **NEXT (one safely actionable blocker):** Original private archive remains inaccessible in this session and must never be uploaded into public CI; only a trusted local device possessing the actual ZIP can run the existing `--verify-private-zip-local` function and confirm the *real* anchored archive/member fingerprints. Do not relax checkout pin policy, modify main, add scheduler, change existing :00 task, :15 cron, Activepieces, Slack or paid services.
+
+
+## Gateway CI workflow identity guard — incremental (2026-10-25 KST)
+
+### Authorized code change (only isolated branch)
+- [`149b8d650f67aaed2df656353f7f34f40b7e6ab7`](https://github.com/watersun79-source/ai-token-optimization/commit/149b8d650f67aaed2df656353f7f34f40b7e6ab7) modifies only `experiments/r16-bot-runtime/gateway/real_gateway.py` and `gateway/test_real_gateway.py`.
+- Root problem: the local Python gateway's `ai-code-verification` role previously inspected only `per_page=1` and returned `PARTIAL` for any completed successful CI on a matching HEAD, without checking workflow identity, trigger, or an independently failed sibling workflow.
+- Fix: bounded `per_page=10`; require an official `push` event, exact current isolated branch SHA, a strictly positive integer run ID, and an allowlisted workflow path (`r16-v81-guard-fast.yml`, `v81-fast-full-isolated.yml`). A failed matching workflow wins over another success; an incomplete sibling prevents premature success. A successful metadata-only result is still only `PARTIAL`, not native ChatGPT proof, and must be checked against original job/raw logs before promotion.
+- Seven new negative/positive mocked regression tests cover unrelated workflow success, manual dispatch, mixed success/failure, stale-first current-second, incomplete sibling, boolean run ID, oversized result page. No production APIs or paid model calls made by new tests.
+
+### Original CI execution independently read
+- Official [run `40199044204`](https://github.com/watersun79-source/ai-token-optimization/actions/runs/40199044204), `event=push`, `head_sha=149b8d650f67aaed2df656353f7f34f40b7e6ab7`, `completed/success`.
+- Fast job `121186070882` `completed/success`; raw job logs show FAST 20/20 offline rules PASS and prior source-parity tests.
+- Full job `121186147548` `completed/success`; raw log shows `Ran 54 tests` in local gateway HTTP/worker suite (including seven new cases), 100/100 offline swarm rules PASS, and `R16_REAL_QUEUED_TASK.status=PASS` for an actual SHA-bound local Python task. This is **not** ChatGPT scheduled native execution or independent LLM inference.
+- Docs-only checkpoint commit may have no new CI run; never claim it passed by borrowing an earlier SHA.
+
+### New scheduled GitHub evidence (kept distinct from ChatGPT)
+- Official [schedule run `40198357946`](https://github.com/watersun79-source/ai-token-optimization/actions/runs/40198357946): `event=schedule`, main HEAD `923c281f82023cc6b49f3844bad17f508f1ab203`, `completed/success`. Job `121184000604` `completed/success`, original raw logs confirm checkout `a88c7993c27404da43cba84a8f69e01a917315a6`, `R16_HOURLY_OFFLINE_RECEIPT_VALIDATED`, native attestations `false`, original model calls `0`.
+- Protected policy expected checkout `a551e6ecc290f625432aba7ce2f7c23cc6117a30` remains different, so **protected-pin parity FAIL**. GitHub schedule offline CI completion does not establish ChatGPT native same-run GitHub/Slack invocation. Native status **UNVERIFIED**.
+- Original private ZIP was not found in current accessible file listings; full 10-file byte parity is **2 EXACT / 8 DIFFERENT / 0 ABSENT** and `full_v81_deployed=false`. Do not infer access or upload a private original.
+
+### Next safe priority
+Acquire separately authorized private local ZIP evidence on trusted local device only, or independently validated owner approval/provenance to reconcile main pin policy. Preserve existing ChatGPT :00 automation ID, active state, history and alerts; no new automation, no modification to main, :15 workflow, Activepieces, Slack, credentials or paid systems. Only new defects on the isolated branch.
