@@ -117,6 +117,42 @@ jobs:
         run: |
           python3 -m unittest discover -s gateway -p test_real_gateway.py -q
           python3 gateway/real_gateway.py --message '에러 고쳐' --code 'print('
+      - name: Run real local prompt compression worker
+        env:
+          PYTHONPATH: gateway
+          TASK_MESSAGE: ${{ inputs.task_message }}
+        run: |
+          python3 -m unittest discover -s gateway -p test_task_executor.py -q
+          python3 - <<'PY'
+          import json, os
+          from task_executor import compact
+          sample = 'repeat\\nunique\\nrepeat\\n'
+          report = compact(sample)
+          assert report['duplicate_lines_removed'] == 1
+          print('R16_REAL_COMPACTION_SAMPLE=' + json.dumps({
+              'input_sha256': report['input_sha256'],
+              'output_sha256': report['output_sha256'],
+              'bytes_saved': report['bytes_saved'],
+              'duplicate_lines_removed': report['duplicate_lines_removed'],
+              'external_model_calls': report['external_model_calls'],
+          }, sort_keys=True))
+          if os.environ.get('GITHUB_EVENT_NAME') == 'workflow_dispatch':
+              text = os.environ.get('TASK_MESSAGE', '')
+              if text:
+                  report = compact(text)
+                  print('R16_REAL_COMPACTION_TASK=' + json.dumps({
+                      'input_sha256': report['input_sha256'],
+                      'output_sha256': report['output_sha256'],
+                      'bytes_saved': report['bytes_saved'],
+                      'duplicate_lines_removed': report['duplicate_lines_removed'],
+                      'external_model_calls': report['external_model_calls'],
+                  }, sort_keys=True))
+                  with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as f:
+                      f.write('## Real bounded text worker\\n')
+                      f.write('Input SHA256: ' + report['input_sha256'] + '\\n\\n')
+                      f.write('Output SHA256: ' + report['output_sha256'] + '\\n\\n')
+                      f.write('Bytes saved: ' + str(report['bytes_saved']) + '\\n\\n')
+          PY
       - name: Execute user-selected bounded task on manual dispatch
         if: github.event_name == 'workflow_dispatch'
         env:
