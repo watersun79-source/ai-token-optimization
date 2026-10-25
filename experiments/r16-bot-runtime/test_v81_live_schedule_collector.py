@@ -468,7 +468,7 @@ class LiveCollectorTests(unittest.TestCase):
         self.assertEqual("PASS", result["status"])
         self.assertNotIn("protected_pin_policy", result)
         self.assertNotIn("observed_source_sha", result)
-        self.assertNotIn("expected_source_sha", result)
+        self.assertEqual(SOURCE, result["expected_source_sha"])
         self.assertFalse(result["native_chatgpt_run_verified"])
         self.assertEqual(5, len(seen))
 
