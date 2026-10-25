@@ -104,6 +104,21 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(report["selected_roles"], ["ai-optimization"])
         self.assertEqual(report["workers"][0]["evidence"]["duplicate_lines_removed"], 1)
 
+    def test_explicit_optimization_cli_receipt(self):
+        import subprocess
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "gateway" / "real_gateway.py"),
+             "--message", chr(10).join(["최적화 실행", "반복", "반복", "유일"])],
+            capture_output=True, text=True, timeout=8, check=True,
+        )
+        report = json.loads(result.stdout)
+        self.assertEqual(report["status"], "DONE")
+        self.assertEqual(report["selected_roles"], ["ai-optimization"])
+        evidence = report["workers"][0]["evidence"]
+        self.assertEqual(evidence["optimized_text"], chr(10).join(["최적화 실행", "반복", "유일"]))
+        self.assertEqual(evidence["duplicate_lines_removed"], 1)
+        self.assertNotEqual(evidence["input_sha256"], evidence["output_sha256"])
+
     def test_automation_plan_not_flow_run(self):
         r=execute_role('ai-automation-design','워크플로 구성')
         self.assertEqual(r['status'],'DONE')
