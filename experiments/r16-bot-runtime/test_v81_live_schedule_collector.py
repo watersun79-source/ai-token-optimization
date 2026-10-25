@@ -84,6 +84,34 @@ class LiveCollectorTests(unittest.TestCase):
         self.assertEqual("UNVERIFIED", collect(fetch, REPO, WORKFLOW, SOURCE)["status"])
         self.assertEqual(1, len(seen))
 
+    def test_failed_run_blocks_before_jobs(self):
+        fetch, seen = fake_api()
+        def failed(path):
+            raw = fetch(path)
+            if path.endswith("/runs?event=schedule&per_page=20"):
+                obj = json.loads(raw)
+                obj["workflow_runs"][0]["conclusion"] = "failure"
+                return json.dumps(obj)
+            return raw
+        out = collect(failed, REPO, WORKFLOW, SOURCE)
+        self.assertEqual("FAIL", out["status"])
+        self.assertEqual("OFFICIAL_RUN_FAILED", out["reason"])
+        self.assertEqual(1, len(seen))
+
+    def test_missing_run_conclusion_unverified(self):
+        fetch, seen = fake_api()
+        def missing(path):
+            raw = fetch(path)
+            if path.endswith("/runs?event=schedule&per_page=20"):
+                obj = json.loads(raw)
+                obj["workflow_runs"][0].pop("conclusion", None)
+                return json.dumps(obj)
+            return raw
+        out = collect(missing, REPO, WORKFLOW, SOURCE)
+        self.assertEqual("UNVERIFIED", out["status"])
+        self.assertEqual("OFFICIAL_RUN_CONCLUSION_MISSING", out["reason"])
+        self.assertEqual(1, len(seen))
+
     def test_failed_job_blocks(self):
         fetch, seen = fake_api(mode="job_failed")
         self.assertEqual("FAIL", collect(fetch, REPO, WORKFLOW, SOURCE)["status"])
