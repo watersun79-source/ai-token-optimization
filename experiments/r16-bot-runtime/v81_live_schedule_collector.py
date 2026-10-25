@@ -112,6 +112,12 @@ def collect(fetch, repository, workflow_sha, source_sha):
             return unverified("EXPECTED_NEW_SCHEDULE_NOT_OBSERVED", run_id=rid)
         if run.get("status") != "completed":
             return unverified("LATEST_SCHEDULE_STILL_RUNNING", run_id=rid)
+        if run.get("conclusion") != "success":
+            result = unverified("OFFICIAL_RUN_FAILED" if run.get("conclusion") is not None
+                                else "OFFICIAL_RUN_CONCLUSION_MISSING", run_id=rid)
+            if run.get("conclusion") is not None:
+                result["status"] = "FAIL"
+            return result
         jobs_obj = _json_obj(fetch, base + "/actions/runs/" + str(rid) +
                             "/jobs?per_page=100", "JOBS")
         jobs = jobs_obj.get("jobs")
