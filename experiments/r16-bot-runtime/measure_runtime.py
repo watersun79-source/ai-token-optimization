@@ -18,13 +18,16 @@ def main():
     m=re.search(r'Ran ([0-9]+) tests?',py)
     if m is None or not re.search(r'\bOK\b',py):raise RuntimeError('Python tests not verifiable')
     counts['python']={'passed':int(m.group(1)),'total':int(m.group(1))}
+    # Pin the trusted fixture path: Java must not pick a different TSV from cwd.
+    fixture=str(ROOT/'utc_strict_oracle_cases.tsv')
     if shutil.which('javac'):
         with tempfile.TemporaryDirectory(prefix='r16-v6-java-') as d:
             execute(['javac','-d',d,str(ROOT/'UtcStrictOracle.java')])
-            java=execute(['java','-cp',d,'UtcStrictOracle'])
+            java=execute(['java','-cp',d,'UtcStrictOracle',fixture],cwd=d)
     else:
-        # OpenJDK source launcher also compiles/executes the exact source file.
-        java=execute(['java',str(ROOT/'UtcStrictOracle.java')])
+        # OpenJDK source launcher; also test outside the checkout.
+        with tempfile.TemporaryDirectory(prefix='r16-v6-java-source-') as d:
+            java=execute(['java',str(ROOT/'UtcStrictOracle.java'),fixture],cwd=d)
     js=execute(['node',str(ROOT/'utc_strict_oracle.js')])
     for lang,out in [('java',java),('js',js)]:
         match=re.search(r'PASS ([0-9]+)/([0-9]+)',out)
