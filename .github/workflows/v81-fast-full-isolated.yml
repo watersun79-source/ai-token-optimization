@@ -9,6 +9,8 @@ on:
       - experiments/r16-bot-runtime/v81_split_bench.py
       - experiments/r16-bot-runtime/v81_verifiable_18.py
       - experiments/r16-bot-runtime/test_v81_verifiable_18.py
+      - experiments/r16-bot-runtime/v81_activepieces_checkpoint_audit.py
+      - experiments/r16-bot-runtime/test_v81_activepieces_checkpoint_audit.py
       - docs/ai/V81_VERIFIABLE_18_20261025.md
       - experiments/r16-bot-runtime/test_v81_split_bench.py
       - experiments/r16-bot-runtime/v81_source_parity.py
@@ -70,6 +72,8 @@ jobs:
           persist-credentials: false
       - name: Verify optional offline 18-role substitutions (not native attestation)
         run: python3 -m unittest -q test_v81_verifiable_18
+      - name: Verify self-reported Activepieces checkpoint chronology
+        run: python3 -m unittest -q test_v81_activepieces_checkpoint_audit
       - name: Verify source SHA comparison (not verbatim v8.1)
         run: |
           python3 v81_source_parity.py
@@ -130,6 +134,9 @@ jobs:
         env:
           V81_PUSH_BEFORE: ${{ github.event.before }}
         run: python3 v81_ci_gate.py
+      - name: Verify Activepieces checkpoint chronology (not native attestation)
+        if: steps.change_gate.outputs.run_full == 'true'
+        run: python3 -m unittest -q test_v81_activepieces_checkpoint_audit
       - name: Verify original-archive source parity before tests rewrite evidence
         if: steps.change_gate.outputs.run_full == 'true'
         run: |
