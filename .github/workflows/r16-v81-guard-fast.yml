@@ -11,6 +11,19 @@ on:
       - experiments/r16-bot-runtime/test_v81_live_schedule_collector.py
       - experiments/r16-bot-runtime/v81_unified_schedule_provenance.py
       - experiments/r16-bot-runtime/test_v81_unified_schedule_provenance.py
+      - experiments/r16-bot-runtime/v81_swarm.py
+      - experiments/r16-bot-runtime/test_v81_swarm.py
+      - experiments/r16-bot-runtime/v81_split_bench.py
+      - experiments/r16-bot-runtime/v81_source_parity.py
+      - experiments/r16-bot-runtime/test_v81_source_parity.py
+      - experiments/r16-bot-runtime/runner.py
+      - experiments/r16-bot-runtime/catalog.json
+      - experiments/r16-bot-runtime/evidence.json
+      - experiments/r16-bot-runtime/measure_runtime.py
+      - experiments/r16-bot-runtime/test_runtime.py
+      - experiments/r16-bot-runtime/UtcStrictOracle.java
+      - experiments/r16-bot-runtime/utc_strict_oracle.js
+      - experiments/r16-bot-runtime/utc_strict_oracle_cases.tsv
   workflow_dispatch:
 
 permissions:
@@ -37,7 +50,7 @@ jobs:
         run: python3 v81_swarm.py --mode audit --workers 4
       - name: Guard regression (changed modules only)
         run: |
-          python3 -m unittest -q test_v81_live_schedule_collector test_v81_unified_schedule_provenance
+          python3 -m unittest -q test_v81_live_schedule_collector test_v81_unified_schedule_provenance test_v81_swarm test_v81_source_parity
 
   full-regression:
     needs: fast-audit
@@ -52,10 +65,26 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+      - name: Setup Python 3.12
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: '3.12'
+      - name: Setup Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Setup Java 21
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Report original ZIP fingerprint gaps before generated receipt changes
+        run: python3 v81_source_parity.py
+      - name: Refresh local regression receipt from Python Java and Node
+        run: python3 measure_runtime.py
       - name: Full 100 synthetic roles after FAST passes
         run: python3 v81_swarm.py --mode all --workers 4
-      - name: Report original ZIP fingerprint gaps without exposing private files
-        run: python3 v81_source_parity.py
       - name: Scope guard
         run: |
           echo 'ISOLATED_OFFLINE_FAST_AND_FULL_ONLY=PASS'
