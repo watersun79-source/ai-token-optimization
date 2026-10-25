@@ -264,6 +264,41 @@ class SourceParityTests(unittest.TestCase):
                         parity.verify_private_zip_local(
                             z, expected_zip_sha256=digest, expected_hashes=expected)
 
+    def test_local_private_zip_unsupported_compression_fails_closed(self):
+        # Patch only fabricated ZIP headers; never open the original private ZIP.
+        import struct
+        import contextlib
+        import io
+        from unittest.mock import patch
+
+        with TemporaryDirectory() as d:
+            root = Path(d)
+            content = b"synthetic-only"
+            path, _ = self._fake_archive(
+                root, [("AI_R16_100_BOT_v8/runner.py", content)])
+            image = bytearray(path.read_bytes())
+            local = image.find(b"PK\\x03\\x04")
+            central = image.find(b"PK\\x01\\x02")
+            self.assertGreaterEqual(local, 0)
+            self.assertGreaterEqual(central, 0)
+            struct.pack_into("<H", image, local + 8, 99)
+            struct.pack_into("<H", image, central + 10, 99)
+            path.write_bytes(image)
+            digest = hashlib.sha256(image).hexdigest()
+            member_hashes = {"runner.py": hashlib.sha256(content).hexdigest()}
+            with self.assertRaisesRegex(
+                    ValueError, "PRIVATE_ZIP_UNSUPPORTED_COMPRESSION"):
+                parity.verify_private_zip_local(
+                    path, expected_zip_sha256=digest, expected_hashes=member_hashes)
+            with patch.object(parity, "LOCAL_V81_ZIP_SHA256", digest), \
+                 patch.dict(parity.ORIGINAL_SHA256, member_hashes, clear=True), \
+                 patch("sys.argv", ["v81_source_parity.py",
+                                   "--verify-private-zip-local", str(path)]), \
+                 contextlib.redirect_stdout(io.StringIO()) as captured:
+                self.assertEqual(2, parity.main())
+            self.assertIn('"status": "UNVERIFIED"', captured.getvalue())
+            self.assertNotIn(str(path), captured.getvalue())
+
     def test_local_private_zip_rejects_symlink_archive(self):
         with TemporaryDirectory() as d:
             root = Path(d)

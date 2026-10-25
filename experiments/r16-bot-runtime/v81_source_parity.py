@@ -138,6 +138,11 @@ def verify_private_zip_local(path: Path, *, expected_zip_sha256: str = LOCAL_V81
                 (entry.create_system == 3 and
                  stat.S_IFMT(entry.external_attr >> 16) == stat.S_IFLNK)):
                 raise ValueError("PRIVATE_ZIP_UNSAFE_ENTRY")
+            if entry.compress_type not in (
+                    zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED,
+                    zipfile.ZIP_BZIP2, zipfile.ZIP_LZMA):
+                # Unsupported decoders otherwise raise uncaught NotImplementedError.
+                raise ValueError("PRIVATE_ZIP_UNSUPPORTED_COMPRESSION")
             seen.add(name)
             if entry.file_size > 4 * 1024 * 1024 or entry.file_size < 0:
                 raise ValueError("PRIVATE_ZIP_MEMBER_SIZE_LIMIT")
