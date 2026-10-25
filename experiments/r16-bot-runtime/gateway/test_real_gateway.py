@@ -28,6 +28,21 @@ class GatewayTests(unittest.TestCase):
         self.assertFalse(x['workers'][0]['evidence']['syntax_valid'])
         self.assertFalse(x['workers'][0]['evidence']['executed_user_code'])
 
+    def test_actual_bounded_syntax_repair(self):
+        report = run_message("에러 고쳐", code="print(")
+        evidence = report["workers"][0]["evidence"]
+        self.assertTrue(evidence["repair_applied"])
+        self.assertEqual(evidence["fixed_source"], "print()")
+        self.assertTrue(evidence["syntax_valid_after"])
+        self.assertNotEqual(evidence["source_sha256"], evidence["fixed_sha256"])
+        self.assertFalse(evidence["executed_user_code"])
+
+    def test_unsafe_or_ambiguous_syntax_is_not_repaired(self):
+        for source in ["if True", "print((1", "print(\\n1"]:
+            evidence = run_message("에러 고쳐", code=source)["workers"][0]["evidence"]
+            self.assertFalse(evidence["repair_applied"])
+            self.assertNotIn("fixed_source", evidence)
+
     def test_wont_execute_untrusted_source(self):
         code='__import__("os").system("touch /tmp/should_not_exist_AI_GATEWAY")'
         x=run_message('에러 고쳐',code=code)
