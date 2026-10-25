@@ -64,6 +64,29 @@ class AuditV2Tests(unittest.TestCase):
         p=self.make();p['native_run']['status']='failed';self.assertIn('종료 성공',check(p)['reason'])
     def test_late_tool_call(self):
         p=self.make();p['tool_calls'][0]['observed_at']='2026-10-22T22:05:00+09:00';self.assertIn('current_handoff',check(p)['missing'])
+    def test_raw_tool_start_outside_native_window_is_rejected(self):
+        # Even caller-supplied "official" text remains format-only. An
+        # explicit start timestamp must never be ignored.
+        for bad in ('2026-10-22T22:01:46.999999999+09:00',
+                    '2026-10-22T22:02:00.000000001+09:00',
+                    'not-a-timestamp', None):
+            with self.subTest(bad_start=bad):
+                p=self.make()
+                p['tool_calls'][0]['started_at']=bad
+                r=check(p)
+                self.assertEqual(r['status'],'미검증')
+                self.assertIn('current_handoff',r['missing'])
+                self.assertFalse(r['official_success_verified'])
+
+    def test_raw_tool_start_inside_native_window_is_format_only(self):
+        p=self.make()
+        p['tool_calls'][0]['started_at']='2026-10-22T22:01:47.000000001+09:00'
+        p['tool_calls'][1]['started_at']='2026-10-22T22:01:47+09:00'
+        r=check(p)
+        self.assertTrue(r['status'].startswith('형식 통과'))
+        self.assertEqual([],r['missing'])
+        self.assertFalse(r['official_success_verified'])
+
     def test_cross_run_tool_call(self):
         p=self.make();p['tool_calls'][0]['run_id']='other';self.assertIn('current_handoff',check(p)['missing'])
     def test_duplicate_invocation(self):

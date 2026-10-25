@@ -179,9 +179,11 @@ def check(payload: dict) -> dict:
         tool, locator, version_type = REQUIRED[t]
         invocation = c.get('invocation_id')
         observed = parsed_time_ns(c.get('observed_at'))
-        if 'otel' in payload:
-            # OTLP provides the full interval; an in-window end alone cannot
-            # prove that this invocation started during the supplied run.
+        if 'otel' in payload or 'started_at' in c:
+            # OTLP always supplies a start. For a raw original call, validate
+            # any explicitly supplied start too: a tool cannot start before
+            # its claimed native run or after its recorded observation.
+            # Missing optional raw starts retain the legacy format-only path.
             began = parsed_time_ns(c.get('started_at'))
             if began is None or observed is None or not start <= began <= observed:
                 continue
