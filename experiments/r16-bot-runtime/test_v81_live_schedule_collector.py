@@ -431,5 +431,64 @@ class LiveCollectorTests(unittest.TestCase):
         self.assertEqual("UNVERIFIED", collect(corrupt, REPO, WORKFLOW, SOURCE)["status"])
 
 
+    def test_protected_source_pin_matches_without_extra_get(self):
+        fetch, seen = fake_api()
+        self.assertEqual(
+            (WORKFLOW, SOURCE),
+            resolve_main_target(fetch, REPO, protected_source_sha=SOURCE))
+        self.assertEqual(2, len(seen))
+        self.assertTrue(all("/actions/" not in endpoint for endpoint in seen))
+
+    def test_protected_source_pin_drift_fails_before_schedule_read(self):
+        fetch, seen = fake_api()
+        with self.assertRaisesRegex(GitHubReadError, "^PROTECTED_PIN_DRIFT$"):
+            resolve_main_target(
+                fetch, REPO,
+                protected_source_sha="a551e6ecc290f625432aba7ce2f7c23cc6117a30")
+        self.assertEqual(2, len(seen))
+        self.assertTrue(all("/actions/" not in endpoint for endpoint in seen))
+
+    def test_invalid_protected_pin_rejected_without_api(self):
+        fetch, seen = fake_api()
+        for invalid in ("", "f" * 39, "../escape", True, 42):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(
+                    GitHubReadError, "^PROTECTED_PIN_POLICY_INVALID$"):
+                resolve_main_target(fetch, REPO, protected_source_sha=invalid)
+        self.assertEqual([], seen)
+
+    def test_cli_protected_pin_drift_keeps_native_unverified(self):
+        fetch, seen = fake_api()
+        argv = ["v81_live_schedule_collector.py", "--repository", REPO,
+                "--protected-source-sha",
+                "a551e6ecc290f625432aba7ce2f7c23cc6117a30"]
+        with patch("sys.argv", argv), patch(
+                "v81_live_schedule_collector.gh_read", side_effect=fetch), redirect_stdout(StringIO()) as out:
+            self.assertEqual(0, main())
+        result = json.loads(
+            out.getvalue().split("R16_V81_LIVE_SCHEDULE_CHECK=", 1)[1])
+        self.assertEqual("UNVERIFIED", result["status"])
+        self.assertEqual("PROTECTED_PIN_DRIFT", result["reason"])
+        self.assertEqual("FAIL", result["protected_pin_policy"])
+        self.assertTrue(result["official_github_api_get_attempted"])
+        self.assertFalse(result["native_chatgpt_run_verified"])
+        self.assertEqual(2, len(seen))
+
+    def test_explicit_pair_cannot_bypass_protected_main_guard(self):
+        fetch, seen = fake_api()
+        argv = ["v81_live_schedule_collector.py", "--repository", REPO,
+                "--expected-workflow-sha", WORKFLOW,
+                "--expected-source-sha", SOURCE,
+                "--protected-source-sha",
+                "a551e6ecc290f625432aba7ce2f7c23cc6117a30"]
+        with patch("sys.argv", argv), patch(
+                "v81_live_schedule_collector.gh_read", side_effect=fetch), redirect_stdout(StringIO()) as out:
+            self.assertEqual(0, main())
+        result = json.loads(
+            out.getvalue().split("R16_V81_LIVE_SCHEDULE_CHECK=", 1)[1])
+        self.assertEqual("UNVERIFIED", result["status"])
+        self.assertEqual("PROTECTED_PIN_REQUIRES_AUTO_MAIN", result["reason"])
+        self.assertEqual([], seen)
+
+
 if __name__ == "__main__":
     unittest.main()
