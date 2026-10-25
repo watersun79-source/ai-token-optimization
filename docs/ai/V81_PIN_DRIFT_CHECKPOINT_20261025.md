@@ -55,3 +55,18 @@ These GitHub patches establish **what changed and when**, not whether its author
 
 ### Remaining actionable next target
 Keep schedule and native ChatGPT distinct. User approval/provenance for the two main edits is still **UNVERIFIED**. Owner must explicitly decide whether the original protected pin should be restored or the protection rule should be changed; do not make either change without authorization. Private ZIP full deployment and trusted native per-run connected GitHub/Slack ledger remain UNVERIFIED.
+
+
+## Protected-pin CI fail-closed exit gate — new isolated-only change
+
+- Parent isolated HEAD: `6061368633ebea914e84a10986d8cd7451d52cf4`.
+- GitHub original `main` commit patches reconfirm pin sequence `a551e6ecc290f625432aba7ce2f7c23cc6117a30` -> `353940b40b73b4001350ce07b323963bda14aa00` (commit `9097914284baf4896919e850c49690737d5715f3`) -> `a88c7993c27404da43cba84a8f69e01a917315a6` (commit `923c281f82023cc6b49f3844bad17f508f1ab203`). Both GitHub commits are attributed to account `watersun79-source`; the owner's explicit authorization remains UNVERIFIED.
+- Discovered additional safety defect: isolated collector previously output `protected_pin_policy=FAIL` with top-level `status=UNVERIFIED`, but exited code 0, allowing a falsely green FAST job.
+- Applied [`f69ef915193f891793704b85f2693fdd34f2a070`](https://github.com/watersun79-source/ai-token-optimization/commit/f69ef915193f891793704b85f2693fdd34f2a070), atomically modifying only `v81_live_schedule_collector.py` and `test_v81_live_schedule_collector.py`. New behavior: exit 1 if protected pin policy FAIL, while preserving `status=UNVERIFIED` for native attestation and exit 0 when protected pin matches. One positive regression added, existing mismatch CLI negative expectation corrected.
+- Official [push Actions run `40195098743`](https://github.com/watersun79-source/ai-token-optimization/actions/runs/40195098743) against exact head `f69ef915193f891793704b85f2693fdd34f2a070`: run **completed/failure, intentionally**. FAST job `121174125727`: **completed/failure**, solely because official read-only live schedule check detected protected pin mismatch. Original raw job log: `R16_V81_LIVE_SCHEDULE_CHECK` has `"reason":"PROTECTED_PIN_DRIFT"`, `"protected_pin_policy":"FAIL"`, `"status":"UNVERIFIED"` and `Process completed with exit code 1`. The collector unit suite printed `Ran 41 tests` and passed before the blocked live check.
+- Same push run full regression job `121174125900`: **completed/success**, raw log confirms 100/100 local offline swarm PASS and Python/Java/JS/C isolated fixture evidence. It does NOT attest native ChatGPT or actual private v8.1 deployment.
+- Separate guard-fast workflow of same SHA has independently verified passing fast job `121174125571`; do not treat this as permission to promote the failed protected-pin gate.
+
+**Pass/fail interpretation:** detector behavior PASS; protected main pin policy FAIL; isolated full offline regressions PASS; trusted native unattended GitHub/Slack linkage UNVERIFIED. No rerun of previously successful identical SHA jobs.
+
+**Safe next step:** do not modify main or the :15 schedule, checkout pin, ChatGPT :00 task, Activepieces, Slack or credentials. Seek explicit authorization before resolving main pin policy; after an authorized main change, verify GitHub official main workflow content and the next scheduled same-run original job checkout log. Retain the intentional red guard until protected pin parity is restored or explicit protected-baseline change is approved.
