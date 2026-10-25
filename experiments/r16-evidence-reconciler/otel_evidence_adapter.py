@@ -98,7 +98,16 @@ def _ok_status(span):
 
 
 def _descends_from(span, root_span_id, root_trace_id, by_id):
-    """Require an unbroken, acyclic same-trace chain to the run root."""
+    """Require same-trace ancestry AND temporally nested parent intervals.
+
+    A tool span wholly inside the root can still have a forged intermediate
+    parent that begins after the tool or ends before it. Such ancestry is not
+    usable evidence of a causally nested scheduled execution.
+    """
+    child_key = (root_trace_id, span.get("spanId"))
+    if child_key not in by_id:
+        return False
+    child_start, child_end = by_id[child_key][2:4]
     parent_id = span.get("parentSpanId")
     visited = set()
     while parent_id:
@@ -110,10 +119,15 @@ def _descends_from(span, root_span_id, root_trace_id, by_id):
         if (parent_id in visited or parent_key not in by_id
                 or by_id[parent_key][0].get("traceId") != root_trace_id):
             return False
+        parent_info = by_id[parent_key]
+        parent_start, parent_end = parent_info[2:4]
+        if not parent_start <= child_start <= child_end <= parent_end:
+            return False
         if parent_id == root_span_id:
             return True
         visited.add(parent_id)
-        parent_id = by_id[parent_key][0].get("parentSpanId")
+        child_start, child_end = parent_start, parent_end
+        parent_id = parent_info[0].get("parentSpanId")
     return False
 
 

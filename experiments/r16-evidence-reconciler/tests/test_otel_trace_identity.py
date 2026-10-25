@@ -37,6 +37,33 @@ class TestTraceIdentity(unittest.TestCase):
                 out = adapt_otlp(data, expected_run_id=RUN, expected_targets=TARGETS)
                 self.assertCountEqual(TARGETS, [c["target"] for c in out["tool_calls"]])
 
+    def test_causal_parent_interval_must_contain_tool_and_fit_root(self):
+        # Before patch, only root/tool time was checked. A forged intermediate
+        # parent starting after a child could still authenticate the chain's
+        # *format*. These are synthetic OTLP traces, not real task evidence.
+        from test_otel_evidence_adapter import span
+        cases = (
+            ("valid", "1792735199500000000", "1792735202000000000", True),
+            ("parent_starts_after_child", "1792735201000000001", "1792735202000000000", False),
+            ("parent_ends_before_child", "1792735199500000000", "1792735200999999999", False),
+            ("parent_begins_before_run_root", "1792735198500000000", "1792735202000000000", False),
+        )
+        for label, begin, end, valid in cases:
+            with self.subTest(case=label):
+                data = fixture()
+                spans = data["resourceSpans"][0]["scopeSpans"][0]["spans"]
+                parent = span("7" * 16, "intermediate", "chat")
+                parent["startTimeUnixNano"] = begin
+                parent["endTimeUnixNano"] = end
+                spans[1]["parentSpanId"] = parent["spanId"]
+                spans.append(parent)
+                out = adapt_otlp(data, expected_run_id=RUN,
+                                 expected_targets=TARGETS)
+                expected = (["current_handoff", "slack_thread"] if valid
+                            else ["slack_thread"])
+                self.assertCountEqual(expected, [c["target"] for c in out["tool_calls"]])
+                self.assertEqual(TRACE, out["trace_id"])
+
     def test_other_trace_intermediate_collision_cannot_hide_parent(self):
         data = fixture()
         spans = data["resourceSpans"][0]["scopeSpans"][0]["spans"]
