@@ -224,8 +224,15 @@ def e09(s):
 
 
 def e10(s):
-    return all(not v.get("_externally_attested", False)
-               for v in runs(s) if v.get("source") == "synthetic_fixture")
+    # Never allow a synthetic run to claim real provider authentication by
+    # changing its source label. Evaluate *every* run; avoid vacuous all().
+    if s.get("source") != "synthetic_fixture":
+        return False
+    return all(
+        v.get("source") == "synthetic_fixture"
+        and v.get("_externally_attested", False) is False
+        for v in runs(s)
+    )
 
 
 CHECKS = {

@@ -70,6 +70,29 @@ class SplitBenchTests(unittest.TestCase):
                     accepted = False
                 self.assertFalse(accepted)
 
+    def test_e10_source_relabel_cannot_bypass_synthetic_provenance(self):
+        for altered in ("run_source", "root_source", "both"):
+            with self.subTest(altered=altered):
+                sample = b.sample_fixture()
+                sample["runs"][0]["_externally_attested"] = True
+                if altered in ("run_source", "both"):
+                    sample["runs"][0]["source"] = "provider_verified"
+                if altered in ("root_source", "both"):
+                    sample["source"] = "provider_verified"
+                self.assertFalse(b.e10(sample))
+                report = b.execute(CATALOG, EVIDENCE, "audit", sample)
+                status = next(x["status"] for x in report["details"]
+                              if x["id"] == "E10")
+                self.assertEqual("FAIL", status)
+
+    def test_e10_rejects_nonboolean_external_attestation(self):
+        for fake in (None, 0, "false", "verified"):
+            with self.subTest(fake=fake):
+                sample = b.sample_fixture()
+                sample["runs"][0]["_externally_attested"] = fake
+                self.assertFalse(b.e10(sample))
+        self.assertTrue(b.e10(b.sample_fixture()))
+
     def test_legacy_native_is_still_unverified(self):
         self.assertEqual("UNVERIFIED", runner.validate(CAT["E10"], EVIDENCE)["status"])
         out = b.execute(CATALOG, EVIDENCE, "audit")
