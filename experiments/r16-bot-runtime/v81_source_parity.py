@@ -34,6 +34,7 @@ assert all(len(x) == 64 and set(x) <= set("0123456789abcdef") for x in ORIGINAL_
 
 # Record reviewed isolated-branch differences; the original ZIP is unavailable
 # on public CI. A hardening disposition never implies source byte equality.
+# Missing files always remain unresolved, even if a previous version was reviewed.
 REVIEWED_DIFFERENCES = {
     "runner.py": {
         "disposition": "KEEP_BRANCH_HARDENING",
@@ -76,7 +77,7 @@ def compare(root: Path = ROOT) -> dict:
     reviewed = {
         filename: REVIEWED_DIFFERENCES[filename]
         for filename, row in rows.items()
-        if row["status"] != "EXACT" and filename in REVIEWED_DIFFERENCES
+        if row["status"] == "DIFFERENT" and filename in REVIEWED_DIFFERENCES
     }
     unresolved = sorted(
         filename for filename, row in rows.items()

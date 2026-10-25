@@ -52,6 +52,24 @@ class SourceParityTests(unittest.TestCase):
         self.assertFalse(report["verbatim_source_match"])
         self.assertFalse(report["full_v81_deployed"])
 
+    def test_missing_reviewed_file_must_stay_unresolved(self):
+        # Previously reviewed hardening applies only while its source file exists.
+        with TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "runner.py").write_bytes(b"isolated modified source")
+            report = parity.compare(root)
+            self.assertEqual("DIFFERENT", report["files"]["runner.py"]["status"])
+            self.assertIn("runner.py", report["reviewed_differences"])
+            self.assertEqual(1, report["reviewed_difference_count"])
+            self.assertEqual(9, report["unresolved_difference_count"])
+            for name in ("test_runtime.py", "utc_strict_oracle.js", "measure_runtime.py"):
+                with self.subTest(absent=name):
+                    self.assertEqual("ABSENT", report["files"][name]["status"])
+                    self.assertNotIn(name, report["reviewed_differences"])
+                    self.assertIn(name, report["unresolved_difference_files"])
+            self.assertFalse(report["verbatim_source_match"])
+            self.assertFalse(report["full_v81_deployed"])
+
     def test_false_claim_of_verbatim_is_fail_closed(self):
         with self.assertRaisesRegex(ValueError, "fail-closed"):
             parity.require_verbatim(parity.compare())
@@ -69,6 +87,8 @@ class SourceParityTests(unittest.TestCase):
         with TemporaryDirectory() as d:
             result = parity.compare(Path(d))
             self.assertEqual(10, result["counts"]["ABSENT"])
+            self.assertEqual(0, result["reviewed_difference_count"])
+            self.assertEqual(10, result["unresolved_difference_count"])
             self.assertFalse(result["verbatim_source_match"])
             self.assertFalse(result["native_chatgpt_scheduled_calls_verified"])
             self.assertEqual(0, result["external_llm_calls"])
