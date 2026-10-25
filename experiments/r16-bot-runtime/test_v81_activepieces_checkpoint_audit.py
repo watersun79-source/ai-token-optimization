@@ -104,6 +104,36 @@ class CheckpointAuditTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             audit_checkpoints("not rows",FIRST,LAST)
 
+    def test_nanosecond_checkpoint_delay_preserved_on_both_sides_of_slot(self):
+        for observation, expected_status, expected_delay in (
+            ("2026-10-21T14:59:59.999999999Z", "FAIL", -0.000000001),
+            ("2026-10-21T15:00:00.000000001Z", "PASS", 0.000000001),
+            ("2026-10-21T15:00:00.000000000Z", "PASS", 0.0),
+        ):
+            with self.subTest(observed=observation):
+                row = {"cells": {
+                    "automationId": AUTOMATION_ID,
+                    "scheduledSlotKst": FIRST,
+                    "observedAtUtc": observation,
+                    "evidenceLevel": SELF_REPORTED,
+                }}
+                checked = audit_checkpoints([row], FIRST, FIRST)
+                slot = checked["slots"][0]
+                self.assertEqual(expected_status, slot["checkpoint_status"])
+                self.assertEqual(expected_delay, slot["delay_seconds"])
+                self.assertFalse(slot["native_execution_proven"])
+
+    def test_unicode_digits_in_utc_timestamp_rejected(self):
+        row = {"cells": {
+            "automationId": AUTOMATION_ID,
+            "scheduledSlotKst": FIRST,
+            "observedAtUtc": "٢٠٢٦-١٠-٢١T١٥:٠٠:٠٠Z",
+            "evidenceLevel": SELF_REPORTED,
+        }}
+        checked = audit_checkpoints([row], FIRST, FIRST)
+        self.assertEqual("FAIL", checked["slots"][0]["checkpoint_status"])
+        self.assertEqual("INVALID_OBSERVED_TIME", checked["slots"][0]["reason"])
+
     def test_parsers_reject_bad_timezone_and_fraction(self):
         self.assertIsNone(parse_slot("2026-10-22 00:00 UTC"))
         self.assertIsNone(parse_utc("2026-10-21T15:00:00+09:00"))

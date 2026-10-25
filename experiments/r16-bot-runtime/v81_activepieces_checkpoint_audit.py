@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 AUTOMATION_ID = "6acb017062a08191a4136238b78b313a"
 SELF_REPORTED = "SELF_REPORTED_UNATTENDED_NOT_INDEPENDENTLY_PROVEN"
 SLOT_FORMAT = re.compile(r"^\d{4}-\d{2}-\d{2} \d{2}:00 Asia/Seoul$")
-UTC_FORMAT = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$")
+UTC_FORMAT = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.([0-9]{1,9}))?Z$")
 KST = ZoneInfo("Asia/Seoul")
 MAX_ROWS = 500
 MAX_HOURS = 168
@@ -37,6 +37,25 @@ def parse_utc(value: Any) -> datetime | None:
         return datetime.fromisoformat(value[:-1] + "+00:00").astimezone(timezone.utc)
     except ValueError:
         return None
+
+
+def parse_utc_ns(value: Any) -> tuple[datetime, int] | None:
+    """Preserve 7th–9th fractional digits that Python datetime truncates."""
+    parsed = parse_utc(value)
+    if parsed is None:
+        return None
+    match = UTC_FORMAT.fullmatch(value)
+    fraction = (match.group(1) or "").ljust(9, "0")
+    return parsed, int(fraction[6:])
+
+
+def delay_seconds_ns(observed: tuple[datetime, int], slot: datetime) -> float:
+    """Compute signed nanosecond delta with integer timedelta arithmetic."""
+    at, sub_micro_ns = observed
+    elapsed = at - slot.astimezone(timezone.utc)
+    ns = ((elapsed.days * 86400 + elapsed.seconds) * 1_000_000_000
+          + elapsed.microseconds * 1000 + sub_micro_ns)
+    return round(ns / 1_000_000_000, 9)
 
 
 def audit_checkpoints(rows: list[dict], first_slot: str, last_slot: str) -> dict:
@@ -86,23 +105,24 @@ def audit_checkpoints(rows: list[dict], first_slot: str, last_slot: str) -> dict
             status, reason, delta = "FAIL", "DUPLICATE_CHECKPOINTS", None
         else:
             cell = matches[0]
-            at = parse_utc(cell.get("observedAtUtc"))
+            at_ns = parse_utc_ns(cell.get("observedAtUtc"))
+            at = at_ns[0] if at_ns is not None else None
             task_id = cell.get("automationId")
             level = cell.get("evidenceLevel")
             if task_id is not None and task_id != AUTOMATION_ID:
                 status, reason, delta = "FAIL", "WRONG_AUTOMATION", None
             elif at is None:
                 status, reason, delta = "FAIL", "INVALID_OBSERVED_TIME", None
-            elif at < slot.astimezone(timezone.utc):
+            elif at_ns < (slot.astimezone(timezone.utc), 0):
                 status, reason = "FAIL", "PRE_SLOT_OBSERVATION"
-                delta = round((at - slot.astimezone(timezone.utc)).total_seconds(), 6)
+                delta = delay_seconds_ns(at_ns, slot)
             elif task_id is None:
                 status, reason, delta = "UNVERIFIED", "TASK_ID_NOT_INCLUDED", None
             elif level != SELF_REPORTED:
                 status, reason, delta = "UNVERIFIED", "SELF_REPORTED_ORIGIN_NOT_CONFIRMED", None
             else:
                 status, reason = "PASS", "CHECKPOINT_CHRONOLOGY_ONLY"
-                delta = round((at - slot.astimezone(timezone.utc)).total_seconds(), 6)
+                delta = delay_seconds_ns(at_ns, slot)
         checks.append({"slot": label, "checkpoint_status": status, "reason": reason,
                        "delay_seconds": delta, "native_execution_proven": False})
     totals = {s: sum(c["checkpoint_status"] == s for c in checks)
