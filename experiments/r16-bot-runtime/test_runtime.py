@@ -9,6 +9,39 @@ class RuntimeTests(unittest.TestCase):
     def test_100_unique_bots(self):
         self.assertEqual(100,len(CAT));self.assertEqual(10,len(set(x['category'] for x in CAT.values())))
     def test_schedule_positive(self):self.assertEqual('PASS',validate(CAT['S02'],ORIG)['status'])
+    def test_hourly_rrule_exact_values_reject_spoofing(self):
+        roles = (CAT['S04'], CAT['S05'], CAT['S06'])
+        good = (
+            'FREQ=HOURLY;BYMINUTE=0;BYSECOND=0',
+            'BYSECOND=0;FREQ=HOURLY;BYMINUTE=0',
+            'RRULE:FREQ=HOURLY;BYMINUTE=0;BYSECOND=0;INTERVAL=1',
+        )
+        bad = (
+            'FREQ=HOURLY_WRONG;BYMINUTE=01;BYSECOND=01',
+            'FREQ=DAILY;BYMINUTE=0;BYSECOND=0',
+            'FREQ=HOURLY;BYMINUTE=0,30;BYSECOND=0',
+            'FREQ=HOURLY;BYMINUTE=0;BYSECOND=01',
+            'FREQ=HOURLY;BYMINUTE=0;BYSECOND=0;COUNT=1',
+            'FREQ=HOURLY;BYMINUTE=0;BYSECOND=0;UNTIL=20261026T000000Z',
+            'FREQ=HOURLY;BYMINUTE=0;BYSECOND=0;INTERVAL=2',
+            'FREQ=HOURLY;FREQ=HOURLY;BYMINUTE=0;BYSECOND=0',
+            'FREQ=HOURLY;BYMINUTE=0;BYMINUTE=0;BYSECOND=0',
+            'FREQ=HOURLY;BYMINUTE=0;BYSECOND=0;',
+            'FREQ=HOURLY;BYMINUTE=0;BYSECOND=0;BYHOUR=12',
+        )
+        for rule in good:
+            with self.subTest(accepted=rule):
+                evidence=copy.deepcopy(ORIG)
+                evidence['schedule']['rrule']=rule
+                for bot in roles:
+                    self.assertEqual('PASS',validate(bot,evidence)['status'])
+        for rule in bad:
+            with self.subTest(rejected=rule):
+                evidence=copy.deepcopy(ORIG)
+                evidence['schedule']['rrule']=rule
+                for bot in roles:
+                    self.assertEqual('FAIL',validate(bot,evidence)['status'])
+
     def test_native_missing_is_unverified(self):
         for b in (CAT['E01'],CAT['E05'],CAT['E10'],CAT['L06'],CAT['A09']):
             self.assertEqual('UNVERIFIED',validate(b,ORIG)['status'])

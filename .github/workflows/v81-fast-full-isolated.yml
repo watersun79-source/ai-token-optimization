@@ -7,6 +7,9 @@ on:
       - ai/r16-v81-fast-full-ci-20261024
     paths:
       - experiments/r16-bot-runtime/v81_split_bench.py
+      - experiments/r16-bot-runtime/runner.py
+      - experiments/r16-bot-runtime/catalog.json
+      - experiments/r16-bot-runtime/test_runtime.py
       - experiments/r16-bot-runtime/v81_verifiable_18.py
       - experiments/r16-bot-runtime/test_v81_verifiable_18.py
       - experiments/r16-bot-runtime/v81_activepieces_checkpoint_audit.py

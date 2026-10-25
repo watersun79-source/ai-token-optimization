@@ -34,6 +34,26 @@ def runtime_input_hashes():
     ).encode('utf8')).hexdigest()
     return hashes
 
+def strict_hourly_rrule_part(value: Any, expected: Any) -> bool:
+    """Reject ambiguous or restricted schedule RRULEs (RFC 5545)."""
+    if type(value) is not str or type(expected) is not str:
+        return False
+    raw = value.removeprefix('RRULE:')
+    parts = raw.split(';')
+    if any(re.fullmatch(r'(?:FREQ|BYMINUTE|BYSECOND|INTERVAL)=[A-Z0-9]+', part) is None
+           for part in parts):
+        return False
+    entries = [part.split('=', 1) for part in parts]
+    values = dict(entries)
+    if len(values) != len(entries):
+        return False
+    return (values.get('FREQ') == 'HOURLY'
+            and values.get('BYMINUTE') == '0'
+            and values.get('BYSECOND') == '0'
+            and values.get('INTERVAL', '1') == '1'
+            and expected in parts)
+
+
 def read_path(data:dict,path:str):
     node = data
     for p in path.split('.'):
@@ -107,6 +127,7 @@ def validate(bot:dict, evidence:dict)->dict:
             if other is _MISSING or other is None: return result
             valid=type(v) is type(other) and v==other
         elif op=='contains': valid=isinstance(v,str) and expect in v
+        elif op=='rrule_part': valid=strict_hourly_rrule_part(v, expect)
         elif op=='starts': valid=isinstance(v,str) and v.startswith(expect)
         elif op=='git_sha': valid=isinstance(v,str) and re.fullmatch('[0-9a-f]{40}',v) is not None
         elif op=='slack_ts': valid=isinstance(v,str) and re.fullmatch(r'\d{10}\.\d{6}',v) is not None
