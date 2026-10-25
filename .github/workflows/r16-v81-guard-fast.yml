@@ -117,7 +117,6 @@ jobs:
         run: |
           python3 -m unittest discover -s gateway -p test_real_gateway.py -q
           python3 gateway/real_gateway.py --message '에러 고쳐' --code 'print('
-          python3 gateway/real_gateway.py --message 
           python3 - <<'PY'
           import json
           from real_gateway import run_message
@@ -127,6 +126,17 @@ jobs:
           evidence = report['workers'][0]['evidence']
           assert evidence['optimized_text'] == chr(10).join(['토큰 최적화', '반복', '유일'])
           assert evidence['duplicate_lines_removed'] == 1
+          natural = run_message(chr(10).join(['압축 실행', '중복', '중복', '유일']))
+          assert natural['status'] == 'DONE'
+          assert natural['selected_roles'] == ['ai-optimization']
+          assert natural['workers'][0]['evidence']['optimized_text'] == chr(10).join(['압축 실행', '중복', '유일'])
+          print('R16_REAL_NATURAL_COMMAND=' + json.dumps({
+              'status': natural['status'],
+              'role': natural['selected_roles'][0],
+              'duplicate_lines_removed': natural['workers'][0]['evidence']['duplicate_lines_removed'],
+              'bytes_saved': natural['workers'][0]['evidence']['bytes_saved'],
+              'output_sha256': natural['workers'][0]['evidence']['output_sha256'],
+          }, sort_keys=True))
           print('R16_REAL_GATEWAY_COMPACTION=' + json.dumps({
               'status': report['status'],
               'input_sha256': evidence['input_sha256'],
