@@ -21,6 +21,17 @@ class TaskExecutorTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             compact("api_key=supersecretkey12345")
 
+    def test_github_pat_and_auth_tokens_blocked(self):
+        for secret in (
+            "ghp_" + "a" * 36,
+            "github_pat_" + "A" * 36,
+            "access_token=" + "x" * 30,
+            "auth-token:" + "y" * 30,
+        ):
+            with self.subTest(prefix=secret[:6]):
+                with self.assertRaisesRegex(ValueError, "credential"):
+                    compact("safe\n" + secret + "\n")
+
     def test_bad_input_refused(self):
         for value in (""," "*12,"a"*4001,None):
             with self.assertRaises(ValueError):
