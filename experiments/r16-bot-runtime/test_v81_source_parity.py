@@ -277,8 +277,8 @@ class SourceParityTests(unittest.TestCase):
             path, _ = self._fake_archive(
                 root, [("AI_R16_100_BOT_v8/runner.py", content)])
             image = bytearray(path.read_bytes())
-            local = image.find(b"PK\\x03\\x04")
-            central = image.find(b"PK\\x01\\x02")
+            local = image.find(b"PK\x03\x04")
+            central = image.find(b"PK\x01\x02")
             self.assertGreaterEqual(local, 0)
             self.assertGreaterEqual(central, 0)
             struct.pack_into("<H", image, local + 8, 99)
