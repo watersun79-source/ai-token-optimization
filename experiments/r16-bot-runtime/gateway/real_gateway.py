@@ -64,7 +64,24 @@ def execute_role(role: str, message: str, *, code: str = "", network: bool = Fal
             ast.parse(code)
             return _result(role,"DONE",evidence={"syntax_valid":True,"source_sha256":sha256(code.encode()).hexdigest(),"executed_user_code":False})
         except SyntaxError as exc:
-            return _result(role,"DONE",evidence={"syntax_valid":False,"line":exc.lineno,"exception_type":"SyntaxError","executed_user_code":False})
+            evidence = {"syntax_valid":False,"line":exc.lineno,
+                        "exception_type":"SyntaxError","executed_user_code":False,
+                        "source_sha256":sha256(code.encode()).hexdigest(),
+                        "repair_applied":False}
+            # Only repair a uniquely identified missing final ')' on a print call.
+            # Do not evaluate user source, touch files, or guess arbitrary syntax.
+            if re.fullmatch(r"print\\([^()\\n]*", code) and not re.search(r"(?i)(?:sk-[A-Za-z0-9_-]{12,}|api[_-]?key\\s*[=:])", code):
+                fixed = code + ")"
+                try:
+                    ast.parse(fixed)
+                except SyntaxError:
+                    pass
+                else:
+                    evidence.update({"repair_applied":True,"fixed_source":fixed,
+                                     "fixed_sha256":sha256(fixed.encode()).hexdigest(),
+                                     "syntax_valid_after":True})
+            return _result(role,"DONE",evidence=evidence,
+                           note="Bounded AST-verified source repair; no user code executed or files modified")
     if role == "ai-cost-security":
         unsafe = bool(re.search(r"(?i)(?:\bsk-[A-Za-z0-9_-]{12,}|api[_-]?key\s*[=:]\s*\S{8,})",code))
         return _result(role,"DONE",evidence={"suspected_secret_in_code":unsafe,"external_model_calls":0,"billing_used":False},note="No secret contents returned")
