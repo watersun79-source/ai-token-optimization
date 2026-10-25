@@ -153,6 +153,25 @@ jobs:
                       f.write('Output SHA256: ' + report['output_sha256'] + '\\n\\n')
                       f.write('Bytes saved: ' + str(report['bytes_saved']) + '\\n\\n')
           PY
+      - name: Execute actual SHA-guarded local code patch
+        env:
+          PYTHONPATH: gateway
+        run: |
+          python3 -m unittest discover -s gateway -p test_safe_patch_worker.py -q
+          python3 - <<'PY'
+          import json, tempfile
+          from pathlib import Path
+          from safe_patch_worker import apply_patch, sha256
+          with tempfile.TemporaryDirectory() as root:
+              fixture = Path(root) / 'fixture.txt'
+              fixture.write_text('speed = slow' + chr(10), encoding='utf-8')
+              before = sha256(fixture.read_bytes())
+              result = apply_patch(root, 'fixture.txt', expected_sha256=before,
+                                   old='speed = slow', new='speed = fast')
+              assert fixture.read_text() == 'speed = fast' + chr(10)
+              assert sha256(fixture.read_bytes()) == result['after_sha256']
+              print('R16_REAL_PATCH=' + json.dumps(result, sort_keys=True))
+          PY
       - name: Execute user-selected bounded task on manual dispatch
         if: github.event_name == 'workflow_dispatch'
         env:
