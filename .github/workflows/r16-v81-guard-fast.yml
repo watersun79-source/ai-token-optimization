@@ -117,6 +117,151 @@ jobs:
         run: |
           python3 -m unittest discover -s gateway -p test_real_gateway.py -q
           python3 gateway/real_gateway.py --message '에러 고쳐' --code 'print('
+          python3 gateway/real_gateway.py --message 
+          python3 - <<'PY'
+          import json
+          from real_gateway import run_message
+          message = chr(10).join(['토큰 최적화', '반복', '반복', '유일'])
+          report = run_message(message)
+          assert report['status'] == 'DONE'
+          evidence = report['workers'][0]['evidence']
+          assert evidence['optimized_text'] == chr(10).join(['토큰 최적화', '반복', '유일'])
+          assert evidence['duplicate_lines_removed'] == 1
+          print('R16_REAL_GATEWAY_COMPACTION=' + json.dumps({
+              'status': report['status'],
+              'input_sha256': evidence['input_sha256'],
+              'output_sha256': evidence['output_sha256'],
+              'bytes_saved': evidence['bytes_saved'],
+              'duplicate_lines_removed': evidence['duplicate_lines_removed'],
+              'external_model_calls': evidence['external_model_calls'],
+          }, sort_keys=True))
+          PY
+      - name: Run real local prompt compression worker
+        env:
+          PYTHONPATH: gateway
+          TASK_MESSAGE: ${{ inputs.task_message }}
+        run: |
+          python3 -m unittest discover -s gateway -p test_task_executor.py -q
+          python3 - <<'PY'
+          import json, os
+          from task_executor import compact
+          sample = chr(10).join(['repeat', 'unique', 'repeat'])
+          report = compact(sample)
+          assert report['duplicate_lines_removed'] == 1
+          print('R16_REAL_COMPACTION_SAMPLE=' + json.dumps({
+              'input_sha256': report['input_sha256'],
+              'output_sha256': report['output_sha256'],
+              'bytes_saved': report['bytes_saved'],
+              'duplicate_lines_removed': report['duplicate_lines_removed'],
+              'external_model_calls': report['external_model_calls'],
+          }, sort_keys=True))
+          if os.environ.get('GITHUB_EVENT_NAME') == 'workflow_dispatch':
+              text = os.environ.get('TASK_MESSAGE', '')
+              if text:
+                  report = compact(text)
+                  print('R16_REAL_COMPACTION_TASK=' + json.dumps({
+                      'input_sha256': report['input_sha256'],
+                      'output_sha256': report['output_sha256'],
+                      'bytes_saved': report['bytes_saved'],
+                      'duplicate_lines_removed': report['duplicate_lines_removed'],
+                      'external_model_calls': report['external_model_calls'],
+                  }, sort_keys=True))
+                  with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as f:
+                      f.write('## Real bounded text worker\\n')
+                      f.write('Input SHA256: ' + report['input_sha256'] + '\\n\\n')
+                      f.write('Output SHA256: ' + report['output_sha256'] + '\\n\\n')
+                      f.write('Bytes saved: ' + str(report['bytes_saved']) + '\\n\\n')
+          PY
+      - name: Execute actual SHA-guarded local code patch
+        env:
+          PYTHONPATH: gateway
+        run: |
+          python3 -m unittest discover -s gateway -p test_safe_patch_worker.py -q
+          python3 - <<'PY'
+          import json, tempfile
+          from pathlib import Path
+          from safe_patch_worker import apply_patch, sha256
+          with tempfile.TemporaryDirectory() as root:
+              fixture = Path(root) / 'fixture.txt'
+              fixture.write_text('speed = slow' + chr(10), encoding='utf-8')
+              before = sha256(fixture.read_bytes())
+              result = apply_patch(root, 'fixture.txt', expected_sha256=before,
+                                   old='speed = slow', new='speed = fast')
+              assert fixture.read_text() == 'speed = fast' + chr(10)
+              assert sha256(fixture.read_bytes()) == result['after_sha256']
+              print('R16_REAL_PATCH=' + json.dumps(result, sort_keys=True))
+              py = Path(root) / 'fixture.py'
+              py.write_text('value = 1' + chr(10), encoding='utf-8')
+              python_result = apply_patch(root, 'fixture.py',
+                                          expected_sha256=sha256(py.read_bytes()),
+                                          old='value = 1', new='value = 2')
+              assert py.read_text() == 'value = 2' + chr(10)
+              print('R16_REAL_PYTHON_PATCH=' + json.dumps(python_result, sort_keys=True))
+          PY
+      - name: Execute user-selected bounded task on manual dispatch
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          PYTHONPATH: gateway
+          TASK_MESSAGE: ${{ inputs.task_message }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from real_gateway import run_message
+          report = run_message(os.environ['TASK_MESSAGE'])
+          safe = {
+              'route': report['route'],
+              'status': report['status'],
+              'roles': report.get('selected_roles', []),
+              'external_llm_calls': report.get('external_llm_calls', 0),
+              'production_writes': report.get('production_writes', 0),
+          }
+          print('R16_REAL_GATEWAY=' + json.dumps(safe, ensure_ascii=False))
+          if report['status'] not in ('DONE', 'PARTIAL'):
+              raise SystemExit('Worker could not execute requested task')
+          PY
+      - name: Publish actionable operator dashboard to GitHub run summary
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess, sys
+          root = pathlib.Path.cwd()
+          result = subprocess.run([sys.executable, 'v81_swarm.py', '--mode', 'all', '--workers', '4'], capture_output=True, text=True)
+          prefix = 'R16_V81_SWARM='
+          line = next((s for s in result.stdout.splitlines() if s.startswith(prefix)), None)
+          if not line:
+              raise SystemExit('No full BOT result; refuse to publish success')
+          data = json.loads(line[len(prefix):])
+          status = data.get('status', 'UNVERIFIED')
+          failed = data.get('failed_or_unknown_roles', [])
+          summary = [
+              '# AI BOT v8.1 · Isolated Operator Dashboard',
+              '',
+              '| Field | Verified result |',
+              '| --- | --- |',
+              f'| Offline rule execution | {status} |',
+              f'| Executed rule count | {data.get("selected_roles", "UNVERIFIED")} |',
+              f'| Local worker count | {data.get("effective_worker_cap", "UNVERIFIED")} |',
+              f'| Failed/unknown IDs | {", ".join(failed) if failed else "None in offline fixture"} |',
+              '| Original v8.1 production deployment | NOT VERIFIED |',
+              '| ChatGPT native unattended run | UNVERIFIED |',
+              '',
+              '## Next operational action',
+              'Supply and authenticate original v8.1 ZIP to resolve 5 differing and 2 absent source files.'
+              if not failed else 'Fix only the failed/unknown IDs on this isolated branch.',
+              '',
+              'Offline synthetic execution is not a real external LLM or native ChatGPT task.',
+          ]
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as f:
+              f.write('\n'.join(summary) + '\n')
+          if result.returncode != 0 or status != 'PASS':
+              raise SystemExit('Full BOT execution did not pass')
+          PY
+      - name: Scope guard
+        run: |
+          echo 'ISOLATED_OFFLINE_FAST_AND_FULL_ONLY=PASS'
+          echo 'NATIVE_CHATGPT_RUN=UNVERIFIED'
+압축 실행\n중복\n중복\n유일'
           python3 - <<'PY'
           import json
           from real_gateway import run_message
