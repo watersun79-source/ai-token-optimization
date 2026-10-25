@@ -56,6 +56,10 @@ REVIEWED_DIFFERENCES = {
         "disposition": "KEEP_BRANCH_HARDENING",
         "reason": "private v8.1 ZIP SHA-256 verified locally 2026-10-25; of 100 rule fingerprints 79 unchanged and 21 hardened: S04-S06 strict RRULE, L06-L10/A07-A09/E01-E10 native-evidence fail-closed; original bytes remain private; not verbatim",
     },
+    "replacement_bots.py": {
+        "disposition": "KEEP_BRANCH_HARDENING",
+        "reason": "private v8.1 ZIP fingerprint and original offline 18/18 sample verified; public synthetic-only facade delegates 18 checks to v81_split_bench with untrusted provenance always UNVERIFIED; not verbatim and original source never uploaded",
+    },
     "UtcStrictOracle.java": {
         "disposition": "KEEP_BRANCH_HARDENING",
         "reason": "isolated branch accepts an explicit fixture path and rejects invalid headers and result labels fail-closed",

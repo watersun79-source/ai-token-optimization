@@ -35,6 +35,8 @@ on:
       - docs/ai/V81_VERIFIABLE_18_20261025.md
       - experiments/r16-bot-runtime/test_v81_split_bench.py
       - experiments/r16-bot-runtime/v81_source_parity.py
+      - experiments/r16-bot-runtime/replacement_bots.py
+      - experiments/r16-bot-runtime/test_v81_replacement_bridge.py
       - experiments/r16-bot-runtime/test_v81_source_parity.py
       - experiments/r16-bot-runtime/test_v81_behavior_oracle.py
       - experiments/r16-bot-runtime/v81_output_contract.py
@@ -118,7 +120,7 @@ jobs:
           python3 v81_source_parity.py
           python3 -m unittest -q test_v81_source_parity
       - name: Verify 18 replacement checks incl. negative test cases
-        run: python3 -m unittest -q test_v81_behavior_oracle test_v81_output_contract_fast
+        run: python3 -m unittest -q test_v81_behavior_oracle test_v81_replacement_bridge test_v81_output_contract_fast
       - name: Check SHA caching, dedup, parallel reads and condensed reporting
         run: |
           python3 -m unittest -q test_v81_speed_orchestrator
@@ -203,7 +205,7 @@ jobs:
           python3 v81_unified_evidence.py --output "$RUNNER_TEMP/v81_unified_evidence.json"
       - name: Verify base tests and 18 replacement negative tests
         if: steps.change_gate.outputs.run_full == 'true'
-        run: python3 -m unittest -q test_runtime test_v81_split_bench test_v81_behavior_oracle test_v81_output_contract
+        run: python3 -m unittest -q test_runtime test_v81_split_bench test_v81_behavior_oracle test_v81_replacement_bridge test_v81_output_contract
       - name: Compare all 100 role output records with private original SHA digests
         if: steps.change_gate.outputs.run_full == 'true'
         run: python3 v81_output_contract.py

@@ -28,28 +28,30 @@ class SourceParityTests(unittest.TestCase):
     def test_expected_difference_is_visible(self):
         report = parity.compare()
         for filename in ("runner.py", "catalog.json", "UtcStrictOracle.java",
-                         "utc_strict_oracle.js", "test_runtime.py", "measure_runtime.py"):
+                         "utc_strict_oracle.js", "test_runtime.py", "measure_runtime.py",
+                         "replacement_bots.py"):
             with self.subTest(filename=filename):
                 self.assertEqual("DIFFERENT", report["files"][filename]["status"])
 
     def test_absent_original_replacement_is_visible(self):
         report = parity.compare()
-        for filename in ("replacement_bots.py", "fixture_SYNTHETIC.json"):
+        for filename in ("fixture_SYNTHETIC.json",):
             with self.subTest(filename=filename):
                 self.assertEqual("ABSENT", report["files"][filename]["status"])
 
     def test_reviewed_hardening_differences_do_not_claim_exact(self):
         report = parity.compare()
         for filename in ("runner.py", "test_runtime.py", "utc_strict_oracle.js",
-                         "measure_runtime.py", "UtcStrictOracle.java", "catalog.json"):
+                         "measure_runtime.py", "UtcStrictOracle.java", "catalog.json",
+                         "replacement_bots.py"):
             with self.subTest(filename=filename):
                 self.assertEqual("DIFFERENT", report["files"][filename]["status"])
                 self.assertEqual(
                     "KEEP_BRANCH_HARDENING",
                     report["reviewed_differences"][filename]["disposition"],
                 )
-        self.assertEqual(6, report["reviewed_difference_count"])
-        self.assertEqual(2, report["unresolved_difference_count"])
+        self.assertEqual(7, report["reviewed_difference_count"])
+        self.assertEqual(1, report["unresolved_difference_count"])
         self.assertFalse(report["verbatim_source_match"])
         self.assertFalse(report["full_v81_deployed"])
 
@@ -94,13 +96,21 @@ class SourceParityTests(unittest.TestCase):
             self.assertEqual(1, report["reviewed_difference_count"])
             self.assertEqual(9, report["unresolved_difference_count"])
             for name in ("test_runtime.py", "utc_strict_oracle.js", "measure_runtime.py",
-                         "UtcStrictOracle.java"):
+                         "UtcStrictOracle.java", "replacement_bots.py"):
                 with self.subTest(absent=name):
                     self.assertEqual("ABSENT", report["files"][name]["status"])
                     self.assertNotIn(name, report["reviewed_differences"])
                     self.assertIn(name, report["unresolved_difference_files"])
             self.assertFalse(report["verbatim_source_match"])
             self.assertFalse(report["full_v81_deployed"])
+
+    def test_public_bridge_is_not_original_source_or_native_proof(self):
+        report = parity.compare()
+        self.assertEqual("DIFFERENT", report["files"]["replacement_bots.py"]["status"])
+        self.assertIn("replacement_bots.py", report["reviewed_differences"])
+        self.assertEqual(["fixture_SYNTHETIC.json"], report["unresolved_difference_files"])
+        self.assertFalse(report["verbatim_source_match"])
+        self.assertFalse(report["full_v81_deployed"])
 
     def test_false_claim_of_verbatim_is_fail_closed(self):
         with self.assertRaisesRegex(ValueError, "fail-closed"):
