@@ -242,6 +242,28 @@ class SourceParityTests(unittest.TestCase):
                     z, expected_zip_sha256=digest,
                     expected_hashes={"runner.py": hashlib.sha256(b"one").hexdigest()})
 
+    def test_local_private_zip_rejects_windows_drives_ads_and_control_names(self):
+        # Synthetic untrusted extras must not bypass unsafe-path validation.
+        # No real private archive bytes are read or placed in CI.
+        with TemporaryDirectory() as d:
+            root = Path(d)
+            content = b"synthetic-only"
+            expected = {"runner.py": hashlib.sha256(content).hexdigest()}
+            unsafe_names = (
+                "C:/escaped_file.txt",
+                "D:relative_file.txt",
+                "notes:alternate_stream",
+                "AI_R16_100_BOT_v8/control\ncharacter.txt",
+            )
+            for name in unsafe_names:
+                with self.subTest(entry=repr(name)):
+                    z, digest = self._fake_archive(
+                        root, [("AI_R16_100_BOT_v8/runner.py", content),
+                               (name, b"synthetic-extra")])
+                    with self.assertRaisesRegex(ValueError, "PRIVATE_ZIP_UNSAFE_ENTRY"):
+                        parity.verify_private_zip_local(
+                            z, expected_zip_sha256=digest, expected_hashes=expected)
+
     def test_local_private_zip_rejects_symlink_archive(self):
         with TemporaryDirectory() as d:
             root = Path(d)

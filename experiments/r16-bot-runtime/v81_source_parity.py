@@ -129,7 +129,7 @@ def verify_private_zip_local(path: Path, *, expected_zip_sha256: str = LOCAL_V81
         for entry in infos:
             name = entry.filename
             parts = name.split("/")
-            if (not name or "\\" in name or name.startswith("/") or
+            if (not name or "\\" in name or ":" in name or\n                any(ord(char) < 32 or ord(char) == 127 for char in name) or\n                name.startswith("/") or
                 any(part in ("", ".", "..") for part in parts[:-1]) or
                 (parts[-1] in ("", ".", "..") and not entry.is_dir()) or
                 name in seen or entry.flag_bits & 1 or
