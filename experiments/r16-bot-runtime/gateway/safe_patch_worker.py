@@ -18,7 +18,7 @@ def sha256(data: bytes) -> str:
 
 def apply_patch(scratch_root: str | Path, filename: str, *, expected_sha256: str,
                 old: str, new: str) -> dict:
-    """Replace exactly one literal match in a scratch .txt file, atomically."""
+    """Replace one literal match in a scratch .txt or .py file, atomically."""
     if not isinstance(filename, str) or not _ALLOWED.fullmatch(filename):
         raise ValueError("only flat .txt or .py fixture names allowed")
     if not isinstance(expected_sha256, str) or not re.fullmatch(r"[a-f0-9]{64}", expected_sha256):
@@ -27,8 +27,12 @@ def apply_patch(scratch_root: str | Path, filename: str, *, expected_sha256: str
         raise ValueError("literal nonempty old and string new required")
     if len(old.encode()) > _MAX_BYTES or len(new.encode()) > _MAX_BYTES:
         raise ValueError("patch too large")
-    root = Path(scratch_root).resolve(strict=True)
-    if not root.is_dir() or root.is_symlink():
+    requested_root = Path(scratch_root)
+    # Check BEFORE resolve(): resolving a symlink hides that it was a link.
+    if requested_root.is_symlink():
+        raise ValueError("symlink scratch root refused")
+    root = requested_root.resolve(strict=True)
+    if not root.is_dir():
         raise ValueError("scratch root must be a real directory")
     target = root / filename
     if target.is_symlink() or not target.is_file():
