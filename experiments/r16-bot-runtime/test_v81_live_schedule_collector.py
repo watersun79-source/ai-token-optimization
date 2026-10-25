@@ -206,6 +206,35 @@ class LiveCollectorTests(unittest.TestCase):
         self.assertEqual("GITHUB_API_HTTP_403", result["reason"])
         self.assertFalse(result["native_chatgpt_run_verified"])
 
+    def test_api_failures_identify_bounded_read_stage(self):
+        for stage, suffix in (
+            ("RUN_LIST", "/actions/runs?event=schedule&per_page=20"),
+            ("JOBS", "/jobs?per_page=100"),
+            ("JOB_LOG", "/logs"),
+        ):
+            with self.subTest(stage=stage):
+                fetch, seen = fake_api()
+                def fail_at_stage(path):
+                    if path.endswith(suffix):
+                        raise GitHubReadError("GITHUB_API_GET_FAILED")
+                    return fetch(path)
+                result = collect(fail_at_stage, REPO, WORKFLOW, SOURCE)
+                self.assertEqual("UNVERIFIED", result["status"])
+                self.assertEqual("GITHUB_API_GET_FAILED", result["reason"])
+                self.assertEqual(stage, result["failed_stage"])
+                self.assertFalse(result["native_chatgpt_run_verified"])
+
+    def test_api_error_stage_is_never_a_native_success_claim(self):
+        fetch, seen = fake_api()
+        def fail_log(path):
+            if path.endswith("/logs"):
+                raise GitHubReadError("GITHUB_API_HTTP_403")
+            return fetch(path)
+        result = collect(fail_log, REPO, WORKFLOW, SOURCE)
+        self.assertEqual("UNVERIFIED", result["status"])
+        self.assertEqual("JOB_LOG", result["failed_stage"])
+        self.assertEqual("GITHUB_API_HTTP_403", result["reason"])
+
     def test_api_failure_unverified(self):
         def fetch(_):
             raise GitHubReadError("GITHUB_API_GET_FAILED")

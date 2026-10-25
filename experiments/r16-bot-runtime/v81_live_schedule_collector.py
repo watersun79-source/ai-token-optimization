@@ -103,6 +103,7 @@ def collect(fetch, repository, workflow_sha, source_sha):
         type(source_sha) is not str or SHA40.fullmatch(source_sha) is None):
         return unverified("INVALID_REPOSITORY_OR_SHA")
     base = "/repos/" + repository
+    failed_stage = "RUN_LIST"
     try:
         data = _json_obj(fetch, base + "/actions/runs?event=schedule&per_page=20", "RUN_LIST")
         runs = data.get("workflow_runs")
@@ -133,6 +134,7 @@ def collect(fetch, repository, workflow_sha, source_sha):
             if run.get("conclusion") is not None:
                 result["status"] = "FAIL"
             return result
+        failed_stage = "JOBS"
         jobs_obj = _json_obj(fetch, base + "/actions/runs/" + str(rid) +
                             "/jobs?per_page=100", "JOBS")
         jobs = jobs_obj.get("jobs")
@@ -154,6 +156,7 @@ def collect(fetch, repository, workflow_sha, source_sha):
                              else "OFFICIAL_JOB_CONCLUSION_MISSING", run_id=rid),
                 "status": "FAIL" if named[0].get("conclusion") else "UNVERIFIED",
             }
+        failed_stage = "JOB_LOG"
         log = fetch(base + "/actions/jobs/" + str(jid) + "/logs")
         if not isinstance(log, str) or not log or len(log) > LOG_LIMIT:
             return unverified("OFFICIAL_LOG_MISSING_OR_OVERSIZE", run_id=rid)
@@ -169,7 +172,7 @@ def collect(fetch, repository, workflow_sha, source_sha):
             "external_model_calls": 0, "production_changes": 0,
         }
     except GitHubReadError as exc:
-        return unverified(str(exc))
+        return {**unverified(str(exc)), "failed_stage": failed_stage}
 
 
 
