@@ -9,7 +9,7 @@ from pathlib import Path
 import re
 import tempfile
 
-_ALLOWED = re.compile(r"[a-zA-Z0-9_-]{1,64}\\.txt\\Z")
+_ALLOWED = re.compile(r"[a-zA-Z0-9_-]{1,64}\.txt\Z")
 _MAX_BYTES = 8192
 
 def sha256(data: bytes) -> str:
