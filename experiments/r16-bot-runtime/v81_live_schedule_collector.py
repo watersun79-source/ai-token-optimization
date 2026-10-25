@@ -185,7 +185,7 @@ def collect(fetch, repository, workflow_sha, source_sha):
 
 
 
-def resolve_main_target(fetch, repository):
+def resolve_main_target(fetch, repository, *, protected_source_sha=None):
     """Resolve main and pinned checkout using only two restricted official GETs.
 
     Query file contents at the resolved commit SHA, not a moving branch ref.
@@ -193,6 +193,10 @@ def resolve_main_target(fetch, repository):
     """
     if not valid_repository(repository):
         raise GitHubReadError("INVALID_REPOSITORY")
+    if protected_source_sha is not None and (
+            type(protected_source_sha) is not str or
+            SHA40.fullmatch(protected_source_sha) is None):
+        raise GitHubReadError("PROTECTED_PIN_POLICY_INVALID")
     base = "/repos/" + repository
     obj = _json_obj(fetch, base + "/git/ref/heads/main", "MAIN_REF")
     target = obj.get("object")
@@ -221,6 +225,8 @@ def resolve_main_target(fetch, repository):
     pins = re.findall(r"(?m)^\s+ref:\s*([0-9a-f]{40})\s*$", workflow)
     if len(pins) != 1:
         raise GitHubReadError("PINNED_SOURCE_NOT_UNIQUE")
+    if protected_source_sha is not None and pins[0] != protected_source_sha:
+        raise GitHubReadError("PROTECTED_PIN_DRIFT")
     return main_sha, pins[0]
 
 
@@ -229,6 +235,8 @@ def main():
     parser.add_argument("--repository", required=True)
     parser.add_argument("--expected-workflow-sha", default=None)
     parser.add_argument("--expected-source-sha", default=None)
+    parser.add_argument("--protected-source-sha", default=None,
+                        help="fail closed if official main checkout differs from approved pin")
     args = parser.parse_args()
     completed_gets = []
     def observed_get(path):
@@ -237,19 +245,25 @@ def main():
         return payload
     if (args.expected_workflow_sha is None) != (args.expected_source_sha is None):
         result = unverified("EXPECTED_SHA_PAIR_REQUIRED")
+    elif args.expected_workflow_sha is not None and args.protected_source_sha is not None:
+        result = unverified("PROTECTED_PIN_REQUIRES_AUTO_MAIN")
     elif args.expected_workflow_sha is not None:
         result = collect(observed_get, args.repository,
                          args.expected_workflow_sha, args.expected_source_sha)
         result["target_resolution"] = "EXPLICIT_SHA_ARGUMENTS"
     else:
         try:
-            main_sha, pinned_sha = resolve_main_target(observed_get, args.repository)
+            main_sha, pinned_sha = resolve_main_target(
+                observed_get, args.repository,
+                protected_source_sha=args.protected_source_sha)
             result = collect(observed_get, args.repository, main_sha, pinned_sha)
             result["target_resolution"] = "OFFICIAL_MAIN_REF_AND_PINNED_WORKFLOW"
             result["expected_workflow_sha"] = main_sha
             result["expected_source_sha"] = pinned_sha
         except GitHubReadError as exc:
             result = unverified(str(exc))
+            if str(exc) == "PROTECTED_PIN_DRIFT":
+                result["protected_pin_policy"] = "FAIL"
     if completed_gets:
         result["official_github_api_get_attempted"] = True
     print("R16_V81_LIVE_SCHEDULE_CHECK=" +
