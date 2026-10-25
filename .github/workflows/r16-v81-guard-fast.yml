@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  guard-regression:
+  fast-audit:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     defaults:
@@ -32,13 +32,27 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - name: Python syntax and targeted offline tests
-        env:
-          PYTHONDONTWRITEBYTECODE: '1'
+      - name: FAST 20 synthetic role checks with serial oracle
+        run: python3 v81_swarm.py --mode audit --workers 4
+      - name: Guard regression (changed modules only)
         run: |
-          python3 -m py_compile v81_live_schedule_collector.py test_v81_live_schedule_collector.py v81_unified_schedule_provenance.py test_v81_unified_schedule_provenance.py
           python3 -m unittest -q test_v81_live_schedule_collector test_v81_unified_schedule_provenance
+
+  full-regression:
+    needs: fast-audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: experiments/r16-bot-runtime
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Full 100 synthetic roles after FAST passes
+        run: python3 v81_swarm.py --mode all --workers 4
       - name: Scope guard
         run: |
-          echo 'ISOLATED_GUARD_TEST_ONLY=PASS'
+          echo 'ISOLATED_OFFLINE_FAST_AND_FULL_ONLY=PASS'
           echo 'NATIVE_CHATGPT_RUN=UNVERIFIED'
