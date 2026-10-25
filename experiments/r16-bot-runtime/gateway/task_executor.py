@@ -11,6 +11,8 @@ SECRET = re.compile(
     r"\bgithub_pat_[A-Za-z0-9_]{20,}|\b(?:api[_-]?key|access[_-]?token|"
     r"auth[_-]?token|token|password|secret)\s*[=:]\s*[^\s]{8,})"
 )
+# Markdown fence opener/closer: 0..3 spaces, >=3 matching backticks or tildes.
+FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
 
 def compact(text):
     if not isinstance(text, str) or not text.strip() or len(text) > MAX_INPUT:
@@ -19,15 +21,22 @@ def compact(text):
         raise ValueError("suspected credential; refuse processing")
     seen, kept, removed = set(), [], 0
     in_code = False
+    fence_char, fence_len = "", 0
     lines = text.splitlines()
     for index, line in enumerate(lines):
-        stripped = line.strip()
-        if stripped.startswith("```"):
-            in_code = not in_code
+        fence = FENCE.match(line)
+        if in_code:
+            # Only a matching marker of sufficient length can close this fence.
+            if (fence and fence.group(1)[0] == fence_char
+                    and len(fence.group(1)) >= fence_len
+                    and not fence.group(2).strip()):
+                in_code = False
+            # Code indentation, blank lines and repeated statements carry meaning.
             kept.append(line)
             continue
-        if in_code:
-            # Code indentation, blank lines and repeated statements carry meaning.
+        if fence and (fence.group(1)[0] == "~" or "`" not in fence.group(2)):
+            fence_char, fence_len = fence.group(1)[0], len(fence.group(1))
+            in_code = True
             kept.append(line)
             continue
         if line.startswith(("    ", "\t")):

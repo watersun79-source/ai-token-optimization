@@ -78,6 +78,22 @@ class TaskExecutorTests(unittest.TestCase):
         self.assertEqual("한 줄\n마지막", result["output"])
         self.assertEqual(1, result["duplicate_lines_removed"])
 
+    def test_quad_backtick_fence_keeps_inner_triple_and_repeat(self):
+        text = "````python\n```\nwrite()\nwrite()\n````"
+        result = compact(text)
+        self.assertEqual(result["output"], text)
+        self.assertEqual(result["duplicate_lines_removed"], 0)
+
+    def test_tilde_fence_keeps_repeated_side_effects(self):
+        text = "~~~python\nwrite()\nwrite()\n~~~"
+        self.assertEqual(compact(text)["output"], text)
+
+    def test_fence_wrong_marker_or_short_closer_blocked(self):
+        for text in ("~~~python\nrun()\n```", "````python\nrun()\n```"):
+            with self.subTest(text=text):
+                with self.assertRaisesRegex(ValueError, "unclosed code fence"):
+                    compact(text)
+
     def test_cli_real_execution(self):
         p=subprocess.run([sys.executable,str(Path(__file__).with_name("task_executor.py")),"--stdin"],
                          input="one\ntwo\none\n",text=True,capture_output=True,timeout=3)
