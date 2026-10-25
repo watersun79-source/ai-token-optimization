@@ -181,7 +181,9 @@ def resolve_main_target(fetch, repository):
         workflow = binary.decode("utf-8")
     except (ValueError, UnicodeDecodeError):
         raise GitHubReadError("WORKFLOW_ENCODING_INVALID") from None
-    if not re.search(r"(?m)^\s*-\s*cron:\s*['\"]15 \* \* \* \*['\"]\s*$", workflow):
+    # A matching :15 entry alone is insufficient: reject added/changed cron slots.
+    cron_entries = re.findall(r"(?m)^\s*-\s*cron:\s*(.+?)\s*$", workflow)
+    if len(cron_entries) != 1 or cron_entries[0].strip().strip("'\\\"") != "15 * * * *":
         raise GitHubReadError("PROTECTED_HOURLY_CRON_MISMATCH")
     pins = re.findall(r"(?m)^\s+ref:\s*([0-9a-f]{40})\s*$", workflow)
     if len(pins) != 1:
