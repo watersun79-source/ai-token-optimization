@@ -104,10 +104,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python3 v81_live_schedule_collector.py \
-            --repository "$GITHUB_REPOSITORY" \
-            --expected-workflow-sha "923c281f82023cc6b49f3844bad17f508f1ab203" \
-            --expected-source-sha "a88c7993c27404da43cba84a8f69e01a917315a6"
+          python3 v81_live_schedule_collector.py --repository "$GITHUB_REPOSITORY"
       - name: Verify self-reported Activepieces checkpoint chronology
         run: python3 -m unittest -q test_v81_activepieces_checkpoint_audit
       - name: Verify scheduled run evidence reconciler rejects non-ASCII Slack timestamps

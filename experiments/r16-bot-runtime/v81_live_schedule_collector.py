@@ -6,6 +6,7 @@ Only allowlisted GET requests; no secrets, model APIs or production writes.
 """
 from __future__ import annotations
 import argparse
+import base64
 import json
 import os
 import re
@@ -15,10 +16,12 @@ from v81_unified_schedule_provenance import verify, WORKFLOW
 
 REPOSITORY = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
 API_PATH = re.compile(
-    r"/repos/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)/actions/"
-    r"(?:runs\?event=schedule&per_page=20|"
+    r"/repos/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)/"
+    r"(?:actions/(?:runs\?event=schedule&per_page=20|"
     r"runs/[1-9][0-9]*/jobs\?per_page=100|"
-    r"jobs/[1-9][0-9]*/logs)\Z"
+    r"jobs/[1-9][0-9]*/logs)|"
+    r"git/ref/heads/main|"
+    r"contents/\.github/workflows/ai-r16-hourly\.yml\?ref=[a-f0-9]{40})\Z"
 )
 
 
@@ -149,19 +152,70 @@ def collect(fetch, repository, workflow_sha, source_sha):
         return unverified(str(exc))
 
 
+
+def resolve_main_target(fetch, repository):
+    """Resolve main and pinned checkout using only two restricted official GETs.
+
+    Query file contents at the resolved commit SHA, not a moving branch ref.
+    No provider SDK beyond gh, no writes, no native ChatGPT attestation.
+    """
+    if not valid_repository(repository):
+        raise GitHubReadError("INVALID_REPOSITORY")
+    base = "/repos/" + repository
+    obj = _json_obj(fetch, base + "/git/ref/heads/main", "MAIN_REF")
+    target = obj.get("object")
+    main_sha = target.get("sha") if isinstance(target, dict) else None
+    if (obj.get("ref") != "refs/heads/main" or type(main_sha) is not str or
+            SHA40.fullmatch(main_sha) is None):
+        raise GitHubReadError("MAIN_REF_NOT_AUTHENTICATED")
+    path = base + "/contents/.github/workflows/ai-r16-hourly.yml?ref=" + main_sha
+    response = _json_obj(fetch, path, "MAIN_WORKFLOW")
+    if (response.get("type") != "file" or
+            response.get("path") != ".github/workflows/ai-r16-hourly.yml" or
+            response.get("encoding") != "base64" or
+            not isinstance(response.get("content"), str)):
+        raise GitHubReadError("WORKFLOW_CONTENTS_UNVERIFIED")
+    try:
+        binary = base64.b64decode("".join(response["content"].split()), validate=True)
+        if len(binary) > 100_000:
+            raise ValueError("oversized workflow")
+        workflow = binary.decode("utf-8")
+    except (ValueError, UnicodeDecodeError):
+        raise GitHubReadError("WORKFLOW_ENCODING_INVALID") from None
+    if not re.search(r"(?m)^\s*-\s*cron:\s*['\"]15 \* \* \* \*['\"]\s*$", workflow):
+        raise GitHubReadError("PROTECTED_HOURLY_CRON_MISMATCH")
+    pins = re.findall(r"(?m)^\s+ref:\s*([0-9a-f]{40})\s*$", workflow)
+    if len(pins) != 1:
+        raise GitHubReadError("PINNED_SOURCE_NOT_UNIQUE")
+    return main_sha, pins[0]
+
+
 def main():
     parser = argparse.ArgumentParser(description="Read-only GitHub schedule probe")
     parser.add_argument("--repository", required=True)
-    parser.add_argument("--expected-workflow-sha", required=True)
-    parser.add_argument("--expected-source-sha", required=True)
+    parser.add_argument("--expected-workflow-sha", default=None)
+    parser.add_argument("--expected-source-sha", default=None)
     args = parser.parse_args()
     completed_gets = []
     def observed_get(path):
         payload = gh_read(path)
         completed_gets.append(path)
         return payload
-    result = collect(observed_get, args.repository,
-                     args.expected_workflow_sha, args.expected_source_sha)
+    if (args.expected_workflow_sha is None) != (args.expected_source_sha is None):
+        result = unverified("EXPECTED_SHA_PAIR_REQUIRED")
+    elif args.expected_workflow_sha is not None:
+        result = collect(observed_get, args.repository,
+                         args.expected_workflow_sha, args.expected_source_sha)
+        result["target_resolution"] = "EXPLICIT_SHA_ARGUMENTS"
+    else:
+        try:
+            main_sha, pinned_sha = resolve_main_target(observed_get, args.repository)
+            result = collect(observed_get, args.repository, main_sha, pinned_sha)
+            result["target_resolution"] = "OFFICIAL_MAIN_REF_AND_PINNED_WORKFLOW"
+            result["expected_workflow_sha"] = main_sha
+            result["expected_source_sha"] = pinned_sha
+        except GitHubReadError as exc:
+            result = unverified(str(exc))
     if completed_gets:
         result["official_github_api_get_attempted"] = True
     print("R16_V81_LIVE_SCHEDULE_CHECK=" +

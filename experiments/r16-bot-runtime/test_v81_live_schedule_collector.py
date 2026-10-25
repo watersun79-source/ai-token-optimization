@@ -1,5 +1,6 @@
 """Mock GitHub API tests: no network, token, or real native-run attestation."""
 import copy
+import base64
 import json
 import unittest
 from io import StringIO
@@ -7,7 +8,7 @@ from contextlib import redirect_stdout
 from unittest.mock import patch
 
 from test_v81_unified_schedule_provenance import build, WORKFLOW, SOURCE
-from v81_live_schedule_collector import collect, gh_read, GitHubReadError, main
+from v81_live_schedule_collector import collect, gh_read, GitHubReadError, main, resolve_main_target
 
 REPO = "watersun79-source/ai-token-optimization"
 BASE = "/repos/" + REPO
@@ -27,7 +28,19 @@ def fake_api(*, mode="ok", bad_log=False):
     if mode == "wrong_job":
         jobs[0]["run_id"] = 2
     runs = [] if mode == "missing_run" else [run, old]
+    workflow = (
+        "name: hourly\n"
+        "on:\n  schedule:\n    - cron: '15 * * * *'\n"
+        "jobs:\n  audit:\n    steps:\n      - uses: actions/checkout@sha\n"
+        "        with:\n          ref: " + SOURCE + "\n"
+    )
     values = {
+        BASE + "/git/ref/heads/main":
+            json.dumps({"ref": "refs/heads/main", "object": {"sha": WORKFLOW}}),
+        BASE + "/contents/.github/workflows/ai-r16-hourly.yml?ref=" + WORKFLOW:
+            json.dumps({"type": "file", "encoding": "base64",
+                        "path": ".github/workflows/ai-r16-hourly.yml",
+                        "content": base64.b64encode(workflow.encode()).decode()}),
         BASE + "/actions/runs?event=schedule&per_page=20":
             json.dumps({"workflow_runs": runs}),
         BASE + "/actions/runs/" + str(run["id"]) + "/jobs?per_page=100":
@@ -164,6 +177,97 @@ class LiveCollectorTests(unittest.TestCase):
         self.assertEqual("NOT_APPLICABLE", result["status"])
         self.assertTrue(result["official_github_api_get_attempted"])
         self.assertEqual(1, len(seen))
+
+    def test_auto_resolves_live_main_and_pinned_source(self):
+        fetch, seen = fake_api()
+        self.assertEqual((WORKFLOW, SOURCE), resolve_main_target(fetch, REPO))
+        argv = ["v81_live_schedule_collector.py", "--repository", REPO]
+        with patch("sys.argv", argv), patch(
+                "v81_live_schedule_collector.gh_read", side_effect=fetch), redirect_stdout(StringIO()) as out:
+            self.assertEqual(0, main())
+        obj = json.loads(out.getvalue().split("R16_V81_LIVE_SCHEDULE_CHECK=", 1)[1])
+        self.assertEqual("PASS", obj["status"])
+        self.assertEqual("OFFICIAL_MAIN_REF_AND_PINNED_WORKFLOW", obj["target_resolution"])
+        self.assertEqual(WORKFLOW, obj["expected_workflow_sha"])
+        self.assertEqual(SOURCE, obj["expected_source_sha"])
+        self.assertFalse(obj["native_chatgpt_run_verified"])
+        self.assertGreaterEqual(len(seen), 5)
+
+    def test_auto_old_schedule_cannot_be_promoted(self):
+        fetch, seen = fake_api(mode="old")
+        argv = ["v81_live_schedule_collector.py", "--repository", REPO]
+        with patch("sys.argv", argv), patch(
+                "v81_live_schedule_collector.gh_read", side_effect=fetch), redirect_stdout(StringIO()) as out:
+            self.assertEqual(0, main())
+        obj = json.loads(out.getvalue().split("R16_V81_LIVE_SCHEDULE_CHECK=", 1)[1])
+        self.assertEqual("NOT_APPLICABLE", obj["status"])
+        self.assertEqual("EXPECTED_NEW_SCHEDULE_NOT_OBSERVED", obj["reason"])
+        self.assertEqual(3, len(seen))
+
+    def test_auto_rejects_changed_protected_cron(self):
+        fetch, _ = fake_api()
+        def altered(endpoint):
+            raw = fetch(endpoint)
+            if "/contents/" in endpoint:
+                obj = json.loads(raw)
+                data = base64.b64decode(obj["content"]).decode().replace(
+                    "15 * * * *", "* * * * *")
+                obj["content"] = base64.b64encode(data.encode()).decode()
+                return json.dumps(obj)
+            return raw
+        with self.assertRaises(GitHubReadError) as ex:
+            resolve_main_target(altered, REPO)
+        self.assertEqual("PROTECTED_HOURLY_CRON_MISMATCH", str(ex.exception))
+
+    def test_auto_rejects_duplicate_checkout_ref(self):
+        fetch, _ = fake_api()
+        def altered(endpoint):
+            raw = fetch(endpoint)
+            if "/contents/" in endpoint:
+                obj = json.loads(raw)
+                data = base64.b64decode(obj["content"]).decode()
+                data += "\n          ref: " + "f" * 40 + "\n"
+                obj["content"] = base64.b64encode(data.encode()).decode()
+                return json.dumps(obj)
+            return raw
+        with self.assertRaises(GitHubReadError) as ex:
+            resolve_main_target(altered, REPO)
+        self.assertEqual("PINNED_SOURCE_NOT_UNIQUE", str(ex.exception))
+
+    def test_auto_rejects_bad_workflow_encoding(self):
+        fetch, _ = fake_api()
+        def altered(endpoint):
+            raw = fetch(endpoint)
+            if "/contents/" in endpoint:
+                obj = json.loads(raw)
+                obj["content"] = "$$"
+                return json.dumps(obj)
+            return raw
+        with self.assertRaises(GitHubReadError) as ex:
+            resolve_main_target(altered, REPO)
+        self.assertEqual("WORKFLOW_ENCODING_INVALID", str(ex.exception))
+
+    def test_incomplete_manual_sha_pair_never_uses_api(self):
+        argv = ["v81_live_schedule_collector.py", "--repository", REPO,
+                "--expected-workflow-sha", WORKFLOW]
+        with patch("sys.argv", argv), patch(
+                "v81_live_schedule_collector.gh_read") as reader, redirect_stdout(StringIO()) as out:
+            self.assertEqual(0, main())
+        obj = json.loads(out.getvalue().split("R16_V81_LIVE_SCHEDULE_CHECK=", 1)[1])
+        self.assertEqual("UNVERIFIED", obj["status"])
+        self.assertEqual("EXPECTED_SHA_PAIR_REQUIRED", obj["reason"])
+        reader.assert_not_called()
+
+    def test_main_ref_and_contents_path_allowlist(self):
+        with patch.dict("os.environ", {"GH_TOKEN": "dummy"}), patch(
+                "v81_live_schedule_collector.subprocess.run") as process:
+            for endpoint in (
+                    BASE + "/git/ref/heads/other",
+                    BASE + "/contents/.github/workflows/ai-r16-hourly.yml?ref=main",
+                    BASE + "/contents/.github/workflows/ai-r16-hourly.yml?ref=" + "a" * 39 + "Z"):
+                with self.subTest(endpoint=endpoint), self.assertRaises(GitHubReadError):
+                    gh_read(endpoint)
+            process.assert_not_called()
 
     def test_json_corruption_unverified(self):
         def corrupt(_):
