@@ -154,6 +154,8 @@ def main():
     parser.add_argument("--repository", required=True)
     parser.add_argument("--expected-workflow-sha", required=True)
     parser.add_argument("--expected-source-sha", required=True)
+    parser.add_argument("--output-json", default=None,
+                        help="Optional sanitized JSON file under the ephemeral runner")
     args = parser.parse_args()
     completed_gets = []
     def observed_get(path):
@@ -164,8 +166,11 @@ def main():
                      args.expected_workflow_sha, args.expected_source_sha)
     if completed_gets:
         result["official_github_api_get_attempted"] = True
-    print("R16_V81_LIVE_SCHEDULE_CHECK=" +
-          json.dumps(result, sort_keys=True, ensure_ascii=False))
+    payload = json.dumps(result, sort_keys=True, ensure_ascii=False)
+    if args.output_json:
+        with open(args.output_json, "w", encoding="utf-8") as receipt:
+            receipt.write(payload + "\n")
+    print("R16_V81_LIVE_SCHEDULE_CHECK=" + payload)
     return 1 if result["status"] == "FAIL" else 0
 
 

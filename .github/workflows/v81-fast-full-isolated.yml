@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - ai/r16-v81-fast-full-ci-20261024
+      - ai/v81-cloud-evidence-artifact-20261025
     paths:
       - experiments/r16-bot-runtime/v81_split_bench.py
       - experiments/r16-bot-runtime/v81_swarm.py
@@ -107,7 +108,16 @@ jobs:
           python3 v81_live_schedule_collector.py \
             --repository "$GITHUB_REPOSITORY" \
             --expected-workflow-sha "923c281f82023cc6b49f3844bad17f508f1ab203" \
-            --expected-source-sha "a88c7993c27404da43cba84a8f69e01a917315a6"
+            --expected-source-sha "a88c7993c27404da43cba84a8f69e01a917315a6" \
+            --output-json "$RUNNER_TEMP/v81_schedule_receipt.json"
+      - name: Upload sanitized cloud schedule evidence (7-day isolated artifact)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: v81-schedule-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/v81_schedule_receipt.json
+          if-no-files-found: warn
+          retention-days: 7
       - name: Verify self-reported Activepieces checkpoint chronology
         run: python3 -m unittest -q test_v81_activepieces_checkpoint_audit
       - name: Verify scheduled run evidence reconciler rejects non-ASCII Slack timestamps

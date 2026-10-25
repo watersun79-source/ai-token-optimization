@@ -1,6 +1,8 @@
 """Mock GitHub API tests: no network, token, or real native-run attestation."""
 import copy
 import json
+import tempfile
+from pathlib import Path
 import unittest
 from io import StringIO
 from contextlib import redirect_stdout
@@ -164,6 +166,28 @@ class LiveCollectorTests(unittest.TestCase):
         self.assertEqual("NOT_APPLICABLE", result["status"])
         self.assertTrue(result["official_github_api_get_attempted"])
         self.assertEqual(1, len(seen))
+
+
+    def test_cli_exports_sanitized_cloud_receipt_without_promoting_native(self):
+        fetch, seen = fake_api(mode="old")
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "cloud-receipt.json"
+            argv = ["v81_live_schedule_collector.py", "--repository", REPO,
+                    "--expected-workflow-sha", WORKFLOW,
+                    "--expected-source-sha", SOURCE,
+                    "--output-json", str(path)]
+            with patch("sys.argv", argv), patch(
+                    "v81_live_schedule_collector.gh_read", side_effect=fetch), redirect_stdout(StringIO()) as printed:
+                self.assertEqual(0, main())
+            receipt = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual("NOT_APPLICABLE", receipt["status"])
+            self.assertTrue(receipt["official_github_api_get_attempted"])
+            self.assertFalse(receipt["native_chatgpt_run_verified"])
+            self.assertFalse(receipt["same_run_github_slack_proven"])
+            self.assertEqual(1, len(seen))
+            self.assertIn(json.dumps(receipt, sort_keys=True, ensure_ascii=False),
+                          printed.getvalue())
+            self.assertNotIn("GH_TOKEN", path.read_text(encoding="utf-8"))
 
     def test_json_corruption_unverified(self):
         def corrupt(_):
