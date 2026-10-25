@@ -16,6 +16,26 @@ class SafePatchTests(unittest.TestCase):
             self.assertNotEqual(before, r["after_sha256"])
             self.assertEqual(r["production_writes"], 0)
 
+    def test_real_python_source_patch_preserves_syntax(self):
+        with tempfile.TemporaryDirectory() as root:
+            file = Path(root) / "fixture.py"
+            file.write_text("value = 1\n", encoding="utf-8")
+            before = sha256(file.read_bytes())
+            report = apply_patch(root, "fixture.py", expected_sha256=before,
+                                 old="value = 1", new="value = 2")
+            self.assertEqual(file.read_text(), "value = 2\n")
+            self.assertNotEqual(report["before_sha256"], report["after_sha256"])
+
+    def test_syntax_breaking_python_patch_rejected_without_write(self):
+        with tempfile.TemporaryDirectory() as root:
+            file = Path(root) / "fixture.py"
+            file.write_text("value = 1\n", encoding="utf-8")
+            before = file.read_bytes()
+            with self.assertRaises(SyntaxError):
+                apply_patch(root, "fixture.py", expected_sha256=sha256(before),
+                            old="value = 1", new="value = (")
+            self.assertEqual(file.read_bytes(), before)
+
     def test_stale_sha_refused(self):
         with tempfile.TemporaryDirectory() as root:
             file = Path(root) / "fixture.txt"
