@@ -268,7 +268,8 @@ def main():
         result["official_github_api_get_attempted"] = True
     print("R16_V81_LIVE_SCHEDULE_CHECK=" +
           json.dumps(result, sort_keys=True, ensure_ascii=False))
-    return 1 if result["status"] == "FAIL" else 0
+    return 1 if (result["status"] == "FAIL" or
+                 result.get("protected_pin_policy") == "FAIL") else 0
 
 
 if __name__ == "__main__":

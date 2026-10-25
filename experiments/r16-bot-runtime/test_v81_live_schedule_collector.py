@@ -456,14 +456,28 @@ class LiveCollectorTests(unittest.TestCase):
                 resolve_main_target(fetch, REPO, protected_source_sha=invalid)
         self.assertEqual([], seen)
 
-    def test_cli_protected_pin_drift_keeps_native_unverified(self):
+    def test_cli_protected_pin_matching_remains_success(self):
+        fetch, seen = fake_api()
+        argv = ["v81_live_schedule_collector.py", "--repository", REPO,
+                "--protected-source-sha", SOURCE]
+        with patch("sys.argv", argv), patch(
+                "v81_live_schedule_collector.gh_read", side_effect=fetch
+        ), redirect_stdout(StringIO()) as out:
+            self.assertEqual(0, main())
+        result = json.loads(out.getvalue().split("R16_V81_LIVE_SCHEDULE_CHECK=", 1)[1])
+        self.assertEqual("PASS", result["status"])
+        self.assertNotIn("protected_pin_policy", result)
+        self.assertFalse(result["native_chatgpt_run_verified"])
+        self.assertEqual(5, len(seen))
+
+    def test_cli_protected_pin_drift_returns_failure_without_native_claim(self):
         fetch, seen = fake_api()
         argv = ["v81_live_schedule_collector.py", "--repository", REPO,
                 "--protected-source-sha",
                 "a551e6ecc290f625432aba7ce2f7c23cc6117a30"]
         with patch("sys.argv", argv), patch(
                 "v81_live_schedule_collector.gh_read", side_effect=fetch), redirect_stdout(StringIO()) as out:
-            self.assertEqual(0, main())
+            self.assertEqual(1, main())
         result = json.loads(
             out.getvalue().split("R16_V81_LIVE_SCHEDULE_CHECK=", 1)[1])
         self.assertEqual("UNVERIFIED", result["status"])
