@@ -20,6 +20,7 @@ from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 from auto_dispatch import dispatch
+from task_executor import compact
 
 REPO = "watersun79-source/ai-token-optimization"
 MEMORY_REF = "ai/continuation-readonly-audit-2026-10-18"
@@ -69,7 +70,19 @@ def execute_role(role: str, message: str, *, code: str = "", network: bool = Fal
         return _result(role,"DONE",evidence={"suspected_secret_in_code":unsafe,"external_model_calls":0,"billing_used":False},note="No secret contents returned")
     if role == "ai-optimization":
         chunks = [s.strip() for s in re.split(r"[.!?\n]+",message) if s.strip()]
-        return _result(role,"DONE",evidence={"text_segments":len(chunks),"unique_text_segments":len(set(chunks)),"estimated_tokens":None},note="Measured duplicate text, not model speed or token usage")
+        try:
+            receipt = compact(message)
+        except ValueError:
+            return _result(role,"BLOCKED",note="Input rejected by bounded compactor (invalid size or suspected credential)")
+        return _result(role,"DONE",evidence={
+            "text_segments":len(chunks),"unique_text_segments":len(set(chunks)),
+            "estimated_tokens":None,"input_sha256":receipt["input_sha256"],
+            "output_sha256":receipt["output_sha256"],
+            "original_bytes":receipt["original_bytes"],"output_bytes":receipt["output_bytes"],
+            "bytes_saved":receipt["bytes_saved"],
+            "duplicate_lines_removed":receipt["duplicate_lines_removed"],
+            "optimized_text":receipt["output"],"external_model_calls":0,
+        },note="Executed real bounded text compaction; not LLM inference or measured token usage")
     if role == "ai-automation-design":
         steps = ["triage", "research", "bounded_action", "verify", "report"]
         return _result(role,"DONE",evidence={"plan_steps":steps,"operational_flows_modified":0},note="Drafted workflow only; no existing Activepieces flow executed")
