@@ -13,6 +13,8 @@ on:
       - experiments/r16-bot-runtime/utc_strict_oracle.c
       - experiments/r16-bot-runtime/test_c_utc_oracle.py
       - experiments/r16-bot-runtime/test_v81_swarm.py
+      - experiments/r16-bot-runtime/v81_schedule_provenance.py
+      - experiments/r16-bot-runtime/test_v81_schedule_provenance.py
       - experiments/r16-bot-runtime/runner.py
       - experiments/r16-evidence-reconciler/audit_v2.py
       - experiments/r16-evidence-reconciler/tests/test_audit_v2.py
@@ -87,6 +89,8 @@ jobs:
         run: |
           python3 -m unittest -q test_v81_swarm
           python3 v81_swarm.py --mode audit --workers 4
+      - name: Verify official-style schedule provenance fail-closed cases (offline fixtures)
+        run: python3 -m unittest -q test_v81_schedule_provenance
       - name: Verify self-reported Activepieces checkpoint chronology
         run: python3 -m unittest -q test_v81_activepieces_checkpoint_audit
       - name: Verify scheduled run evidence reconciler rejects non-ASCII Slack timestamps
