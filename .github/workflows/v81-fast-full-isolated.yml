@@ -11,6 +11,10 @@ on:
       - experiments/r16-bot-runtime/v81_unified_evidence.py
       - experiments/r16-bot-runtime/test_v81_unified_evidence.py
       - experiments/r16-bot-runtime/utc_strict_oracle.c
+      - experiments/r16-bot-runtime/UtcStrictOracle.java
+      - experiments/r16-bot-runtime/utc_strict_oracle.js
+      - experiments/r16-bot-runtime/utc_strict_oracle_cases.tsv
+      - experiments/r16-bot-runtime/measure_runtime.py
       - experiments/r16-bot-runtime/test_c_utc_oracle.py
       - experiments/r16-bot-runtime/test_v81_swarm.py
       - experiments/r16-bot-runtime/v81_schedule_provenance.py
