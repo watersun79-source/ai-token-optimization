@@ -8,6 +8,7 @@ import hashlib
 import os
 from pathlib import Path
 import re
+import stat
 import tempfile
 
 _ALLOWED = re.compile(r"[a-zA-Z0-9_-]{1,64}\.(?:txt|py)\Z")
@@ -51,8 +52,11 @@ def apply_patch(scratch_root: str | Path, filename: str, *, expected_sha256: str
     if filename.endswith(".py"):
         # Never execute user code; refuse a syntax-breaking patch before writing.
         ast.parse(patched.decode("utf-8"), filename=filename)
+    # Atomic replacement otherwise resets permissions to mkstemp's 0600.
+    original_mode = stat.S_IMODE(target.stat().st_mode)
     fd, temp_name = tempfile.mkstemp(prefix=".patch-", suffix=".tmp", dir=root)
     try:
+        os.fchmod(fd, original_mode)
         with os.fdopen(fd, "wb") as f:
             f.write(patched)
             f.flush()
