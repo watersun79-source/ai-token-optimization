@@ -116,6 +116,32 @@ class Substitutes(unittest.TestCase):
         self.assertFalse(r["native_chatgpt_same_run_proven"])
         self.assertEqual("UNVERIFIED",r["original_native_evidence_gate_status"])
 
+    def test_v17_rejects_string_failure_and_unknown_or_boolean_counts(self):
+        base = fake_snapshot()
+        candidates = (
+            ('"UNVERIFIED": 18}', '"UNVERIFIED": 18, "FAIL": "1"}'),
+            ('"UNVERIFIED": 18}', '"UNVERIFIED": 18, "EXTRA": 0}'),
+            ('"PASS": 82', '"PASS": true'),
+            ('"executed_rule_checks": 100', '"executed_rule_checks": true'),
+        )
+        for before, after in candidates:
+            with self.subTest(after=after):
+                x = fake_snapshot()
+                self.assertIn(before, x["raw_job_log"])
+                x["raw_job_log"] = x["raw_job_log"].replace(before, after)
+                self.assertEqual("FAIL", statuses(x)["V17"])
+
+    def test_v06_rejects_excessive_fractional_precision(self):
+        for fraction in ("1" * 7, "1" * 30):
+            with self.subTest(length=len(fraction)):
+                x = fake_snapshot()
+                x["run"]["created_at"] = "2026-10-25T01:35:29."+fraction+"Z"
+                self.assertEqual("FAIL", statuses(x)["V06"])
+        for fraction in ("1", "123456"):
+            x = fake_snapshot()
+            x["run"]["created_at"] = "2026-10-25T01:35:29."+fraction+"Z"
+            self.assertEqual("PASS", statuses(x)["V06"])
+
     def test_malformed_log_json_reports_unverified(self):
         s=fake_snapshot();s["raw_job_log"]="{not valid JSON"
         self.assertEqual("UNVERIFIED", statuses(s)["V17"])

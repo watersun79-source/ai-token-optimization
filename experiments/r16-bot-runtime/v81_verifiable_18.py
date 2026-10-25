@@ -32,7 +32,7 @@ ROLE_TITLES = (
 NEW_IDS = tuple(f"V{i:02d}" for i in range(1, 19))
 assert len(OLD_NATIVE_IDS) == len(set(OLD_NATIVE_IDS)) == 18
 assert len(ROLE_TITLES) == 18
-UTC_STAMP = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]+)?Z\Z")
+UTC_STAMP = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?Z\Z")
 SHA = re.compile(r"[0-9a-f]{40}\Z")
 
 
@@ -139,9 +139,12 @@ def evaluate(snapshot: dict) -> dict:
               if isinstance(obj, dict) else None,
               f"{lang} tests {count}/{count} from raw CI log")
     stats = rules.get("statuses") if rules else None
-    check(17, (rules.get("executed_rule_checks") == 100 and
+    check(17, (type(rules.get("executed_rule_checks")) is int and
+               rules["executed_rule_checks"] == 100 and
+               set(stats).issubset({"PASS", "FAIL", "UNVERIFIED"}) and
+               all(type(value) is int and value >= 0 for value in stats.values()) and
                stats.get("PASS") == 82 and stats.get("UNVERIFIED") == 18 and
-               sum(v for v in stats.values() if type(v) is int) == 100)
+               stats.get("FAIL", 0) == 0 and sum(stats.values()) == 100)
           if rules and isinstance(stats, dict) else None, "82 offline pass, 18 original native gates still unverified")
     check(18, (receipt.get("official_unattended_app_call_success") == "UNVERIFIED" and
                receipt.get("selected_outcome") == "UNVERIFIED" and
