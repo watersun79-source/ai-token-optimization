@@ -20,7 +20,7 @@ from urllib.parse import quote
 from urllib.request import Request, urlopen
 
 from auto_dispatch import dispatch
-from task_executor import compact
+from task_executor import SECRET, compact
 
 REPO = "watersun79-source/ai-token-optimization"
 MEMORY_REF = "ai/continuation-readonly-audit-2026-10-18"
@@ -61,6 +61,14 @@ def execute_role(role: str, message: str, *, code: str = "", network: bool = Fal
     if role == "ai-auto-debug":
         if not code:
             return _result(role,"NEEDS_INPUT",note="Provide Python source separately to analyze; no code executed")
+        # Do not return an auto-repaired source containing GitHub/API tokens.
+        # Reuse the bounded worker's centralized credential detector.
+        if SECRET.search(code):
+            return _result(role,"BLOCKED",
+                           evidence={"suspected_secret": True,
+                                     "executed_user_code": False,
+                                     "repair_applied": False},
+                           note="Credential-like source refused; no source returned")
         try:
             ast.parse(code)
             return _result(role,"DONE",evidence={"syntax_valid":True,"source_sha256":sha256(code.encode()).hexdigest(),"executed_user_code":False})
@@ -71,7 +79,7 @@ def execute_role(role: str, message: str, *, code: str = "", network: bool = Fal
                         "repair_applied":False}
             # Only repair a uniquely identified missing final ')' on a print call.
             # Do not evaluate user source, touch files, or guess arbitrary syntax.
-            if re.fullmatch(r"print\([^()\n]*", code) and not re.search(r"(?i)(?:sk-[A-Za-z0-9_-]{12,}|api[_-]?key\s*[=:])", code):
+            if re.fullmatch(r"print\([^()\n]*", code):
                 fixed = code + ")"
                 try:
                     ast.parse(fixed)
@@ -87,7 +95,7 @@ def execute_role(role: str, message: str, *, code: str = "", network: bool = Fal
             return _result(role,"BLOCKED",evidence=evidence,
                            note="SyntaxError detected; no safe repair applied; user code not executed")
     if role == "ai-cost-security":
-        unsafe = bool(re.search(r"(?i)(?:\bsk-[A-Za-z0-9_-]{12,}|api[_-]?key\s*[=:]\s*\S{8,})",code))
+        unsafe = bool(SECRET.search(code))
         return _result(role,"DONE",evidence={"suspected_secret_in_code":unsafe,"external_model_calls":0,"billing_used":False},note="No secret contents returned")
     if role == "ai-optimization":
         chunks = [s.strip() for s in re.split(r"[.!?\n]+",message) if s.strip()]

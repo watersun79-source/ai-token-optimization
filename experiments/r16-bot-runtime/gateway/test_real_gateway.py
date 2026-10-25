@@ -46,6 +46,29 @@ class GatewayTests(unittest.TestCase):
             self.assertFalse(evidence["repair_applied"])
             self.assertNotIn("fixed_source", evidence)
 
+    def test_auto_debug_blocks_token_in_repaired_source_without_echo(self):
+        # The old auto-fix could close ')' and return a GitHub PAT in fixed_source.
+        for secret in ("ghp_" + "A" * 30, "github_pat_" + "B" * 30,
+                       "access_token=" + "C" * 24, "sk-" + "D" * 24):
+            with self.subTest(kind=secret[:3]):
+                source = 'print("' + secret + '"'
+                report = run_message("에러 고쳐", code=source)
+                self.assertEqual("BLOCKED", report["status"])
+                worker = report["workers"][0]
+                self.assertEqual("BLOCKED", worker["status"])
+                self.assertTrue(worker["evidence"]["suspected_secret"])
+                self.assertFalse(worker["evidence"]["repair_applied"])
+                self.assertFalse(worker["evidence"]["executed_user_code"])
+                self.assertNotIn("fixed_source", worker["evidence"])
+                self.assertNotIn(secret, json.dumps(report))
+
+    def test_cost_security_catches_github_pat_without_echo(self):
+        secret = "github_pat_" + "A" * 30
+        report = execute_role("ai-cost-security", "보안 검사",
+                              code='print("' + secret + '")')
+        self.assertTrue(report["evidence"]["suspected_secret_in_code"])
+        self.assertNotIn(secret, json.dumps(report))
+
     def test_wont_execute_untrusted_source(self):
         code='__import__("os").system("touch /tmp/should_not_exist_AI_GATEWAY")'
         x=run_message('에러 고쳐',code=code)
@@ -299,6 +322,19 @@ class HTTPTests(unittest.TestCase):
         self.assertEqual(report['status'],'DONE')
         self.assertEqual(report['workers'][0]['evidence']['duplicate_lines_removed'],1)
         self.assertEqual(report['workers'][0]['evidence']['optimized_text'],'토큰 최적화\n중복')
+
+    def test_http_auto_debug_token_not_returned(self):
+        secret = "ghp_" + "B" * 32
+        payload = json.dumps({"message": "에러 고쳐",
+                              "code": 'print("' + secret + '"'}).encode()
+        request = Request(self.url + "/api/chat", data=payload,
+                          headers={"Content-Type": "application/json"})
+        with urlopen(request, timeout=3) as response:
+            raw = response.read().decode()
+        self.assertNotIn(secret, raw)
+        result = json.loads(raw)
+        self.assertEqual("BLOCKED", result["status"])
+        self.assertFalse(result["workers"][0]["evidence"]["repair_applied"])
 
     def test_index_real_http(self):
         with urlopen(self.url+'/',timeout=3) as r:
