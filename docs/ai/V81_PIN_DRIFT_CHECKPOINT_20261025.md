@@ -140,3 +140,24 @@ Once the user's private archive is actually available on a local device, run the
 
 ### Next safe priority
 Acquire separately authorized private local ZIP evidence on trusted local device only, or independently validated owner approval/provenance to reconcile main pin policy. Preserve existing ChatGPT :00 automation ID, active state, history and alerts; no new automation, no modification to main, :15 workflow, Activepieces, Slack, credentials or paid systems. Only new defects on the isolated branch.
+
+
+## Safe indented-code compaction, incremental execution (2026-10-25)
+
+### Actual isolated-only code change
+- Verified original source defect: the bounded text compaction worker `gateway/task_executor.py` normalized whitespace and removed duplicate lines outside triple-backtick fences; Markdown 4-space or tab-indented code blocks were therefore de-indented or repeated side effects removed. No external provider or native ChatGPT integration was involved.
+- Applied [commit `bc7ab843426b17361015e68bfbf122c670879788`](https://github.com/watersun79-source/ai-token-optimization/commit/bc7ab843426b17361015e68bfbf122c670879788) **only on authorized isolated branch**. Files: `experiments/r16-bot-runtime/gateway/task_executor.py` and `gateway/test_task_executor.py`.
+- Guard preserves 4-space and tab-indented executable lines (including repeated operations), keeps blank Markdown boundaries around indented blocks, and retains ordinary prose line deduplication. Three new targeted regressions validate indented code, tabs, and continued plain prose compression. External LLM calls: 0; operational writes: 0.
+
+### Original GitHub CI evidence
+- Official [push run `40199712091`](https://github.com/watersun79-source/ai-token-optimization/actions/runs/40199712091), `head_sha=bc7ab843426b17361015e68bfbf122c670879788`, `completed/success`.
+- Fast job `121188091599` `completed/success`, original raw log shows FAST offline swarm 20 PASS plus local tests.
+- Full job `121188158501` `completed/success`, original raw log shows `python3 -m unittest discover -s gateway -p test_task_executor.py -q`, `Ran 14 tests`, `test_real_gateway.py` `Ran 54 tests`, independent local swarm 100/100 PASS and `R16_REAL_QUEUED_TASK.status=PASS`. Offline queued Python execution is real, but **NOT native unattended ChatGPT**, nor proof of original ZIP deployment. No prior identical-SHA jobs were intentionally retriggered.
+- This code-path-only push triggered only `.github/workflows/r16-v81-guard-fast.yml`; there is no new `v81-fast-full-isolated.yml` run for this exact SHA. Do not claim that separate workflow passed.
+
+### Remaining safeguards/blockers
+- Private user original v8.1 ZIP still not accessible; 10-file source mapping remains 2 EXACT / 8 DIFFERENT / 0 ABSENT on previously observed CI, with `full_v81_deployed=false`. Real original archive validation stays UNVERIFIED.
+- `main` protected checkout expected `a551e6ecc290f625432aba7ce2f7c23cc6117a30`; observed checkout `a88c7993c27404da43cba84a8f69e01a917315a6`; policy **FAIL** pending independent owner authorization evidence. Preserve the intentional failure and never change main or its :15 workflow without explicit authorization.
+- Official native ChatGPT per-run ID/timestamps plus same-run original GitHub/Slack calls not supplied; native scheduled success stays UNVERIFIED.
+
+**NEXT:** With explicit trusted local-only original ZIP access, validate original archive/member SHA; otherwise triage the next independently reproducible isolated-source defect. Do not change existing hourly :00 task, main, :15, Activepieces, Slack, billing, secrets, private ZIP or operational deployment.
