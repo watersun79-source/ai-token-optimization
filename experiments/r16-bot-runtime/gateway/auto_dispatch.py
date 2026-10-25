@@ -18,7 +18,7 @@ ROLE_TRIGGERS: dict[str, tuple[str, ...]] = {
     "ai-cost-security": ("api 키", "비밀키", "무료 한도", "과금", "비용 보안", "유료 api", "결제 방지", "credit limit"),
     "ai-github-management": ("브랜치", "풀 리퀘스트", "pull request", "pr 생성", "깃허브 이슈", "github issue"),
     "ai-cross-model-review": ("gemini claude", "gemini와 claude", "교차 검토", "모델끼리 비교", "독립 검토"),
-    "ai-optimization": ("토큰 최적화", "성능 최적화", "속도 개선", "프롬프트 최적화", "반복 줄여", "품질 개선", "latency"),
+    "ai-optimization": ("압축 실행", "중복 제거", "문장 압축", "토큰 최적화", "성능 최적화", "속도 개선", "프롬프트 최적화", "반복 줄여", "품질 개선", "latency"),
 }
 DIRECT_CHAT_PREFIXES = ("안녕", "고마워", "오늘 날씨", "내일 날씨", "번역해", "음식 추천", "생일 축하")
 PROJECT_CONTEXT = ("ai 프로젝트", "ai project", "3봇", "ai bot", "ai 봇", "bot team")
