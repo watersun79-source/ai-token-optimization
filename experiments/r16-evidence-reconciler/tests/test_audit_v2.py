@@ -76,6 +76,16 @@ class AuditV2Tests(unittest.TestCase):
         p=self.make();p['tool_calls'][0]['version']='not-a-sha';self.assertIn('current_handoff',check(p)['missing'])
     def test_slack_ts_invalid(self):
         p=self.make();p['tool_calls'][1]['version']='hello';self.assertIn('slack_thread',check(p)['missing'])
+    def test_slack_ts_rejects_unicode_decimal_digits(self):
+        p=self.make()
+        p['tool_calls'][1]['version']='١٢٣٤٥٦٧٨٩٠.١٢٣٤٥٦'
+        r=check(p)
+        self.assertEqual('미검증',r['status'])
+        self.assertIn('slack_thread',r['missing'])
+        good=self.make()
+        self.assertTrue(check(good)['status'].startswith('형식 통과'))
+        self.assertFalse(check(good)['official_success_verified'])
+
     def test_manual_tool_call_is_not_scheduled(self):
         p=self.make();p['tool_calls'][0]['origin']='manual_chat';self.assertIn('current_handoff',check(p)['missing'])
     def test_missing_one_required_call(self):

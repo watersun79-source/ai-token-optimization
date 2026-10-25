@@ -44,7 +44,7 @@ OPTIONAL = {
 }
 
 SHA = re.compile(r'^[a-f0-9]{40}$')
-SLACK_TS = re.compile(r'^\d{10}\.\d{6}$')
+SLACK_TS = re.compile(r'^[0-9]{10}\.[0-9]{6}$')
 # Preserve native timestamps at up to nine fractional digits for ordering.
 AUDIT_TIME = re.compile(r'^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.([0-9]{1,9}))?(?:Z|[+-][0-9]{2}:[0-9]{2})$')
 # Do not let datetime.fromisoformat() silently truncate nonzero nanoseconds.
