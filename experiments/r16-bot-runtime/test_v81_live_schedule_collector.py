@@ -467,6 +467,8 @@ class LiveCollectorTests(unittest.TestCase):
         result = json.loads(out.getvalue().split("R16_V81_LIVE_SCHEDULE_CHECK=", 1)[1])
         self.assertEqual("PASS", result["status"])
         self.assertNotIn("protected_pin_policy", result)
+        self.assertNotIn("observed_source_sha", result)
+        self.assertNotIn("expected_source_sha", result)
         self.assertFalse(result["native_chatgpt_run_verified"])
         self.assertEqual(5, len(seen))
 
@@ -483,6 +485,10 @@ class LiveCollectorTests(unittest.TestCase):
         self.assertEqual("UNVERIFIED", result["status"])
         self.assertEqual("PROTECTED_PIN_DRIFT", result["reason"])
         self.assertEqual("FAIL", result["protected_pin_policy"])
+        self.assertEqual("a551e6ecc290f625432aba7ce2f7c23cc6117a30",
+                         result["expected_source_sha"])
+        self.assertEqual(SOURCE, result["observed_source_sha"])
+        self.assertEqual(WORKFLOW, result["main_workflow_sha"])
         self.assertTrue(result["official_github_api_get_attempted"])
         self.assertFalse(result["native_chatgpt_run_verified"])
         self.assertEqual(2, len(seen))

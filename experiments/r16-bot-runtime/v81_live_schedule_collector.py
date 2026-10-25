@@ -37,6 +37,16 @@ class GitHubReadError(Exception):
     pass
 
 
+class ProtectedPinDrift(GitHubReadError):
+    """Trusted GitHub SHA-only context; never include credentials or file bodies."""
+
+    def __init__(self, *, expected, observed, main_sha):
+        super().__init__("PROTECTED_PIN_DRIFT")
+        self.expected = expected
+        self.observed = observed
+        self.main_sha = main_sha
+
+
 def _safe_gh_failure(stderr):
     """Only emit an allowlisted error category; never log provider stderr."""
     if not isinstance(stderr, str):
@@ -226,7 +236,8 @@ def resolve_main_target(fetch, repository, *, protected_source_sha=None):
     if len(pins) != 1:
         raise GitHubReadError("PINNED_SOURCE_NOT_UNIQUE")
     if protected_source_sha is not None and pins[0] != protected_source_sha:
-        raise GitHubReadError("PROTECTED_PIN_DRIFT")
+        raise ProtectedPinDrift(expected=protected_source_sha,
+                                observed=pins[0], main_sha=main_sha)
     return main_sha, pins[0]
 
 
@@ -262,8 +273,13 @@ def main():
             result["expected_source_sha"] = pinned_sha
         except GitHubReadError as exc:
             result = unverified(str(exc))
-            if str(exc) == "PROTECTED_PIN_DRIFT":
-                result["protected_pin_policy"] = "FAIL"
+            if isinstance(exc, ProtectedPinDrift):
+                result.update(
+                    protected_pin_policy="FAIL",
+                    expected_source_sha=exc.expected,
+                    observed_source_sha=exc.observed,
+                    main_workflow_sha=exc.main_sha,
+                )
     if completed_gets:
         result["official_github_api_get_attempted"] = True
     print("R16_V81_LIVE_SCHEDULE_CHECK=" +
