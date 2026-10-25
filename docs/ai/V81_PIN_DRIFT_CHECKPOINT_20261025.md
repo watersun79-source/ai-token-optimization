@@ -99,3 +99,21 @@ Keep schedule and native ChatGPT distinct. User approval/provenance for the two 
 
 ### Next permitted goal
 Once the user's private archive is actually available on a local device, run the verifier there and inspect only PASS/UNVERIFIED metadata to decide if a specific safe source mismatch can be triaged. Until then: original full v8.1 source/deployment = UNVERIFIED; exact 10-file public source parity stays 2 EXACT / 8 DIFFERENT / 0 ABSENT (reviewed ≠ verbatim). Preserve `main`, ChatGPT :00 task, :15 checkout pin, Activepieces, Slack, and confidential ZIP. No new scheduler or billing.
+
+
+## Single-descriptor private ZIP snapshot guard — incremental checkpoint (2026-10-25 KST)
+
+**Observed reproducible defect:** Local-only private ZIP checker previously verified an archive SHA by `Path.open()` and then separately reopened the same pathname via `zipfile.ZipFile(path)`. If a mutable pathname was replaced between these operations, ZIP parsing could process bytes that were *not* bound by the verified archive hash.
+
+**Change:** [commit `5916906855c98cc48bfb037086cefa3472ef21e2`](https://github.com/watersun79-source/ai-token-optimization/commit/5916906855c98cc48bfb037086cefa3472ef21e2) updates only `v81_source_parity.py` and `test_v81_source_parity.py` on authorized isolated branch:
+- Open the local archive once with `os.open`, `O_NOFOLLOW` where available, `O_CLOEXEC`, `O_NONBLOCK`; `os.fstat` verifies a regular file, size remains bounded to 32 MiB.
+- Capture a bounded immutable byte snapshot on that single descriptor. Require the read length matches the stat size and SHA-256 matches the pinned original archive fingerprint.
+- Parse `zipfile.ZipFile(io.BytesIO(archive_bytes))` instead of reopening a mutable pathname. Existing ZIP member limits, member SHA-256 validation, no extraction/execution, private source retention and native `UNVERIFIED` are preserved.
+- Add a synthetic regression test that swaps the local ZIP pathname *immediately before ZipFile parsing*, proving that the parser receives the exact verified `BytesIO` snapshot, not replacement bytes. Tests do not access any real private original ZIP.
+
+**Official GitHub code/CI evidence:**
+- Guard [run `40198076043`](https://github.com/watersun79-source/ai-token-optimization/actions/runs/40198076043): `event=push`, head `5916906855c98cc48bfb037086cefa3472ef21e2`, `completed/success`. FAST job `121183154824` `completed/success`, full job `121183210368` `completed/success`. Raw FAST job: `Ran 21 tests` on parity + dashboard suite, `Ran 70 tests` in separate provenance suite, local FAST swarm 20 PASS. Raw FULL job: local offline 100/100 PASS and `ISOLATED_OFFLINE_FAST_AND_FULL_ONLY=PASS`.
+- Separate protected-main pin [run `40198076015`](https://github.com/watersun79-source/ai-token-optimization/actions/runs/40198076015): `event=push`, same head, `completed/failure` due existing `PROTECTED_PIN_DRIFT` (`a551e6ec...` expected vs `a88c7993...` observed), not caused by private ZIP change; independently verified full-regression job success.
+- The change does NOT prove real original ZIP available: source parity remains `EXACT 2 / DIFFERENT 8 / ABSENT 0`, `verbatim_source_match=false`, `full_v81_deployed=false`. ChatGPT native per-run same-execution GitHub/Slack evidence remains **UNVERIFIED**.
+
+**NEXT (one safely actionable blocker):** Original private archive remains inaccessible in this session and must never be uploaded into public CI; only a trusted local device possessing the actual ZIP can run the existing `--verify-private-zip-local` function and confirm the *real* anchored archive/member fingerprints. Do not relax checkout pin policy, modify main, add scheduler, change existing :00 task, :15 cron, Activepieces, Slack or paid services.
