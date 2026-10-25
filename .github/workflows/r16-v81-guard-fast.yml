@@ -171,6 +171,13 @@ jobs:
                       f.write('Output SHA256: ' + report['output_sha256'] + '\\n\\n')
                       f.write('Bytes saved: ' + str(report['bytes_saved']) + '\\n\\n')
           PY
+      - name: Execute actual user-requested SHA-bound queued Python task
+        env:
+          PYTHONPATH: gateway
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python3 -m unittest discover -s gateway -p test_queued_task_worker.py -q
+          python3 gateway/queued_task_worker.py
       - name: Execute actual SHA-guarded local code patch
         env:
           PYTHONPATH: gateway

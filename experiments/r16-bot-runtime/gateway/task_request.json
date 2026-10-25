@@ -1,0 +1,6 @@
+{
+  "task_id": "r16-20261025-1713",
+  "mode": "bounded_offline_optimize",
+  "message": "프롬프트 압축 실행\n반복 작업 생략\n반복 작업 생략\n증분 처리 우선",
+  "expected_input_sha256": "83f7125e8e5b23535df7a2d6feda2b9358b300daa4d87830ebf9048947564b53"
+}
