@@ -52,6 +52,10 @@ REVIEWED_DIFFERENCES = {
         "disposition": "KEEP_BRANCH_HARDENING",
         "reason": "pin trusted Java fixture by absolute path and run from isolated cwd; original hash remains DIFFERENT",
     },
+    "catalog.json": {
+        "disposition": "KEEP_BRANCH_HARDENING",
+        "reason": "private v8.1 ZIP SHA-256 verified locally 2026-10-25; of 100 rule fingerprints 79 unchanged and 21 hardened: S04-S06 strict RRULE, L06-L10/A07-A09/E01-E10 native-evidence fail-closed; original bytes remain private; not verbatim",
+    },
     "UtcStrictOracle.java": {
         "disposition": "KEEP_BRANCH_HARDENING",
         "reason": "isolated branch accepts an explicit fixture path and rejects invalid headers and result labels fail-closed",

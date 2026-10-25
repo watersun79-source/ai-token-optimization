@@ -41,15 +41,45 @@ class SourceParityTests(unittest.TestCase):
     def test_reviewed_hardening_differences_do_not_claim_exact(self):
         report = parity.compare()
         for filename in ("runner.py", "test_runtime.py", "utc_strict_oracle.js",
-                         "measure_runtime.py", "UtcStrictOracle.java"):
+                         "measure_runtime.py", "UtcStrictOracle.java", "catalog.json"):
             with self.subTest(filename=filename):
                 self.assertEqual("DIFFERENT", report["files"][filename]["status"])
                 self.assertEqual(
                     "KEEP_BRANCH_HARDENING",
                     report["reviewed_differences"][filename]["disposition"],
                 )
-        self.assertEqual(5, report["reviewed_difference_count"])
-        self.assertEqual(3, report["unresolved_difference_count"])
+        self.assertEqual(6, report["reviewed_difference_count"])
+        self.assertEqual(2, report["unresolved_difference_count"])
+        self.assertFalse(report["verbatim_source_match"])
+        self.assertFalse(report["full_v81_deployed"])
+
+    def test_reviewed_catalog_hardening_stays_non_verbatim(self):
+        # No private original catalog is committed to the public CI runner.
+        rules = json.loads((parity.ROOT / "catalog.json").read_text(encoding="utf-8"))
+        roles = {r["id"]: r for r in rules}
+        self.assertEqual(100, len(rules))
+        self.assertEqual(100, len(roles))
+        for role_id in ("S04", "S05", "S06"):
+            with self.subTest(strict_rrule=role_id):
+                self.assertEqual("rrule_part", roles[role_id]["operator"])
+                self.assertEqual("schedule.rrule", roles[role_id]["field"])
+        native_ids = ({f"L{i:02d}" for i in range(6, 11)}
+                      | {f"A{i:02d}" for i in range(7, 10)}
+                      | {f"E{i:02d}" for i in range(1, 11)})
+        actual_native = {r["id"] for r in rules
+                         if r["evidence_source"] == "ChatGPT.native_per_run_raw_ledger"}
+        self.assertEqual(native_ids, actual_native)
+        for role_id in sorted(native_ids):
+            with self.subTest(native_role=role_id):
+                self.assertTrue(roles[role_id]["field"].startswith("native."))
+                self.assertNotEqual("offline_replacement", roles[role_id]["operator"])
+                self.assertEqual("offline_evidence_rule", roles[role_id]["scope"])
+        report = parity.compare()
+        self.assertEqual("DIFFERENT", report["files"]["catalog.json"]["status"])
+        self.assertEqual(
+            "KEEP_BRANCH_HARDENING",
+            report["reviewed_differences"]["catalog.json"]["disposition"],
+        )
         self.assertFalse(report["verbatim_source_match"])
         self.assertFalse(report["full_v81_deployed"])
 
