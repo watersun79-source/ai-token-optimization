@@ -32,9 +32,8 @@ ORIGINAL_SHA256 = {
 assert len(ORIGINAL_SHA256) == 10
 assert all(len(x) == 64 and set(x) <= set("0123456789abcdef") for x in ORIGINAL_SHA256.values())
 
-# Reviewed against the authenticated private ZIP without publishing its bytes.
-# A reviewed difference remains DIFFERENT; this only records a fail-closed
-# disposition so it is not repeatedly treated as an unexplained gap.
+# Record reviewed isolated-branch differences; the original ZIP is unavailable
+# on public CI. A hardening disposition never implies source byte equality.
 REVIEWED_DIFFERENCES = {
     "runner.py": {
         "disposition": "KEEP_BRANCH_HARDENING",
@@ -47,6 +46,10 @@ REVIEWED_DIFFERENCES = {
     "utc_strict_oracle.js": {
         "disposition": "KEEP_BRANCH_HARDENING",
         "reason": "isolated branch resolves the fixture beside the script and rejects empty, malformed, or invalid-result rows fail-closed",
+    },
+    "measure_runtime.py": {
+        "disposition": "KEEP_BRANCH_HARDENING",
+        "reason": "pin trusted Java fixture by absolute path and run from isolated cwd; original hash remains DIFFERENT",
     },
 }
 assert set(REVIEWED_DIFFERENCES) <= set(ORIGINAL_SHA256)
