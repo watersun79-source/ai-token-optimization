@@ -36,6 +36,16 @@ class SafePatchTests(unittest.TestCase):
                             old="value = 1", new="value = (")
             self.assertEqual(file.read_bytes(), before)
 
+    def test_atomic_python_patch_preserves_executable_permissions(self):
+        with tempfile.TemporaryDirectory() as root:
+            file = Path(root) / "fixture.py"
+            file.write_text("value = 1\n", encoding="utf-8")
+            file.chmod(0o750)
+            apply_patch(root, "fixture.py", expected_sha256=sha256(file.read_bytes()),
+                        old="value = 1", new="value = 2")
+            self.assertEqual(file.stat().st_mode & 0o777, 0o750)
+            self.assertEqual(file.read_text(), "value = 2\n")
+
     def test_stale_sha_refused(self):
         with tempfile.TemporaryDirectory() as root:
             file = Path(root) / "fixture.txt"
