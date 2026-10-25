@@ -39,7 +39,10 @@ class GatewayTests(unittest.TestCase):
 
     def test_unsafe_or_ambiguous_syntax_is_not_repaired(self):
         for source in ["if True", "print((1", "print(\\n1"]:
-            evidence = run_message("에러 고쳐", code=source)["workers"][0]["evidence"]
+            report = run_message("에러 고쳐", code=source)
+            evidence = report["workers"][0]["evidence"]
+            self.assertEqual(report["status"], "BLOCKED")
+            self.assertEqual(report["workers"][0]["status"], "BLOCKED")
             self.assertFalse(evidence["repair_applied"])
             self.assertNotIn("fixed_source", evidence)
 

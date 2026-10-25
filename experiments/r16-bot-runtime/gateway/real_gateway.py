@@ -80,8 +80,11 @@ def execute_role(role: str, message: str, *, code: str = "", network: bool = Fal
                     evidence.update({"repair_applied":True,"fixed_source":fixed,
                                      "fixed_sha256":sha256(fixed.encode()).hexdigest(),
                                      "syntax_valid_after":True})
-            return _result(role,"DONE",evidence=evidence,
-                           note="Bounded AST-verified source repair; no user code executed or files modified")
+            if evidence["repair_applied"]:
+                return _result(role,"DONE",evidence=evidence,
+                               note="Bounded AST-verified source repair; no user code executed or files modified")
+            return _result(role,"BLOCKED",evidence=evidence,
+                           note="SyntaxError detected; no safe repair applied; user code not executed")
     if role == "ai-cost-security":
         unsafe = bool(re.search(r"(?i)(?:\bsk-[A-Za-z0-9_-]{12,}|api[_-]?key\s*[=:]\s*\S{8,})",code))
         return _result(role,"DONE",evidence={"suspected_secret_in_code":unsafe,"external_model_calls":0,"billing_used":False},note="No secret contents returned")
