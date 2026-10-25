@@ -57,6 +57,27 @@ class TaskExecutorTests(unittest.TestCase):
         result = compact("repeat\nrepeat\nunique")
         self.assertEqual(result["output"], "repeat\nunique")
 
+    def test_indented_code_keeps_repeated_statements_and_scope(self):
+        message = "설명\n\n    if ready:\n        send()\n        send()\n\n요약\n요약"
+        report = compact(message)
+        self.assertIn("    if ready:\n        send()\n        send()", report["output"])
+        self.assertIn("설명\n\n    if ready:", report["output"])
+        self.assertIn("        send()\n\n요약", report["output"])
+        self.assertEqual(1, report["duplicate_lines_removed"])
+        self.assertEqual(report["external_model_calls"], 0)
+
+    def test_tab_indented_code_is_not_deduplicated(self):
+        message = "code\n\tstep()\n\tstep()\nnormal\nnormal"
+        report = compact(message)
+        self.assertEqual("code\n\tstep()\n\tstep()\nnormal", report["output"])
+        self.assertEqual(1, report["duplicate_lines_removed"])
+
+    def test_plain_prose_dedup_unchanged(self):
+        message = "한 줄\n한 줄\n마지막"
+        result = compact(message)
+        self.assertEqual("한 줄\n마지막", result["output"])
+        self.assertEqual(1, result["duplicate_lines_removed"])
+
     def test_cli_real_execution(self):
         p=subprocess.run([sys.executable,str(Path(__file__).with_name("task_executor.py")),"--stdin"],
                          input="one\ntwo\none\n",text=True,capture_output=True,timeout=3)

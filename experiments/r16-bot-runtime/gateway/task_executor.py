@@ -19,7 +19,8 @@ def compact(text):
         raise ValueError("suspected credential; refuse processing")
     seen, kept, removed = set(), [], 0
     in_code = False
-    for line in text.splitlines():
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
         stripped = line.strip()
         if stripped.startswith("```"):
             in_code = not in_code
@@ -29,8 +30,20 @@ def compact(text):
             # Code indentation, blank lines and repeated statements carry meaning.
             kept.append(line)
             continue
+        if line.startswith(("    ", "\t")):
+            # Markdown indented code and its repeated side effects are not prose.
+            # Never deduplicate or normalize executable lines.
+            kept.append(line)
+            continue
         normalized = re.sub(r"\s+", " ", line).strip()
         if not normalized:
+            # Preserve the boundary around an indented code block, otherwise
+            # removing it can silently change Markdown rendering semantics.
+            next_is_code = (index + 1 < len(lines)
+                            and lines[index + 1].startswith(("    ", "\t")))
+            previous_is_code = bool(kept and kept[-1].startswith(("    ", "\t")))
+            if next_is_code or previous_is_code:
+                kept.append(line)
             continue
         if normalized in seen:
             removed += 1
