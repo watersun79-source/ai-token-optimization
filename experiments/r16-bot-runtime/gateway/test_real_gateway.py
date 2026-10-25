@@ -59,6 +59,24 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(r['evidence']['unique_text_segments'],2)
         self.assertIsNone(r['evidence']['estimated_tokens'])
 
+    def test_optimization_worker_actually_compacts_and_returns_receipt(self):
+        message = "토큰 최적화\n반복\n반복\n유일"
+        report = run_message(message)
+        self.assertEqual(report["status"], "DONE")
+        evidence = report["workers"][0]["evidence"]
+        self.assertEqual(evidence["optimized_text"], "토큰 최적화\n반복\n유일")
+        self.assertEqual(evidence["duplicate_lines_removed"], 1)
+        self.assertGreater(evidence["bytes_saved"], 0)
+        self.assertNotEqual(evidence["input_sha256"], evidence["output_sha256"])
+        self.assertEqual(evidence["external_model_calls"], 0)
+
+    def test_optimization_worker_blocks_secret_without_echo(self):
+        secret = "github_pat_" + "x" * 30
+        report = run_message("토큰 최적화\n" + secret)
+        self.assertEqual(report["status"], "BLOCKED")
+        self.assertEqual(report["workers"][0]["status"], "BLOCKED")
+        self.assertNotIn(secret, json.dumps(report))
+
     def test_automation_plan_not_flow_run(self):
         r=execute_role('ai-automation-design','워크플로 구성')
         self.assertEqual(r['status'],'DONE')
@@ -169,6 +187,15 @@ class HTTPTests(unittest.TestCase):
             d=json.load(r)
         self.assertEqual(d['workers'][0]['status'],'DONE')
         self.assertFalse(d['workers'][0]['evidence']['syntax_valid'])
+    def test_real_http_optimization_compaction(self):
+        payload=json.dumps({'message':'토큰 최적화\n중복\n중복'}).encode()
+        req=Request(self.url+'/api/chat',data=payload,headers={'Content-Type':'application/json'})
+        with urlopen(req,timeout=3) as r:
+            report=json.load(r)
+        self.assertEqual(report['status'],'DONE')
+        self.assertEqual(report['workers'][0]['evidence']['duplicate_lines_removed'],1)
+        self.assertEqual(report['workers'][0]['evidence']['optimized_text'],'토큰 최적화\n중복')
+
     def test_index_real_http(self):
         with urlopen(self.url+'/',timeout=3) as r:
             self.assertIn('text/html',r.headers['Content-Type'])
