@@ -22,6 +22,7 @@ concurrency:
 
 jobs:
   fast-audit:
+    if: github.ref == 'refs/heads/ai/r16-v81-fast-full-ci-20261024'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     defaults:
@@ -40,6 +41,7 @@ jobs:
 
   full-regression:
     needs: fast-audit
+    if: github.ref == 'refs/heads/ai/r16-v81-fast-full-ci-20261024'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     defaults:
@@ -52,6 +54,8 @@ jobs:
           persist-credentials: false
       - name: Full 100 synthetic roles after FAST passes
         run: python3 v81_swarm.py --mode all --workers 4
+      - name: Report original ZIP fingerprint gaps without exposing private files
+        run: python3 v81_source_parity.py
       - name: Scope guard
         run: |
           echo 'ISOLATED_OFFLINE_FAST_AND_FULL_ONLY=PASS'
