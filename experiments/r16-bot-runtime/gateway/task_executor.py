@@ -6,7 +6,11 @@ import re
 import sys
 
 MAX_INPUT = 4000
-SECRET = re.compile(r"(?i)(?:\bsk-[A-Za-z0-9_-]{12,}|\b(?:api[_-]?key|token|password|secret)\s*[=:]\s*[^\s]{8,})")
+SECRET = re.compile(
+    r"(?i)(?:\bsk-[A-Za-z0-9_-]{12,}|\bgh[pousr]_[A-Za-z0-9_]{20,}|"
+    r"\bgithub_pat_[A-Za-z0-9_]{20,}|\b(?:api[_-]?key|access[_-]?token|"
+    r"auth[_-]?token|token|password|secret)\s*[=:]\s*[^\s]{8,})"
+)
 
 def compact(text):
     if not isinstance(text, str) or not text.strip() or len(text) > MAX_INPUT:
