@@ -11,10 +11,14 @@ function strictUtc(s){
   const d=new Date(0);d.setUTCFullYear(year,mon-1,day);d.setUTCHours(hh,mm,ss,0);
   return d.getUTCFullYear()===year&&d.getUTCMonth()===mon-1&&d.getUTCDate()===day&&d.getUTCHours()===hh&&d.getUTCMinutes()===mm&&d.getUTCSeconds()===ss;
 }
-const raw=fs.readFileSync(path.join(__dirname,'utc_strict_oracle_cases.tsv'),'utf8');
+const fixture=path.join(__dirname,'utc_strict_oracle_cases.tsv');
+const stat=fs.statSync(fixture);
+if(!stat.isFile() || stat.size>65536)throw Error('fixture size or type invalid');
+const raw=fs.readFileSync(fixture,'utf8');
 const lines=raw.replace(/\r?\n$/, '').split(/\r?\n/);
 if(lines.length<2 || lines[0]!=='value\texpected')throw Error('invalid or empty fixture');
 const rows=lines.slice(1);
+if(rows.length>256)throw Error('too many fixture cases');
 let count=0;
 for (const row of rows){
   const fields=row.split('\t');
