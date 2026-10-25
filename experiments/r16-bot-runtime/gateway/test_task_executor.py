@@ -72,6 +72,26 @@ class TaskExecutorTests(unittest.TestCase):
         self.assertIn("BLOCKED", p.stdout)
         self.assertNotIn("fakeValue12345678", p.stdout)
 
+    def test_quoted_authorization_json_and_mapping_headers_blocked(self):
+        messages = (
+            '{"Authorization":"Bearer fakeValue12345678"}',
+            '{"authorization": "Basic fakeValue12345678"}',
+            "{'HTTP_AUTHORIZATION': 'Bearer fakeValue12345678'}",
+        )
+        for message in messages:
+            with self.subTest(header=message.split(":")[0]):
+                with self.assertRaisesRegex(ValueError, "credential"):
+                    compact(message)
+
+    def test_quoted_authorization_cli_never_echoes_value(self):
+        message = '{"Authorization": "Bearer fakeValue12345678"}'
+        process = subprocess.run(
+            [sys.executable, str(Path(__file__).with_name("task_executor.py")), "--stdin"],
+            input=message, text=True, capture_output=True, timeout=3)
+        self.assertEqual(process.returncode, 2)
+        self.assertIn("BLOCKED", process.stdout)
+        self.assertNotIn("fakeValue12345678", process.stdout)
+
     def test_noncredential_json_still_allowed(self):
         message = '{"title": "example_value123"}'
         self.assertEqual(compact(message)["output"], message)

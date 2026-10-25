@@ -19,6 +19,11 @@ QUOTED_SECRET = re.compile(
     r"""access[_-]?token|auth[_-]?token|token|password|secret)["']\s*:\s*"""
     r"""["'][^"'\\\s]{8,}["']"""
 )
+# Quoted HTTP Authorization values include a space after their scheme.
+QUOTED_AUTH = re.compile(
+    r"""(?i)["'](?:[A-Za-z][A-Za-z0-9]*[_-])*authorization["']\s*:\s*"""
+    r"""["'](?:Bearer|Basic)\s+[^"'\\\s]{8,}["']"""
+)
 # Markdown fence opener/closer: 0..3 spaces, >=3 matching backticks or tildes.
 FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
 # Structural Markdown tokens are semantic blocks, not redundant prose.
@@ -27,7 +32,7 @@ STRUCTURAL = re.compile(r"^ {0,3}(?:#{1,6}(?:[ \t]|$)|[-+*][ \t]|\d{1,9}[.)][ \t
 def compact(text):
     if not isinstance(text, str) or not text.strip() or len(text) > MAX_INPUT:
         raise ValueError("input must contain 1..4000 characters")
-    if SECRET.search(text) or QUOTED_SECRET.search(text):
+    if SECRET.search(text) or QUOTED_SECRET.search(text) or QUOTED_AUTH.search(text):
         raise ValueError("suspected credential; refuse processing")
     seen, kept, removed = set(), [], 0
     in_code = False
