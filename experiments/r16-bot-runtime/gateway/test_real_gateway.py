@@ -119,6 +119,12 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(evidence["duplicate_lines_removed"], 1)
         self.assertNotEqual(evidence["input_sha256"], evidence["output_sha256"])
 
+    def test_prompt_compression_request_executes(self):
+        report = run_message("프롬프트 압축\n같은 줄\n같은 줄")
+        self.assertEqual(report["status"], "DONE")
+        self.assertEqual(report["selected_roles"], ["ai-optimization"])
+        self.assertEqual(report["workers"][0]["evidence"]["duplicate_lines_removed"], 1)
+
     def test_automation_plan_not_flow_run(self):
         r=execute_role('ai-automation-design','워크플로 구성')
         self.assertEqual(r['status'],'DONE')
