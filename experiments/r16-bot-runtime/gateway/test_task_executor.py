@@ -137,23 +137,22 @@ class TaskExecutorTests(unittest.TestCase):
         self.assertEqual(1, report["duplicate_lines_removed"])
 
     def test_unfenced_repeated_calls_preserve_side_effects(self):
-        message = "send()\\nsend()\\nqueue.push(1);\\nqueue.push(1);\\nsummary\\nsummary"
-        message = message.replace("\\n", "\n")
+        message = "send()\nsend()\nqueue.push(1);\nqueue.push(1);\nsummary\nsummary"
         report = compact(message)
         self.assertEqual(
             report["output"],
-            "send()\\nsend()\\nqueue.push(1);\\nqueue.push(1);\\nsummary".replace("\\n", "\n"),
+            "send()\nsend()\nqueue.push(1);\nqueue.push(1);\nsummary",
         )
         self.assertEqual(report["duplicate_lines_removed"], 1)
 
     def test_cli_unfenced_repeated_calls_preserved(self):
         p = subprocess.run(
             [sys.executable, str(Path(__file__).with_name("task_executor.py")), "--stdin"],
-            input="send()\\nsend()\\nnote\\nnote".replace("\\n", "\n"),
+            input="send()\nsend()\nnote\nnote",
             text=True, capture_output=True, timeout=3)
         self.assertEqual(p.returncode, 0, p.stderr)
         report = json.loads(p.stdout.split("R16_TASK_EXECUTOR=", 1)[1])
-        self.assertEqual(report["output"], "send()\\nsend()\\nnote".replace("\\n", "\n"))
+        self.assertEqual(report["output"], "send()\nsend()\nnote")
         self.assertEqual(report["duplicate_lines_removed"], 1)
 
     def test_plain_prose_dedup_unchanged(self):
