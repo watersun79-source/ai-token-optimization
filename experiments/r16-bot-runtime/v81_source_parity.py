@@ -52,6 +52,10 @@ REVIEWED_DIFFERENCES = {
         "disposition": "KEEP_BRANCH_HARDENING",
         "reason": "pin trusted Java fixture by absolute path and run from isolated cwd; original hash remains DIFFERENT",
     },
+    "UtcStrictOracle.java": {
+        "disposition": "KEEP_BRANCH_HARDENING",
+        "reason": "isolated branch accepts an explicit fixture path and rejects invalid headers and result labels fail-closed",
+    },
 }
 assert set(REVIEWED_DIFFERENCES) <= set(ORIGINAL_SHA256)
 
