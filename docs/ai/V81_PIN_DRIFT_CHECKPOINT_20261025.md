@@ -32,3 +32,26 @@ Evidence links:
 - https://github.com/watersun79-source/ai-token-optimization/issues/8
 
 No changes to main, ChatGPT task, Activepieces, Slack, credentials, or any other branch. No paid/LLM calls.
+
+
+## Incremental root-cause and guard verification — 2026-10-25 (KST)
+
+### Confirmed causal commits on main (GitHub original patches)
+1. [`9097914284baf4896919e850c49690737d5715f3`](https://github.com/watersun79-source/ai-token-optimization/commit/9097914284baf4896919e850c49690737d5715f3): `ref: a551e6ecc290f625432aba7ce2f7c23cc6117a30` → `353940b40b73b4001350ce07b323963bda14aa00` (2026-10-25 03:54:16 UTC).
+2. [`923c281f82023cc6b49f3844bad17f508f1ab203`](https://github.com/watersun79-source/ai-token-optimization/commit/923c281f82023cc6b49f3844bad17f508f1ab203): `ref: 353940b40b73b4001350ce07b323963bda14aa00` → `a88c7993c27404da43cba84a8f69e01a917315a6` (2026-10-25 04:40:00 UTC).
+
+These GitHub patches establish **what changed and when**, not whether its authors had user approval. GitHub `main` was not modified during this checkpoint.
+
+### Authenticated GitHub run/job/raw log
+- [Schedule run `40194229228`](https://github.com/watersun79-source/ai-token-optimization/actions/runs/40194229228): `event=schedule`, `head_sha=923c281f82023cc6b49f3844bad17f508f1ab203`, `completed/success`; job `121171517112` `completed/success`. GitHub original job log at 2026-10-25 12:41:32 UTC confirms checkout `a88c7993c27404da43cba84a8f69e01a917315a6`, receipt `R16_HOURLY_OFFLINE_RECEIPT_VALIDATED`, and offline unified 4-language + 20/100-rule evidence. This is NOT native ChatGPT or user-approved pin parity.
+- [Isolated push CI run `40194538442`](https://github.com/watersun79-source/ai-token-optimization/actions/runs/40194538442): `head_sha=b2ea27548d0ddd4f043c951353a3ff1c6536969a`, `event=push`, `completed/success`. Fast job `121172526368` and full job `121172526618` both `completed/success`.
+- Fast job raw log shows `R16_V81_LIVE_SCHEDULE_CHECK={"status":"UNVERIFIED","reason":"PROTECTED_PIN_DRIFT","protected_pin_policy":"FAIL",...}`. The separate guard reports the policy violation **without treating offline CI success as proof that the protected pin matches**.
+
+### Only-authorized-branch patch and regression
+- [`7d0a1566ff54621a76ff4a0e4a224079476d2cab`](https://github.com/watersun79-source/ai-token-optimization/commit/7d0a1566ff54621a76ff4a0e4a224079476d2cab): fail-closed optional `protected_source_sha` validation in the read-only collector; mismatch blocks schedule-read promotion; malformed policy and protected+manual pair fail closed.
+- [`95f13be7e075500afe936923ba30029e0f73b61d`](https://github.com/watersun79-source/ai-token-optimization/commit/95f13be7e075500afe936923ba30029e0f73b61d): five negative/positive unit tests.
+- [`b2ea27548d0ddd4f043c951353a3ff1c6536969a`](https://github.com/watersun79-source/ai-token-optimization/commit/b2ea27548d0ddd4f043c951353a3ff1c6536969a): isolated workflow invokes the collector with protected `a551e6ecc290f625432aba7ce2f7c23cc6117a30`; no main change.
+- The detector is **PASS** (it correctly detected drift) while the **protected source policy is FAIL** (main still differs). Both facts must be reported together.
+
+### Remaining actionable next target
+Keep schedule and native ChatGPT distinct. User approval/provenance for the two main edits is still **UNVERIFIED**. Owner must explicitly decide whether the original protected pin should be restored or the protection rule should be changed; do not make either change without authorization. Private ZIP full deployment and trusted native per-run connected GitHub/Slack ledger remain UNVERIFIED.
