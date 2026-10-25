@@ -70,7 +70,7 @@ class LiveCollectorTests(unittest.TestCase):
     def test_previous_schedule_not_promoted(self):
         fetch, seen = fake_api(mode="old")
         out = collect(fetch, REPO, WORKFLOW, SOURCE)
-        self.assertEqual("NOT_APPLICABLE", out["status"])
+        self.assertEqual("UNVERIFIED", out["status"])
         self.assertEqual("EXPECTED_NEW_SCHEDULE_NOT_OBSERVED", out["reason"])
         self.assertEqual(1, len(seen))
 
@@ -174,7 +174,7 @@ class LiveCollectorTests(unittest.TestCase):
             self.assertEqual(0, main())
         raw = output.getvalue().split("R16_V81_LIVE_SCHEDULE_CHECK=", 1)[1]
         result = json.loads(raw)
-        self.assertEqual("NOT_APPLICABLE", result["status"])
+        self.assertEqual("UNVERIFIED", result["status"])
         self.assertTrue(result["official_github_api_get_attempted"])
         self.assertEqual(1, len(seen))
 
@@ -200,7 +200,7 @@ class LiveCollectorTests(unittest.TestCase):
                 "v81_live_schedule_collector.gh_read", side_effect=fetch), redirect_stdout(StringIO()) as out:
             self.assertEqual(0, main())
         obj = json.loads(out.getvalue().split("R16_V81_LIVE_SCHEDULE_CHECK=", 1)[1])
-        self.assertEqual("NOT_APPLICABLE", obj["status"])
+        self.assertEqual("UNVERIFIED", obj["status"])
         self.assertEqual("EXPECTED_NEW_SCHEDULE_NOT_OBSERVED", obj["reason"])
         self.assertEqual(3, len(seen))
 

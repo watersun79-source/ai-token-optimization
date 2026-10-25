@@ -109,8 +109,7 @@ def collect(fetch, repository, workflow_sha, source_sha):
         if type(rid) is not int or rid <= 0:
             return unverified("RUN_ID_INVALID")
         if run.get("head_sha") != workflow_sha:
-            return unverified("EXPECTED_NEW_SCHEDULE_NOT_OBSERVED",
-                              run_id=rid, status="NOT_APPLICABLE")
+            return unverified("EXPECTED_NEW_SCHEDULE_NOT_OBSERVED", run_id=rid)
         if run.get("status") != "completed":
             return unverified("LATEST_SCHEDULE_STILL_RUNNING", run_id=rid)
         jobs_obj = _json_obj(fetch, base + "/actions/runs/" + str(rid) +
