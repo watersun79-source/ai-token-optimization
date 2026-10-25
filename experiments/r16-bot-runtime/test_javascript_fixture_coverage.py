@@ -56,11 +56,11 @@ class JavaScriptFixtureCoverageTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
 
     def test_bounded_case_count_rejects_257_but_allows_256(self):
-        row = "2026-10-24T05:00:00Z\\tPASS"
-        accepted = self.run_fixture(["value\\texpected"] + [row] * 256)
+        row = "2026-10-24T05:00:00Z\tPASS"
+        accepted = self.run_fixture(["value\texpected"] + [row] * 256)
         self.assertEqual(0, accepted.returncode, accepted.stderr)
         self.assertIn("PASS 256/256", accepted.stdout)
-        rejected = self.run_fixture(["value\\texpected"] + [row] * 257)
+        rejected = self.run_fixture(["value\texpected"] + [row] * 257)
         self.assertNotEqual(0, rejected.returncode)
         self.assertIn("too many fixture cases", rejected.stderr)
         self.assertNotIn("PASS", rejected.stdout)
@@ -68,7 +68,7 @@ class JavaScriptFixtureCoverageTests(unittest.TestCase):
     def test_oversized_fixture_is_rejected_before_evaluation(self):
         # 64 KiB is the maximum accepted fixture size; never print user data.
         oversized = "X" * 70000
-        result = self.run_fixture(["value\\texpected", oversized + "\\tFAIL"])
+        result = self.run_fixture(["value\texpected", oversized + "\tFAIL"])
         self.assertNotEqual(0, result.returncode)
         self.assertIn("fixture size or type invalid", result.stderr)
         self.assertNotIn("PASS", result.stdout)
