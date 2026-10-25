@@ -21,6 +21,42 @@ class JavaFixtureCoverageTests(unittest.TestCase):
     def rows(self):
         return (ROOT / 'utc_strict_oracle_cases.tsv').read_text().splitlines()
 
+    def test_explicit_fixture_is_independent_of_working_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shutil.copyfile(ROOT / 'UtcStrictOracle.java', root / 'UtcStrictOracle.java')
+            fixture = root / 'utc_strict_oracle_cases.tsv'
+            fixture.write_text('\n'.join(self.rows()) + '\n', encoding='utf8')
+            with tempfile.TemporaryDirectory() as outside:
+                result = subprocess.run(
+                    ['java', str(root / 'UtcStrictOracle.java'), str(fixture)],
+                    cwd=outside, capture_output=True, text=True, timeout=30)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertIn('PASS 20/20', result.stdout)
+
+    def test_explicit_missing_fixture_fails_even_if_default_exists(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shutil.copyfile(ROOT / 'UtcStrictOracle.java', root / 'UtcStrictOracle.java')
+            (root / 'utc_strict_oracle_cases.tsv').write_text(
+                '\n'.join(self.rows()) + '\n', encoding='utf8')
+            result = subprocess.run(
+                ['java', str(root / 'UtcStrictOracle.java'), str(root / 'missing.tsv')],
+                cwd=root, capture_output=True, text=True, timeout=30)
+            self.assertNotEqual(0, result.returncode)
+
+    def test_multiple_fixture_paths_are_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shutil.copyfile(ROOT / 'UtcStrictOracle.java', root / 'UtcStrictOracle.java')
+            (root / 'utc_strict_oracle_cases.tsv').write_text(
+                '\n'.join(self.rows()) + '\n', encoding='utf8')
+            result = subprocess.run(
+                ['java', str(root / 'UtcStrictOracle.java'),
+                 str(root / 'utc_strict_oracle_cases.tsv'), 'unused'],
+                cwd=root, capture_output=True, text=True, timeout=30)
+            self.assertNotEqual(0, result.returncode)
+
     def test_added_failing_case_cannot_be_silently_ignored(self):
         result = self.run_fixture(self.rows() + ['not-a-date\tPASS'])
         self.assertNotEqual(0, result.returncode, result.stdout)

@@ -14,7 +14,9 @@ public class UtcStrictOracle {
     } catch(Exception e) {return false;}
   }
   public static void main(String[] a)throws Exception{
-    var lines=Files.readAllLines(Paths.get("utc_strict_oracle_cases.tsv"));
+    if(a.length>1)throw new IllegalArgumentException("Expected at most one fixture path");
+    var fixture=a.length==1?Paths.get(a[0]):Paths.get("utc_strict_oracle_cases.tsv");
+    var lines=Files.readAllLines(fixture);
     if(lines.size()<2 || !lines.get(0).equals("value\texpected"))throw new IllegalArgumentException("Invalid or empty fixture");
     int n=0; for(String line:lines.subList(1,lines.size())){
       String[] fields=line.split("\t",-1);
