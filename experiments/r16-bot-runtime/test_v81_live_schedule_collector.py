@@ -166,6 +166,46 @@ class LiveCollectorTests(unittest.TestCase):
             self.assertNotIn("dummy-test-token", repr(args))
             self.assertFalse(proc.call_args.kwargs.get("shell", False))
 
+    def test_gh_http_error_classification_is_redacted(self):
+        endpoint = BASE + "/actions/runs?event=schedule&per_page=20"
+        class Proc:
+            returncode = 1
+            stdout = ""
+            stderr = ("gh: HTTP 403: Resource not accessible by integration "
+                      "token=DO_NOT_LEAK_TEST_SECRET")
+        with patch.dict("os.environ", {"GH_TOKEN": "another-secret"}), patch(
+                "v81_live_schedule_collector.subprocess.run",
+                return_value=Proc()) as proc:
+            with self.assertRaises(GitHubReadError) as error:
+                gh_read(endpoint)
+            self.assertEqual("GITHUB_API_HTTP_403", str(error.exception))
+            self.assertNotIn("DO_NOT_LEAK", str(error.exception))
+            self.assertNotIn("another-secret", repr(proc.call_args.args[0]))
+
+    def test_gh_network_error_and_unknown_error_are_redacted(self):
+        endpoint = BASE + "/actions/runs?event=schedule&per_page=20"
+        class Proc:
+            returncode = 1
+            stdout = ""
+            stderr = "lookup api.github.com: no such host"
+        with patch.dict("os.environ", {"GH_TOKEN": "dummy-test-token"}), patch(
+                "v81_live_schedule_collector.subprocess.run",
+                return_value=Proc()):
+            with self.assertRaisesRegex(
+                    GitHubReadError, "^GITHUB_API_NETWORK_UNAVAILABLE$"):
+                gh_read(endpoint)
+            Proc.stderr = "unclassified failure token=DO_NOT_LEAK_TEST_SECRET"
+            with self.assertRaisesRegex(GitHubReadError, "^GITHUB_API_GET_FAILED$"):
+                gh_read(endpoint)
+
+    def test_safe_http_failure_keeps_official_run_unverified(self):
+        def fetch(_):
+            raise GitHubReadError("GITHUB_API_HTTP_403")
+        result = collect(fetch, REPO, WORKFLOW, SOURCE)
+        self.assertEqual("UNVERIFIED", result["status"])
+        self.assertEqual("GITHUB_API_HTTP_403", result["reason"])
+        self.assertFalse(result["native_chatgpt_run_verified"])
+
     def test_api_failure_unverified(self):
         def fetch(_):
             raise GitHubReadError("GITHUB_API_GET_FAILED")

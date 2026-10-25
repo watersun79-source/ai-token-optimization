@@ -37,6 +37,21 @@ class GitHubReadError(Exception):
     pass
 
 
+def _safe_gh_failure(stderr):
+    """Only emit an allowlisted error category; never log provider stderr."""
+    if not isinstance(stderr, str):
+        return "GITHUB_API_GET_FAILED"
+    match = re.search(r"\bHTTP\s+(401|403|404|429|500|502|503|504)\b",
+                      stderr, flags=re.IGNORECASE)
+    if match:
+        return "GITHUB_API_HTTP_" + match.group(1)
+    if re.search(r"(?i)(could not resolve|no such host|network is unreachable|"
+                 r"temporary failure in name resolution|connection timed out)",
+                 stderr):
+        return "GITHUB_API_NETWORK_UNAVAILABLE"
+    return "GITHUB_API_GET_FAILED"
+
+
 def gh_read(endpoint):
     """Fetch allowlisted GitHub GET paths without exposing token/errors."""
     match = API_PATH.fullmatch(endpoint) if isinstance(endpoint, str) else None
@@ -52,7 +67,7 @@ def gh_read(endpoint):
     except (OSError, subprocess.TimeoutExpired, ValueError):
         raise GitHubReadError("GITHUB_API_UNAVAILABLE") from None
     if proc.returncode:
-        raise GitHubReadError("GITHUB_API_GET_FAILED")
+        raise GitHubReadError(_safe_gh_failure(proc.stderr))
     if len(proc.stdout) > LOG_LIMIT:
         raise GitHubReadError("GITHUB_RESPONSE_OVERSIZE")
     return proc.stdout
