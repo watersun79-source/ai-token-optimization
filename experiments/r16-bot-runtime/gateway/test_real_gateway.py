@@ -179,13 +179,44 @@ class GatewayTests(unittest.TestCase):
 
     def test_ci_metadata_is_only_partial(self):
         observed = []
+        head = 'a'*40
         def stub(path):
             observed.append(path)
-            return {'workflow_runs':[{'id':42,'conclusion':'success','status':'completed','head_sha':'abc'}]}
+            if '/branches/' in path: return {'commit': {'sha':head}}
+            return {'workflow_runs':[{'id':42,'conclusion':'success','status':'completed','head_sha':head}]}
         r=execute_role('ai-code-verification','CI 확인',network=True,fetch=stub)
         self.assertEqual(r['status'],'PARTIAL')
         self.assertEqual(r['evidence']['id'],42)
-        self.assertEqual(observed, ['/repos/'+REPO+'/actions/runs?branch=ai%2Fr16-v81-fast-full-ci-20261024&per_page=1'])
+        self.assertTrue(r['evidence']['head_match'])
+        self.assertEqual(observed, [
+            '/repos/'+REPO+'/branches/ai%2Fr16-v81-fast-full-ci-20261024',
+            '/repos/'+REPO+'/actions/runs?branch=ai%2Fr16-v81-fast-full-ci-20261024&per_page=1'])
+
+    def test_ci_stale_success_must_not_verify_current_head(self):
+        def stub(path):
+            if '/branches/' in path: return {'commit': {'sha':'a'*40}}
+            return {'workflow_runs':[{'id':43,'conclusion':'success','status':'completed','head_sha':'b'*40}]}
+        r=execute_role('ai-code-verification','CI 확인',network=True,fetch=stub)
+        self.assertEqual(r['status'],'UNVERIFIED')
+        self.assertFalse(r['evidence']['head_match'])
+
+    def test_ci_incomplete_or_failed_is_not_success(self):
+        for state, conclusion, expected in [
+            ('in_progress', None, 'UNVERIFIED'),
+            ('completed', 'failure', 'FAIL'),
+            ('completed', 'cancelled', 'FAIL'),
+            ('completed', None, 'UNVERIFIED'),
+        ]:
+            with self.subTest(state=state, conclusion=conclusion):
+                def stub(path):
+                    if '/branches/' in path: return {'commit': {'sha':'a'*40}}
+                    return {'workflow_runs':[{'id':44,'status':state,'conclusion':conclusion,'head_sha':'a'*40}]}
+                r=execute_role('ai-code-verification','CI 확인',network=True,fetch=stub)
+                self.assertEqual(r['status'],expected)
+
+    def test_ci_missing_current_sha_fails_closed(self):
+        r=execute_role('ai-code-verification','CI 확인',network=True,fetch=lambda _: {'commit': {'sha':'abc'}})
+        self.assertEqual(r['status'],'UNVERIFIED')
 
     def test_repo_info_success(self):
         r=execute_role('ai-github-management','브랜치',network=True,fetch=lambda x:{'full_name':REPO,'default_branch':'main'})
@@ -214,6 +245,7 @@ class GatewayTests(unittest.TestCase):
         with self.assertRaises(ValueError): github_get('/repos/'+REPO+'/actions/runs?per_page=100')
         with self.assertRaises(ValueError):
             github_get('/repos/'+REPO+'/actions/runs?branch=ai%2Ftop10-role-sandbox-2026-10-22&per_page=1')
+        with self.assertRaises(ValueError): github_get('/repos/'+REPO+'/branches/main')
 
     def test_github_read_uses_no_token(self):
         class Resp:

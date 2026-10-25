@@ -34,6 +34,7 @@ def github_get(path: str, *, request_fn: Callable[..., Any] = urlopen) -> dict:
     allowed = (
         rf"/repos/{re.escape(REPO)}/contents/{re.escape(MEMORY_PATH)}\?ref=ai%2Fcontinuation-readonly-audit-2026-10-18",
         rf"/repos/{re.escape(REPO)}/actions/runs\?branch=ai%2Fr16-v81-fast-full-ci-20261024&per_page=1",
+        rf"/repos/{re.escape(REPO)}/branches/ai%2Fr16-v81-fast-full-ci-20261024",
         rf"/repos/{re.escape(REPO)}",
     )
     oss_allowed = tuple(rf"/repos/{re.escape(repo)}" for repo in OSS_ALLOWLIST.values())
@@ -122,11 +123,29 @@ def execute_role(role: str, message: str, *, code: str = "", network: bool = Fal
         if not network:
             return _result(role,"BLOCKED",note="Run with --allow-github-read to inspect last remote CI metadata")
         try:
-            d=fetch(f"/repos/{REPO}/actions/runs?branch=ai%2Fr16-v81-fast-full-ci-20261024&per_page=1")
-            runs=d.get("workflow_runs") or []
-            if not runs: return _result(role,"UNVERIFIED",note="No matching CI run metadata")
-            x=runs[0]
-            return _result(role,"PARTIAL",evidence={"id":x.get("id"),"status":x.get("status"),"conclusion":x.get("conclusion"),"head_sha":x.get("head_sha"),"html_url":x.get("html_url")},note="Run metadata only; not independently verified CI job logs")
+            branch=fetch(f"/repos/{REPO}/branches/ai%2Fr16-v81-fast-full-ci-20261024")
+            current_sha=(branch.get("commit") or {}).get("sha")
+            if not isinstance(current_sha,str) or not re.fullmatch(r"[0-9a-f]{40}",current_sha):
+                return _result(role,"UNVERIFIED",note="Current branch HEAD SHA unavailable or invalid")
+            data=fetch(f"/repos/{REPO}/actions/runs?branch=ai%2Fr16-v81-fast-full-ci-20261024&per_page=1")
+            runs=data.get("workflow_runs")
+            if not isinstance(runs,list) or not runs or not isinstance(runs[0],dict):
+                return _result(role,"UNVERIFIED",note="No valid current-branch CI run metadata")
+            run=runs[0]
+            receipt={"id":run.get("id"),"status":run.get("status"),
+                     "conclusion":run.get("conclusion"),"head_sha":run.get("head_sha"),
+                     "branch_head_sha":current_sha,"html_url":run.get("html_url"),
+                     "head_match":run.get("head_sha")==current_sha,
+                     "source":"GITHUB_RUN_METADATA_ONLY_NO_JOB_LOGS"}
+            if not receipt["head_match"]:
+                return _result(role,"UNVERIFIED",evidence=receipt,note="Newest CI run is for a stale HEAD; no current SHA result")
+            if run.get("status")!="completed":
+                return _result(role,"UNVERIFIED",evidence=receipt,note="Current HEAD CI has not completed")
+            if run.get("conclusion")=="success":
+                return _result(role,"PARTIAL",evidence=receipt,note="Current HEAD CI metadata succeeded; job/raw logs still unverified")
+            if run.get("conclusion") in ("failure","timed_out","cancelled"):
+                return _result(role,"FAIL",evidence=receipt,note="Current HEAD CI failed or cancelled; inspect job/raw logs")
+            return _result(role,"UNVERIFIED",evidence=receipt,note="Current HEAD CI conclusion is not a proven success")
         except Exception as exc:
             return _result(role,"BLOCKED",note="CI metadata read failed: "+type(exc).__name__)
     if role == "ai-github-management":
