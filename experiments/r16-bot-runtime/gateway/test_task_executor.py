@@ -94,6 +94,24 @@ class TaskExecutorTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "unclosed code fence"):
                     compact(text)
 
+    def test_repeated_markdown_headings_preserved(self):
+        message = "# Part A\n## Result\n# Part B\n## Result"
+        report = compact(message)
+        self.assertEqual(report["output"], message)
+        self.assertEqual(report["duplicate_lines_removed"], 0)
+
+    def test_repeated_markdown_tasks_and_quotes_preserved(self):
+        message = "- [ ] verify\n- [ ] verify\n1. run\n1. run\n> note\n> note"
+        report = compact(message)
+        self.assertEqual(report["output"], message)
+        self.assertEqual(report["duplicate_lines_removed"], 0)
+
+    def test_repeated_markdown_table_rows_preserved(self):
+        message = "| Key | Value |\n| item | PASS |\n| item | PASS |"
+        report = compact(message)
+        self.assertEqual(report["output"], message)
+        self.assertEqual(report["duplicate_lines_removed"], 0)
+
     def test_cli_real_execution(self):
         p=subprocess.run([sys.executable,str(Path(__file__).with_name("task_executor.py")),"--stdin"],
                          input="one\ntwo\none\n",text=True,capture_output=True,timeout=3)

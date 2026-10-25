@@ -13,6 +13,8 @@ SECRET = re.compile(
 )
 # Markdown fence opener/closer: 0..3 spaces, >=3 matching backticks or tildes.
 FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
+# Structural Markdown tokens are semantic blocks, not redundant prose.
+STRUCTURAL = re.compile(r"^ {0,3}(?:#{1,6}(?:[ \t]|$)|[-+*][ \t]|\d{1,9}[.)][ \t]|>|[|]|(?:[-*_][ \t]*){3,}$)")
 
 def compact(text):
     if not isinstance(text, str) or not text.strip() or len(text) > MAX_INPUT:
@@ -42,6 +44,10 @@ def compact(text):
         if line.startswith(("    ", "\t")):
             # Markdown indented code and its repeated side effects are not prose.
             # Never deduplicate or normalize executable lines.
+            kept.append(line)
+            continue
+        if STRUCTURAL.match(line):
+            # Repeated headings, tasks, table rows or quotations must survive.
             kept.append(line)
             continue
         normalized = re.sub(r"\s+", " ", line).strip()
