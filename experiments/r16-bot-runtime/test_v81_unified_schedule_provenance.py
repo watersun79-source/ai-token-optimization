@@ -15,7 +15,7 @@ def receipt():
     raw = {
         "format": "V81_OFFLINE_UNIFIED_EVIDENCE_V1",
         "scope": "ISOLATED_LOCAL_OFFLINE_NOT_NATIVE_PLATFORM",
-        "status": "PASS", "languages": COUNTS, "language_total": 83,
+        "status": "PASS", "languages": dict(COUNTS), "language_total": 83,
         "local_swarm": {
             "fast_pass": 20, "full_pass": 100, "groups": 10, "worker_cap": 4,
             "independent_serial_oracle_match": True, "input_sha256": "a" * 64,
@@ -126,6 +126,7 @@ class UnifiedScheduledProofTests(unittest.TestCase):
             x, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
         _, _, log = build(rec=x)
         self.assertEqual("FAIL", self.verify(log=log)["status"])
+        self.assertEqual(20, COUNTS["c"])  # Shared fixture constants stay immutable.
 
     def test_environment_run_link_required(self):
         x = receipt()
