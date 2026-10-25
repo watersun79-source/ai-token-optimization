@@ -14,7 +14,17 @@ def compact(text):
     if SECRET.search(text):
         raise ValueError("suspected credential; refuse processing")
     seen, kept, removed = set(), [], 0
+    in_code = False
     for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_code = not in_code
+            kept.append(line)
+            continue
+        if in_code:
+            # Code indentation, blank lines and repeated statements carry meaning.
+            kept.append(line)
+            continue
         normalized = re.sub(r"\s+", " ", line).strip()
         if not normalized:
             continue
@@ -23,6 +33,8 @@ def compact(text):
             continue
         seen.add(normalized)
         kept.append(normalized)
+    if in_code:
+        raise ValueError("unclosed code fence; refuse lossy compaction")
     output = "\n".join(kept)
     original_bytes = len(text.encode("utf-8"))
     output_bytes = len(output.encode("utf-8"))
