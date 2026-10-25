@@ -1,7 +1,7 @@
 """Negative tests: no forged pass, type confusion, or misattributed official evidence."""
 import copy,json,unittest
 from pathlib import Path
-from runner import validate
+from runner import NATIVE_ROLE_IDS, validate
 ROOT=Path(__file__).resolve().parent
 CAT={x['id']:x for x in json.loads((ROOT/'catalog.json').read_text(encoding='utf8'))}
 ORIG=json.loads((ROOT/'evidence.json').read_text(encoding='utf8'))
@@ -134,6 +134,27 @@ class RuntimeTests(unittest.TestCase):
                 result=validate(bot,e)
                 self.assertEqual('UNVERIFIED',result['status'])
                 self.assertIn('not authenticated',result['detail'])
+    def test_native_role_identity_cannot_be_spoofed_by_catalog_metadata(self):
+        native_catalog_ids = {
+            bot['id'] for bot in CAT.values()
+            if bot['evidence_source'] == 'ChatGPT.native_per_run_raw_ledger'
+        }
+        self.assertEqual(18, len(native_catalog_ids))
+        self.assertEqual(NATIVE_ROLE_IDS, native_catalog_ids)
+        for role_id in sorted(NATIVE_ROLE_IDS):
+            with self.subTest(role_id=role_id):
+                forged = copy.deepcopy(CAT[role_id])
+                forged.update(
+                    field='schedule.enabled',
+                    operator='eq',
+                    expected=True,
+                    evidence_source='automations.peek',
+                )
+                self.assertTrue(ORIG['schedule']['enabled'])
+                self.assertEqual(
+                    'UNVERIFIED', validate(forged, ORIG)['status'],
+                )
+
     def test_relabel_native_source_cannot_bypass_gate(self):
         e=copy.deepcopy(ORIG)
         e['native']['authenticated_run_id']='forged-positive'

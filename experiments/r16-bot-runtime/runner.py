@@ -14,6 +14,13 @@ import re
 from typing import Any
 ROOT = Path(__file__).resolve().parent
 _MISSING = object()
+# Pin official native-evidence roles by identity, not mutable catalog metadata.
+# The offline runner cannot authenticate a real ChatGPT scheduled execution.
+NATIVE_ROLE_IDS = frozenset(
+    [f'E{i:02d}' for i in range(1, 11)]
+    + [f'L{i:02d}' for i in range(6, 11)]
+    + [f'A{i:02d}' for i in range(7, 10)]
+)
 RECEIPT_INPUT_FILES = (
     'runner.py', 'measure_runtime.py', 'catalog.json', 'test_runtime.py',
     'UtcStrictOracle.java', 'utc_strict_oracle.js', 'utc_strict_oracle_cases.tsv',
@@ -114,7 +121,8 @@ def validate(bot:dict, evidence:dict)->dict:
     # supplied native.* fields to masquerade as platform-authenticated records.
     # A trusted, platform-backed adapter needs its own attestation verification
     # before any of these gates can be considered passed.
-    if bot['field'].startswith('native.') or bot['evidence_source'] == 'ChatGPT.native_per_run_raw_ledger':
+    if (bot['id'] in NATIVE_ROLE_IDS or bot['field'].startswith('native.')
+            or bot['evidence_source'] == 'ChatGPT.native_per_run_raw_ledger'):
         result['detail'] = 'original scheduler tool-call ledger not authenticated by this offline runner'
         return result
     if v is _MISSING or v is None:
