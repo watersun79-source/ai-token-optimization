@@ -26,6 +26,39 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual("DIRECT_CHAT", report["route"])
         self.assertEqual([], report["workers"])
 
+    def test_explicit_v81_continuation_runs_bounded_queue_without_flag(self):
+        report = run_message("AI BOT v8.1 계속 진행")
+        self.assertEqual("SPECIALISTS", report["route"])
+        self.assertEqual(["ai-operator-continuation", "ai-scheduled-audit"],
+                         report["selected_roles"])
+        self.assertEqual("PARTIAL", report["status"])
+        worker = report["workers"][0]
+        self.assertEqual("DONE", worker["status"])
+        self.assertEqual("PASS", worker["evidence"]["status"])
+        self.assertFalse(worker["evidence"]["native_chatgpt_run_verified"])
+        self.assertEqual("UNVERIFIED", report["workers"][1]["status"])
+        self.assertEqual(0, report["production_writes"])
+        self.assertEqual(0, report["external_llm_calls"])
+
+    def test_similar_version_and_bare_commands_cannot_start_queue(self):
+        from auto_dispatch import dispatch
+        for message in ("계속 진행", "AI BOT v8.10 계속 진행",
+                        "AI BOT v8.1.2 계속 진행", "다른 작업 계속 진행"):
+            with self.subTest(message=message):
+                self.assertNotIn("ai-operator-continuation",
+                                 dispatch(message)["roles"])
+
+    def test_explicit_v81_continuation_cli_needs_no_flag(self):
+        import subprocess
+        proc = subprocess.run(
+            [sys.executable, str(ROOT / "gateway" / "real_gateway.py"),
+             "--message", "AI BOT v8.1 계속 진행"],
+            capture_output=True, text=True, timeout=8, check=True)
+        report = json.loads(proc.stdout)
+        self.assertEqual("PARTIAL", report["status"])
+        self.assertEqual("DONE", report["workers"][0]["status"])
+        self.assertFalse(report["workers"][0]["evidence"]["native_chatgpt_run_verified"])
+
     def test_project_scoped_continuation_runs_real_local_queue(self):
         report = run_message("이제는 실제로 실행 시켜. 진행. 계속 진행.",
                              project_context=True)

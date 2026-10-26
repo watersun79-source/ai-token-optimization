@@ -41,10 +41,13 @@ def dispatch(message: str, max_roles: int = 3, *, project_context: bool = False)
     candidates = sorted((role for role, hits in matches.items() if hits and not direct),
                         key=lambda role: (-len(matches[role]), list(ROLE_TRIGGERS).index(role)))
     generic_project = any(x in normalized for x in PROJECT_CONTEXT)
-    if project_context and not direct and CONTINUE_INTENT.search(normalized):
+    # An explicit v8.1 project label is sufficient to scope a bounded, offline
+    # continuation. Bare commands stay ordinary chat, not a global hook.
+    explicit_v81 = re.search(r"(?<!\\w)ai\\s*(?:bot|봇)\\s*v8\\.1(?![\\w.])", normalized) is not None
+    if (project_context or explicit_v81) and not direct and CONTINUE_INTENT.search(normalized):
         # Run only an approved offline queued task; native task stays unverified.
         candidates = list(dict.fromkeys(["ai-operator-continuation", "ai-scheduled-audit"] + candidates))
-        matches["ai-operator-continuation"] = ["explicit_project_context+continue"]
+        matches["ai-operator-continuation"] = ["approved_project_scope+continue"]
         if not matches["ai-scheduled-audit"]:
             matches["ai-scheduled-audit"] = ["native_provenance_unverified"]
     route = "SPECIALISTS" if candidates else "THREE_ROLE_WORKFLOW" if generic_project and not direct else "DIRECT_CHAT"
