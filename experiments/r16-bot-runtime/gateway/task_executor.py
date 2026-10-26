@@ -37,7 +37,7 @@ ASSIGNMENT_LINE = re.compile(
 STRUCTURAL = re.compile(r"^ {0,3}(?:#{1,6}(?:[ \t]|$)|[-+*][ \t]|\d{1,9}[.)][ \t]|>|[|]|(?:[-*_][ \t]*){3,}$)")
 
 # Setext headings use the following underline: repetitions are structural, not prose.
-SETEXT_UNDERLINE = re.compile(r"^ {0,3}(?:=+|-+)[ \\t]*$")
+SETEXT_UNDERLINE = re.compile(r"^ {0,3}(?:=+|-+)[ \t]*$")
 
 def compact(text):
     if not isinstance(text, str) or not text.strip() or len(text) > MAX_INPUT:

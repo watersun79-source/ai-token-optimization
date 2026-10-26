@@ -228,13 +228,13 @@ class TaskExecutorTests(unittest.TestCase):
                     compact(text)
 
     def test_repeated_setext_headings_preserved_without_losing_prose_dedup(self):
-        message = "note\\nnote\\nTopic\\n=====\\nfirst\\nTopic\\n=====\\nsecond"
+        message = "note\nnote\nTopic\n=====\nfirst\nTopic\n=====\nsecond"
         report = compact(message)
-        self.assertEqual(report["output"], "note\\nTopic\\n=====\\nfirst\\nTopic\\n=====\\nsecond")
+        self.assertEqual(report["output"], "note\nTopic\n=====\nfirst\nTopic\n=====\nsecond")
         self.assertEqual(report["duplicate_lines_removed"], 1)
 
     def test_repeated_dash_setext_titles_preserved(self):
-        message = "Section\\n---\\nSection\\n---"
+        message = "Section\n---\nSection\n---"
         self.assertEqual(compact(message)["output"], message)
 
     def test_repeated_markdown_headings_preserved(self):
