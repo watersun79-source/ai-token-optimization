@@ -162,7 +162,7 @@ def validate(bot:dict, evidence:dict)->dict:
         elif op=='rrule_part': valid=strict_hourly_rrule_part(v, expect)
         elif op=='starts': valid=isinstance(v,str) and v.startswith(expect)
         elif op=='git_sha': valid=isinstance(v,str) and re.fullmatch('[0-9a-f]{40}',v) is not None
-        elif op=='slack_ts': valid=isinstance(v,str) and re.fullmatch(r'\d{10}\.\d{6}',v) is not None
+        elif op=='slack_ts': valid=isinstance(v,str) and re.fullmatch(r'[0-9]{10}\.[0-9]{6}',v) is not None
         elif op=='positive_id': valid=type(v) is int and v > 0
         elif op=='nonnegative_count': valid=type(v) is int and v >= 0
         elif op=='ci_url_run_id':

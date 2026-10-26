@@ -60,6 +60,15 @@ class RuntimeTests(unittest.TestCase):
     def test_malformed_slack_ts_rejected(self):
         e=copy.deepcopy(ORIG);e['slack']['parent_ts']='abcd'
         self.assertEqual('FAIL',validate(CAT['L03'],e)['status'])
+    def test_slack_timestamp_rejects_unicode_digit_spoofing(self):
+        # Python regex \\d accepts Unicode digits, but Slack timestamps are ASCII.
+        for timestamp in ('١٢٣٤٥٦٧٨٩٠.١٢٣٤٥٦', '１２３４５６７８９０.１２３４５６'):
+            with self.subTest(timestamp_type='non_ascii'):
+                e=copy.deepcopy(ORIG);e['slack']['parent_ts']=timestamp
+                self.assertEqual('FAIL', validate(CAT['L03'],e)['status'])
+        e=copy.deepcopy(ORIG);e['slack']['parent_ts']='1234567890.123456'
+        self.assertEqual('PASS', validate(CAT['L03'],e)['status'])
+
     def test_external_model_calls_nonzero_detected(self):
         e=copy.deepcopy(ORIG);e['package']['provider_model_calls']=1
         self.assertEqual('FAIL',validate(CAT['C02'],e)['status'])
