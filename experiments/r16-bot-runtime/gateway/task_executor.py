@@ -36,6 +36,9 @@ ASSIGNMENT_LINE = re.compile(
 # Structural Markdown tokens are semantic blocks, not redundant prose.
 STRUCTURAL = re.compile(r"^ {0,3}(?:#{1,6}(?:[ \t]|$)|[-+*][ \t]|\d{1,9}[.)][ \t]|>|[|]|(?:[-*_][ \t]*){3,}$)")
 
+# Setext headings use the following underline: repetitions are structural, not prose.
+SETEXT_UNDERLINE = re.compile(r"^ {0,3}(?:=+|-+)[ \\t]*$")
+
 def compact(text):
     if not isinstance(text, str) or not text.strip() or len(text) > MAX_INPUT:
         raise ValueError("input must contain 1..4000 characters")
@@ -72,6 +75,12 @@ def compact(text):
         if line.startswith(("    ", "\t")):
             # Markdown indented code and its repeated side effects are not prose.
             # Never deduplicate or normalize executable lines.
+            kept.append(line)
+            continue
+        if SETEXT_UNDERLINE.match(line) or (
+            index + 1 < len(lines) and SETEXT_UNDERLINE.match(lines[index + 1])
+        ):
+            # Preserve Setext titles and underlines even when repeated.
             kept.append(line)
             continue
         if STRUCTURAL.match(line):
