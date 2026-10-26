@@ -1,6 +1,6 @@
 {
   "task_id": "r16-20261027-execute-real-queue",
   "mode": "bounded_offline_optimize",
-  "message": "AI BOT v8.1 격리 FAST 실행\n목표: 기존 실행기에서 SHA 연계 입력을 실제 처리\n같은 목표 중복 입력 제거\n같은 목표 중복 입력 제거\n원본 private ZIP 내용 업로드 금지\n운영 main, 정각 예약, Slack, Activepieces 변경 금지\nGitHub 오프라인 작업과 ChatGPT native 실행을 구분\n완료 근거: 실제 worker 로그와 SHA로 판정",
-  "expected_input_sha256": "d862740e7bac70780486870bb725a2def2a2d12ce134932d306ed85c888d996b"
+  "message": "토큰 최적화 실행\n같은 문장 반복을 하나로 정리\n같은 문장 반복을 하나로 정리\n입력과 출력 SHA의 실제 차이를 기록\n기존 보호 설정 그대로 유지\n실행 결과는 오프라인 작업으로만 분류",
+  "expected_input_sha256": "f2e584e42b18c1e0b11d72b472098c6c996a4a38462682e3acd5c90124ef00b8"
 }
