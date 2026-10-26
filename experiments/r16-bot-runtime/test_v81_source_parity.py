@@ -10,6 +10,14 @@ import v81_source_parity as parity
 
 
 class SourceParityTests(unittest.TestCase):
+    def test_oversized_public_source_fails_closed(self):
+        # Public compare() must not read an unbounded source file.
+        with TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "runner.py").write_bytes(b"x" * (4 * 1024 * 1024 + 1))
+            with self.assertRaisesRegex(ValueError, "SOURCE_FILE_SIZE_LIMIT"):
+                parity.compare(root)
+
     def test_original_zip_sha_is_bound(self):
         self.assertEqual(64, len(parity.LOCAL_V81_ZIP_SHA256))
         self.assertEqual(10, len(parity.ORIGINAL_SHA256))
