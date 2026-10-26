@@ -109,11 +109,6 @@ jobs:
         run: python3 -m unittest -q test_v81_unified_schedule_provenance
       - name: Verify live schedule collector with mocked API negative cases
         run: python3 -m unittest -q test_v81_live_schedule_collector
-      - name: Read official GitHub schedule API and correlate unified evidence (read-only)
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 v81_live_schedule_collector.py --repository "$GITHUB_REPOSITORY" --protected-source-sha a551e6ecc290f625432aba7ce2f7c23cc6117a30
       - name: Verify self-reported Activepieces checkpoint chronology
         run: python3 -m unittest -q test_v81_activepieces_checkpoint_audit
       - name: Verify scheduled run evidence reconciler rejects non-ASCII Slack timestamps
@@ -159,6 +154,13 @@ jobs:
         run: python3 -m unittest -q test_v81_fast_auto
       - name: Measure fast 20-rule audit on hosted runner
         run: python3 v81_split_bench.py --mode audit --repeats 150
+      # Keep fail-closed protected-pin drift detection, but finish offline-only checks first.
+      # No production calls or native ChatGPT attestation occur in earlier steps.
+      - name: Read official GitHub schedule API and correlate unified evidence (read-only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 v81_live_schedule_collector.py --repository "$GITHUB_REPOSITORY" --protected-source-sha a551e6ecc290f625432aba7ce2f7c23cc6117a30
 
   full-regression:
     name: Full regression - 100 rules + cross-language tests
