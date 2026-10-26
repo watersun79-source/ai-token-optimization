@@ -1,6 +1,7 @@
 """One-shot SHA-bound queued task: actual offline Python worker, no secrets or network."""
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 
@@ -8,6 +9,36 @@ from real_gateway import run_message
 
 QUEUE_PATH = Path(__file__).with_name("task_request.json")
 REQUIRED = {"task_id", "mode", "message", "expected_input_sha256"}
+
+
+def _append_job_summary(result: dict) -> bool:
+    """Record bounded verified output in this GitHub Actions job, never user text."""
+    target = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not target:
+        return False
+    task = result.get("task_id")
+    before, after = result.get("input_sha256"), result.get("output_sha256")
+    saved, removed = result.get("bytes_saved"), result.get("duplicate_lines_removed")
+    if (result.get("status") != "PASS" or
+        not isinstance(task, str) or not re.fullmatch(r"r16-[0-9a-z-]{8,56}", task) or
+        not all(isinstance(s, str) and re.fullmatch(r"[0-9a-f]{64}", s) for s in (before, after)) or
+        type(saved) is not int or saved < 0 or
+        type(removed) is not int or removed < 0 or
+        result.get("native_chatgpt_run_verified") is not False):
+        raise ValueError("invalid bounded task receipt")
+    lines = [
+        "### Real isolated Python task (not ChatGPT native run)",
+        "- Task ID: `" + task + "`",
+        "- Input SHA-256: `" + before + "`",
+        "- Output SHA-256: `" + after + "`",
+        "- Bytes saved: " + str(saved),
+        "- Duplicate lines removed: " + str(removed),
+        "- ChatGPT native unattended run: UNVERIFIED",
+        "",
+    ]
+    with open(target, "a", encoding="utf-8") as stream:
+        stream.write("\n".join(lines) + "\n")
+    return True
 
 
 def execute(request: dict) -> dict:
@@ -64,6 +95,12 @@ def main() -> int:
         print('R16_REAL_QUEUED_TASK=' + json.dumps({
             "status": "BLOCKED", "native_chatgpt_run_verified": False
         }, sort_keys=True))
+        return 2
+    try:
+        _append_job_summary(result)
+    except (OSError, ValueError):
+        print('R16_REAL_QUEUED_TASK=' + json.dumps({'status': 'BLOCKED',
+            'reason': 'JOB_SUMMARY_RECORD_FAILED', 'native_chatgpt_run_verified': False}, sort_keys=True))
         return 2
     print('R16_REAL_QUEUED_TASK=' + json.dumps(result, sort_keys=True))
     return 0
