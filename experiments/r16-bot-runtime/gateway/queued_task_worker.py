@@ -11,6 +11,27 @@ QUEUE_PATH = Path(__file__).with_name("task_request.json")
 REQUIRED = {"task_id", "mode", "message", "expected_input_sha256"}
 
 
+def _github_runner_provenance_lines() -> list[str]:
+    """Only runner-reported public run metadata; not a ChatGPT native record."""
+    repo = "watersun79-source/ai-token-optimization"
+    ref = "refs/heads/ai/r16-v81-fast-full-ci-20261024"
+    run_id = os.environ.get("GITHUB_RUN_ID", "")
+    checkout = os.environ.get("GITHUB_SHA", "")
+    if (os.environ.get("GITHUB_ACTIONS") != "true"
+        or os.environ.get("GITHUB_REPOSITORY") != repo
+        or os.environ.get("GITHUB_REF") != ref
+        or os.environ.get("GITHUB_EVENT_NAME") != "push"
+        or re.fullmatch(r"[1-9][0-9]{0,19}", run_id) is None
+        or re.fullmatch(r"[0-9a-f]{40}", checkout) is None):
+        return ["- GitHub Actions runner context: UNVERIFIED"]
+    return [
+        "- GitHub Actions runner-reported run: https://github.com/" + repo + "/actions/runs/" + run_id,
+        "- GitHub Actions runner-reported checkout SHA: `" + checkout + "`",
+        "- GitHub Actions runner-reported trigger: `push`",
+        "- Runner context is NOT official ChatGPT native scheduled-run proof",
+    ]
+
+
 def _append_job_summary(result: dict) -> bool:
     """Record bounded verified output in this GitHub Actions job, never user text."""
     target = os.environ.get("GITHUB_STEP_SUMMARY")
@@ -36,6 +57,7 @@ def _append_job_summary(result: dict) -> bool:
         "- ChatGPT native unattended run: UNVERIFIED",
         "",
     ]
+    lines.extend(_github_runner_provenance_lines())
     with open(target, "a", encoding="utf-8") as stream:
         stream.write("\n".join(lines) + "\n")
     return True
