@@ -238,7 +238,7 @@ class TaskExecutorTests(unittest.TestCase):
         self.assertEqual(compact(message)["output"], message)
 
     def test_markdown_double_space_hard_break_preserves_repeated_lines(self):
-        message = "repeat  \\nrepeat  \\nnext"
+        message = "repeat  \nrepeat  \nnext"
         report = compact(message)
         self.assertEqual(report["output"], message)
         self.assertEqual(report["duplicate_lines_removed"], 0)
@@ -246,15 +246,15 @@ class TaskExecutorTests(unittest.TestCase):
 
     def test_markdown_backslash_hard_break_preserves_repeated_lines(self):
         line = "repeat" + chr(92)
-        message = "\\n".join((line, line, "next"))
+        message = "\n".join((line, line, "next"))
         report = compact(message)
         self.assertEqual(report["output"], message)
         self.assertEqual(report["duplicate_lines_removed"], 0)
 
     def test_hard_break_does_not_disable_plain_prose_dedup(self):
-        message = "first  \\nplain\\nplain"
+        message = "first  \nplain\nplain"
         report = compact(message)
-        self.assertEqual(report["output"], "first  \\nplain")
+        self.assertEqual(report["output"], "first  \nplain")
         self.assertEqual(report["duplicate_lines_removed"], 1)
 
     def test_repeated_markdown_headings_preserved(self):
