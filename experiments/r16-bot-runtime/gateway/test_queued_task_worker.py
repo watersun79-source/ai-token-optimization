@@ -1,9 +1,13 @@
 """Regression for the SHA-bound user-requested real GitHub runner task."""
 import hashlib
 import json
+import os
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 import unittest
 
-from queued_task_worker import execute
+from queued_task_worker import execute, _append_job_summary
 
 
 class QueuedTaskTests(unittest.TestCase):
@@ -27,6 +31,34 @@ class QueuedTaskTests(unittest.TestCase):
         self.assertEqual(output["external_model_calls"], 0)
         self.assertEqual(output["production_writes"], 0)
         self.assertFalse(output["native_chatgpt_run_verified"])
+
+    def test_approved_receipt_is_recorded_without_input_text(self):
+        receipt = execute(self.request)
+        with TemporaryDirectory() as d:
+            summary = Path(d) / "ci-summary.md"
+            with patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": str(summary)}):
+                self.assertTrue(_append_job_summary(receipt))
+            content = summary.read_text(encoding="utf-8")
+        self.assertIn(receipt["task_id"], content)
+        self.assertIn(receipt["input_sha256"], content)
+        self.assertIn(receipt["output_sha256"], content)
+        self.assertIn("ChatGPT native unattended run: UNVERIFIED", content)
+        self.assertNotIn(self.request["message"], content)
+
+    def test_invalid_or_unauthenticated_receipt_does_not_write_summary(self):
+        receipt = execute(self.request)
+        with TemporaryDirectory() as d:
+            summary = Path(d) / "ci-summary.md"
+            with patch.dict(os.environ, {"GITHUB_STEP_SUMMARY": str(summary)}):
+                for altered in (
+                    {**receipt, "status": "FAIL"},
+                    {**receipt, "task_id": "r16-bad-`text"},
+                    {**receipt, "native_chatgpt_run_verified": True},
+                    {**receipt, "bytes_saved": -1},
+                ):
+                    with self.subTest(changed_keys=altered), self.assertRaises(ValueError):
+                        _append_job_summary(altered)
+            self.assertFalse(summary.exists())
 
     def test_digest_tampering_is_blocked(self):
         self.request["expected_input_sha256"] = "0" * 64
