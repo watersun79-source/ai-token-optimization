@@ -160,7 +160,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python3 v81_live_schedule_collector.py --repository "$GITHUB_REPOSITORY" --protected-source-sha a551e6ecc290f625432aba7ce2f7c23cc6117a30
+          python3 v81_live_schedule_collector.py --repository "$GITHUB_REPOSITORY" --protected-source-sha a551e6ecc290f625432aba7ce2f7c23cc6117a30 --report-observed-schedule
 
   full-regression:
     name: Full regression - 100 rules + cross-language tests

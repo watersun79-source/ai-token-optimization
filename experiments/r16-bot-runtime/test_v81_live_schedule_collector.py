@@ -4,7 +4,7 @@ import base64
 import json
 import unittest
 from io import StringIO
-from contextlib import redirect_stdout
+from contextlib import redirect_stdout, redirect_stderr
 from unittest.mock import patch
 
 from test_v81_unified_schedule_provenance import build, WORKFLOW, SOURCE
@@ -492,6 +492,71 @@ class LiveCollectorTests(unittest.TestCase):
         self.assertTrue(result["official_github_api_get_attempted"])
         self.assertFalse(result["native_chatgpt_run_verified"])
         self.assertEqual(2, len(seen))
+
+    def test_cli_drift_reports_observed_schedule_without_approving_pin(self):
+        fetch, seen = fake_api()
+        argv = ["v81_live_schedule_collector.py", "--repository", REPO,
+                "--protected-source-sha", "a551e6ecc290f625432aba7ce2f7c23cc6117a30",
+                "--report-observed-schedule"]
+        with patch("sys.argv", argv), patch(
+                "v81_live_schedule_collector.gh_read", side_effect=fetch), \
+                redirect_stdout(StringIO()) as out, redirect_stderr(StringIO()):
+            try:
+                code = main()
+            except SystemExit as exc:
+                code = exc.code
+        self.assertEqual(1, code)
+        result = json.loads(out.getvalue().split("R16_V81_LIVE_SCHEDULE_CHECK=", 1)[1])
+        self.assertEqual("FAIL", result["protected_pin_policy"])
+        self.assertEqual("PROTECTED_PIN_DRIFT", result["reason"])
+        observed = result["observed_schedule"]
+        self.assertEqual("PASS", observed["status"])
+        self.assertEqual(SOURCE, observed["observed_source_sha"])
+        self.assertEqual(WORKFLOW, observed["observed_workflow_sha"])
+        self.assertEqual("OPERATIONAL_EVIDENCE_NOT_PROTECTION_APPROVAL", observed["scope"])
+        self.assertFalse(result["native_chatgpt_run_verified"])
+        self.assertFalse(observed["native_chatgpt_run_verified"])
+        self.assertEqual(5, len(seen))
+
+    def test_cli_observation_preserves_failed_or_unverified_schedule(self):
+        for mode, bad_log, status in (("job_failed", False, "FAIL"),
+                                      ("ok", True, "UNVERIFIED"),
+                                      ("running", False, "UNVERIFIED")):
+            with self.subTest(mode=mode, bad_log=bad_log):
+                fetch, seen = fake_api(mode=mode, bad_log=bad_log)
+                argv = ["v81_live_schedule_collector.py", "--repository", REPO,
+                        "--protected-source-sha", "a551e6ecc290f625432aba7ce2f7c23cc6117a30",
+                        "--report-observed-schedule"]
+                with patch("sys.argv", argv), patch(
+                        "v81_live_schedule_collector.gh_read", side_effect=fetch), \
+                        redirect_stdout(StringIO()) as out, redirect_stderr(StringIO()):
+                    try:
+                        code = main()
+                    except SystemExit as exc:
+                        code = exc.code
+                self.assertEqual(1, code)
+                result = json.loads(out.getvalue().split("R16_V81_LIVE_SCHEDULE_CHECK=", 1)[1])
+                self.assertEqual("FAIL", result["protected_pin_policy"])
+                self.assertEqual(status, result["observed_schedule"]["status"])
+                self.assertTrue(result["observed_schedule"]["official_github_api_get_attempted"])
+                self.assertFalse(result["same_run_github_slack_proven"])
+
+    def test_cli_observation_does_not_duplicate_reads_for_matching_pin(self):
+        fetch, seen = fake_api()
+        argv = ["v81_live_schedule_collector.py", "--repository", REPO,
+                "--protected-source-sha", SOURCE, "--report-observed-schedule"]
+        with patch("sys.argv", argv), patch(
+                "v81_live_schedule_collector.gh_read", side_effect=fetch), \
+                redirect_stdout(StringIO()) as out, redirect_stderr(StringIO()):
+            try:
+                code = main()
+            except SystemExit as exc:
+                code = exc.code
+        self.assertEqual(0, code)
+        result = json.loads(out.getvalue().split("R16_V81_LIVE_SCHEDULE_CHECK=", 1)[1])
+        self.assertEqual("PASS", result["status"])
+        self.assertEqual(5, len(seen))
+        self.assertNotIn("observed_schedule", result)
 
     def test_explicit_pair_cannot_bypass_protected_main_guard(self):
         fetch, seen = fake_api()

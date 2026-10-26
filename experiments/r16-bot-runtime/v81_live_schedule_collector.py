@@ -248,6 +248,8 @@ def main():
     parser.add_argument("--expected-source-sha", default=None)
     parser.add_argument("--protected-source-sha", default=None,
                         help="fail closed if official main checkout differs from approved pin")
+    parser.add_argument("--report-observed-schedule", action="store_true",
+                        help="also inspect observed schedule on pin drift; never approve the pin")
     args = parser.parse_args()
     completed_gets = []
     def observed_get(path):
@@ -280,6 +282,20 @@ def main():
                     observed_source_sha=exc.observed,
                     main_workflow_sha=exc.main_sha,
                 )
+                if args.report_observed_schedule:
+                    # Observation is read-only evidence, never a baseline change.
+                    # Keep the outer policy FAIL and nonzero exit even if it passes.
+                    before_observation = len(completed_gets)
+                    observed = collect(observed_get, args.repository,
+                                       exc.main_sha, exc.observed)
+                    if len(completed_gets) > before_observation:
+                        observed["official_github_api_get_attempted"] = True
+                    observed.update(
+                        scope="OPERATIONAL_EVIDENCE_NOT_PROTECTION_APPROVAL",
+                        observed_workflow_sha=exc.main_sha,
+                        observed_source_sha=exc.observed,
+                    )
+                    result["observed_schedule"] = observed
     if completed_gets:
         result["official_github_api_get_attempted"] = True
     print("R16_V81_LIVE_SCHEDULE_CHECK=" +
