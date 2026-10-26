@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 import unittest
 
-from queued_task_worker import execute, _append_job_summary
+from queued_task_worker import execute, _append_job_summary, _github_runner_provenance_lines
 
 
 class QueuedTaskTests(unittest.TestCase):
@@ -59,6 +59,46 @@ class QueuedTaskTests(unittest.TestCase):
                     with self.subTest(changed_keys=altered), self.assertRaises(ValueError):
                         _append_job_summary(altered)
             self.assertFalse(summary.exists())
+
+    def test_ci_run_metadata_is_runner_reported_not_native_evidence(self):
+        env = {
+            "GITHUB_ACTIONS": "true",
+            "GITHUB_REPOSITORY": "watersun79-source/ai-token-optimization",
+            "GITHUB_REF": "refs/heads/ai/r16-v81-fast-full-ci-20261024",
+            "GITHUB_EVENT_NAME": "push",
+            "GITHUB_RUN_ID": "40277817374",
+            "GITHUB_SHA": "a" * 40,
+        }
+        with patch.dict(os.environ, env, clear=True):
+            lines = _github_runner_provenance_lines()
+        self.assertIn("/actions/runs/40277817374", lines[0])
+        self.assertIn("a" * 40, lines[1])
+        self.assertIn("NOT official ChatGPT native", lines[-1])
+
+    def test_ci_run_metadata_fail_closed_on_wrong_or_missing_context(self):
+        valid = {
+            "GITHUB_ACTIONS": "true",
+            "GITHUB_REPOSITORY": "watersun79-source/ai-token-optimization",
+            "GITHUB_REF": "refs/heads/ai/r16-v81-fast-full-ci-20261024",
+            "GITHUB_EVENT_NAME": "push",
+            "GITHUB_RUN_ID": "40277817374",
+            "GITHUB_SHA": "a" * 40,
+        }
+        altered_cases = (
+            {},
+            {**valid, "GITHUB_REPOSITORY": "attacker/other"},
+            {**valid, "GITHUB_REF": "refs/heads/main"},
+            {**valid, "GITHUB_EVENT_NAME": "workflow_dispatch"},
+            {**valid, "GITHUB_RUN_ID": "1;evil"},
+            {**valid, "GITHUB_SHA": "not-sha"},
+        )
+        for altered in altered_cases:
+            with self.subTest(context=altered.get("GITHUB_EVENT_NAME")), \
+                 patch.dict(os.environ, altered, clear=True):
+                self.assertEqual(
+                    ["- GitHub Actions runner context: UNVERIFIED"],
+                    _github_runner_provenance_lines(),
+                )
 
     def test_digest_tampering_is_blocked(self):
         self.request["expected_input_sha256"] = "0" * 64
