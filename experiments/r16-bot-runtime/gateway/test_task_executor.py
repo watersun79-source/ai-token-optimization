@@ -8,7 +8,7 @@ from task_executor import compact
 
 class TaskExecutorTests(unittest.TestCase):
     def test_real_dedup(self):
-        r=compact("alpha\nbeta\nalpha\n  beta  \ngamma\n")
+        r=compact("alpha\nbeta\nalpha\n  beta \ngamma\n")
         self.assertEqual(r["output"],"alpha\nbeta\ngamma")
         self.assertEqual(r["duplicate_lines_removed"],2)
         self.assertGreater(r["bytes_saved"],0)
