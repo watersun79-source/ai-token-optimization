@@ -92,6 +92,14 @@ class JavaScriptFixtureCoverageTests(unittest.TestCase):
             self.assertNotEqual(0, proc.returncode)
             self.assertNotIn("PASS", proc.stdout)
 
+    def test_failed_case_never_prints_untrusted_fixture_value(self):
+        # Negative fixture values might contain private data; avoid CI log leaks.
+        marker = "PRIVATE_FIXTURE_CANARY_MUST_NOT_APPEAR_20261027"
+        result = self.run_fixture([self.rows()[0], marker + "\tPASS"])
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotIn(marker, result.stdout + result.stderr)
+        self.assertIn("case 1 result mismatch", result.stderr)
+
     def test_no_cases_fails(self):
         result = self.run_fixture([self.rows()[0]])
         self.assertNotEqual(result.returncode, 0)

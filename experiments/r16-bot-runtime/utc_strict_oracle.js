@@ -40,7 +40,7 @@ for (const row of rows){
   if(fields.length!==2 || !['PASS','FAIL'].includes(fields[1]))throw Error('malformed case '+(count+1));
   const [s,expected]=fields;
   const got=strictUtc(s)?'PASS':'FAIL';
-  if(got!==expected)throw Error('case '+(count+1)+' '+s+' got '+got+' expected '+expected);
+  if(got!==expected)throw Error('case '+(count+1)+' result mismatch: got '+got+' expected '+expected);
   count++;
 }
 console.log(`JavaScript strict timestamp oracle: PASS ${count}/${count}`);
