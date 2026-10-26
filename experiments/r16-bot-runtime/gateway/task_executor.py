@@ -40,6 +40,8 @@ STRUCTURAL = re.compile(r"^ {0,3}(?:#{1,6}(?:[ \t]|$)|[-+*][ \t]|\d{1,9}[.)][ \t
 SETEXT_UNDERLINE = re.compile(r"^ {0,3}(?:=+|-+)[ \t]*$")
 # Deduplication is only meaningful within a Markdown section, not across titles.
 ATX_HEADING = re.compile(r"^ {0,3}#{1,6}(?:[ \t]|$)")
+# A list item starts a new semantic unit; nested continuation lines are not prose.
+LIST_MARKER = re.compile(r"^ {0,3}(?:[-+*][ \t]|\\d{1,9}[.)][ \t])")
 
 def compact(text):
     if not isinstance(text, str) or not text.strip() or len(text) > MAX_INPUT:
@@ -55,6 +57,7 @@ def compact(text):
         except json.JSONDecodeError:
             pass
     seen, kept, removed = set(), [], 0
+    in_list = False
     in_code = False
     fence_char, fence_len = "", 0
     lines = [] if preserve_json else text.splitlines()
@@ -91,6 +94,16 @@ def compact(text):
             # Preserve Setext titles and underlines even when repeated.
             kept.append(line)
             continue
+        if LIST_MARKER.match(line):
+            # Dedup only within a list item, never across distinct tasks.
+            seen.clear()
+            in_list = True
+        elif in_list and line.startswith(("  ", "\\t")):
+            # Preserve two-space list continuations and their multiplicity.
+            kept.append(line)
+            continue
+        elif line.strip() and not line[0].isspace():
+            in_list = False
         if STRUCTURAL.match(line):
             # Repeated headings, tasks, table rows or quotations must survive.
             kept.append(line)

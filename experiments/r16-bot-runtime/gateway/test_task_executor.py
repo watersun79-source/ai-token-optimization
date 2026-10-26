@@ -281,6 +281,22 @@ class TaskExecutorTests(unittest.TestCase):
         self.assertEqual(report["output"], message)
         self.assertEqual(report["duplicate_lines_removed"], 0)
 
+    def test_list_continuation_indentation_is_semantic(self):
+        message = "- Task A\n  critical detail\n  critical detail\n- Task B\n  critical detail"
+        report = compact(message)
+        self.assertEqual(report["output"], message)
+        self.assertEqual(report["duplicate_lines_removed"], 0)
+
+    def test_normal_prose_after_list_still_deduplicates(self):
+        message = "- Task\n  detail\nsummary\nsummary"
+        report = compact(message)
+        self.assertEqual(report["output"], "- Task\n  detail\nsummary")
+        self.assertEqual(report["duplicate_lines_removed"], 1)
+
+    def test_nested_list_lines_remain_distinct(self):
+        message = "1. phase one\n  repeated\n2. phase two\n  repeated"
+        self.assertEqual(compact(message)["output"], message)
+
     def test_repeated_markdown_tasks_and_quotes_preserved(self):
         message = "- [ ] verify\n- [ ] verify\n1. run\n1. run\n> note\n> note"
         report = compact(message)
