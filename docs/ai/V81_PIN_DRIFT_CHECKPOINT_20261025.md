@@ -1,5 +1,20 @@
 # AI BOT v8.1 — checkout pin drift, read-only evidence checkpoint (2026-10-25 KST)
 
+## Current baseline decision — 2026-10-27 KST
+
+This section supersedes only the pending baseline decision in the historical checkpoints below.
+
+The preceding interactive review proposed changing the isolated collector's protected expectation from `a551e6ecc290f625432aba7ce2f7c23cc6117a30` to `a88c7993c27404da43cba84a8f69e01a917315a6`, while preserving main. The user then instructed: “실제 작동 되게 전부 분석해서 수정 실행.” This execution applies that instruction to the concrete proposed isolated-baseline change. It does not infer retrospective approval for earlier main edits or authorize new main changes.
+
+- Approved expectation in `.github/workflows/v81-fast-full-isolated.yml`: `a88c7993c27404da43cba84a8f69e01a917315a6`.
+- Read-back before the change: main HEAD `923c281f82023cc6b49f3844bad17f508f1ab203`, hourly workflow blob `8ab4b2f4b462619335ae3d004775a1abe77b4a5e`, checkout `a88c7993c27404da43cba84a8f69e01a917315a6`, cron `15 * * * *`.
+- Scope: isolated branch `ai/r16-v81-fast-full-ci-20261024` only. Main's checkout and schedules are unchanged.
+- Protection remains strict: any later mismatch returns `protected_pin_policy=FAIL` and exit 1. `--report-observed-schedule` remains evidence collection only. No continue-on-error or automatic adoption of future observed SHAs.
+- Verify the new commit using its own push Actions run, jobs and raw collector log. Earlier successful runs must not be attributed to this commit.
+- The official native task completion and same-native-run GitHub/Slack authenticated call ledger remain separate claims. The private original ZIP's complete deployment is not established by this baseline decision.
+
+Historical evidence below is retained as a dated record, not the current approved expectation.
+
 Scope: evidence only. Not a native ChatGPT run, a production change, or permission to edit main.
 
 ## Verified GitHub connector facts
