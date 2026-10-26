@@ -87,6 +87,11 @@ def compact(text):
             # Repeated headings, tasks, table rows or quotations must survive.
             kept.append(line)
             continue
+        # Markdown hard line breaks are meaningful: trailing double spaces or
+        # a backslash must survive even on repeated textual lines.
+        if line.strip() and (line.endswith("  ") or line.endswith(chr(92))):
+            kept.append(line)
+            continue
         if CALL_LINE.match(line):
             # Unfenced executable-looking calls are not redundant prose.
             kept.append(line)
