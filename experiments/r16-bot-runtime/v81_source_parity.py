@@ -178,6 +178,34 @@ def verify_private_zip_local(path: Path, *, expected_zip_sha256: str = LOCAL_V81
     }
 
 
+SOURCE_MAX_BYTES = 4 * 1024 * 1024
+
+
+def _bounded_source_sha256(path: Path) -> str:
+    """Read a regular public source once, without following a swapped symlink."""
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NONBLOCK", 0)
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    elif path.is_symlink():
+        raise ValueError("SOURCE_NOT_REGULAR_FILE")
+    try:
+        fd = os.open(path, flags)
+    except OSError:
+        raise ValueError("SOURCE_NOT_REGULAR_FILE") from None
+    with os.fdopen(fd, "rb") as stream:
+        metadata = os.fstat(stream.fileno())
+        if not stat.S_ISREG(metadata.st_mode):
+            raise ValueError("SOURCE_NOT_REGULAR_FILE")
+        if metadata.st_size > SOURCE_MAX_BYTES:
+            raise ValueError("SOURCE_FILE_SIZE_LIMIT")
+        body = stream.read(SOURCE_MAX_BYTES + 1)
+        if len(body) > SOURCE_MAX_BYTES:
+            raise ValueError("SOURCE_FILE_SIZE_LIMIT")
+        if len(body) != metadata.st_size:
+            raise ValueError("SOURCE_CHANGED_DURING_READ")
+    return hashlib.sha256(body).hexdigest()
+
+
 def compare(root: Path = ROOT) -> dict:
     rows = {}
     for filename, original_hash in ORIGINAL_SHA256.items():
@@ -187,7 +215,7 @@ def compare(root: Path = ROOT) -> dict:
         if not file.is_file():
             rows[filename] = {"status": "ABSENT", "source_sha256": original_hash, "branch_sha256": None}
             continue
-        digest = hashlib.sha256(file.read_bytes()).hexdigest()
+        digest = _bounded_source_sha256(file)
         rows[filename] = {
             "status": "EXACT" if digest == original_hash else "DIFFERENT",
             "source_sha256": original_hash,
