@@ -1,6 +1,6 @@
 {
-  "task_id": "r16-20261027-execute-real-queue",
+  "task_id": "r16-20261027-bridge-sha-sync",
   "mode": "bounded_offline_optimize",
-  "message": "토큰 최적화 실행\n같은 문장 반복을 하나로 정리\n같은 문장 반복을 하나로 정리\n입력과 출력 SHA의 실제 차이를 기록\n기존 보호 설정 그대로 유지\n실행 결과는 오프라인 작업으로만 분류",
-  "expected_input_sha256": "f2e584e42b18c1e0b11d72b472098c6c996a4a38462682e3acd5c90124ef00b8"
+  "message": "토큰 최적화 실행\nAI BOT v8.1 격리 입력 처리\n작업 증거의 입력과 출력 지문 보존\n작업 증거의 입력과 출력 지문 보존\n두 서비스 조회 결과를 별도 검증 단계에 전달\n원본과 결과가 다른 경우 미확인으로 남김\n운영 변경 없이 격리 테스트만 수행",
+  "expected_input_sha256": "6f67e9382e1eb464c6ab7d93fe92bce1437031119570b7061c87fc24f600ec56"
 }
