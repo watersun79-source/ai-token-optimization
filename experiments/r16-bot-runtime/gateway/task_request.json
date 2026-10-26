@@ -1,6 +1,6 @@
 {
-  "task_id": "r16-20261026-real-offline-task",
+  "task_id": "r16-20261027-execute-real-queue",
   "mode": "bounded_offline_optimize",
-  "message": "프롬프트 압축 실행\n실행 목표: 허가된 격리 환경 FAST 작업\n반복 제거 후 원본 SHA 근거 보존\n반복 제거 후 원본 SHA 근거 보존\n보호: 기존 정각 예약·main·운영 플로우 불변\n미완료: ChatGPT native 개별 실행 원장 확보\n판정: 오프라인 작업을 native 성공으로 주장 금지",
-  "expected_input_sha256": "be2b67f00997a6b73c1f04bd94e0b4381a0ffc81e9672bd44d5aaab96de6476c"
+  "message": "AI BOT v8.1 격리 FAST 실행\n목표: 기존 실행기에서 SHA 연계 입력을 실제 처리\n같은 목표 중복 입력 제거\n같은 목표 중복 입력 제거\n원본 private ZIP 내용 업로드 금지\n운영 main, 정각 예약, Slack, Activepieces 변경 금지\nGitHub 오프라인 작업과 ChatGPT native 실행을 구분\n완료 근거: 실제 worker 로그와 SHA로 판정",
+  "expected_input_sha256": "d862740e7bac70780486870bb725a2def2a2d12ce134932d306ed85c888d996b"
 }
