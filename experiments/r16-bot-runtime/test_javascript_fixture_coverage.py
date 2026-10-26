@@ -73,6 +73,25 @@ class JavaScriptFixtureCoverageTests(unittest.TestCase):
         self.assertIn("fixture size or type invalid", result.stderr)
         self.assertNotIn("PASS", result.stdout)
 
+    def test_symlink_fixture_to_external_path_is_refused(self):
+        # Refuse a linked fixture even if its target contains valid rows.
+        with tempfile.TemporaryDirectory() as tmp:
+            parent = Path(tmp)
+            worker = parent / "worker"
+            worker.mkdir()
+            external = parent / "external.tsv"
+            external.write_text(
+                "value\\texpected\\n2026-10-24T05:00:00Z\\tPASS\\n",
+                encoding="utf-8")
+            shutil.copyfile(ROOT / "utc_strict_oracle.js",
+                            worker / "utc_strict_oracle.js")
+            (worker / "utc_strict_oracle_cases.tsv").symlink_to(external)
+            proc = subprocess.run(
+                ["node", str(worker / "utc_strict_oracle.js")],
+                cwd=worker, capture_output=True, text=True, timeout=8)
+            self.assertNotEqual(0, proc.returncode)
+            self.assertNotIn("PASS", proc.stdout)
+
     def test_no_cases_fails(self):
         result = self.run_fixture([self.rows()[0]])
         self.assertNotEqual(result.returncode, 0)

@@ -12,9 +12,24 @@ function strictUtc(s){
   return d.getUTCFullYear()===year&&d.getUTCMonth()===mon-1&&d.getUTCDate()===day&&d.getUTCHours()===hh&&d.getUTCMinutes()===mm&&d.getUTCSeconds()===ss;
 }
 const fixture=path.join(__dirname,'utc_strict_oracle_cases.tsv');
-const stat=fs.statSync(fixture);
-if(!stat.isFile() || stat.size>65536)throw Error('fixture size or type invalid');
-const raw=fs.readFileSync(fixture,'utf8');
+// Open without following symlinks and cap bytes from the same open descriptor.
+// A pathname stat followed by a separate read is vulnerable to replacement.
+const flags=fs.constants.O_RDONLY|fs.constants.O_NOFOLLOW|fs.constants.O_NONBLOCK;
+const fd=fs.openSync(fixture, flags);
+let raw;
+try {
+  const stat=fs.fstatSync(fd);
+  if(!stat.isFile() || stat.size>65536)throw Error('fixture size or type invalid');
+  const data=Buffer.alloc(65537);
+  let total=0;
+  while(total<data.length){
+    const n=fs.readSync(fd, data, total, data.length-total, null);
+    if(n===0)break;
+    total+=n;
+  }
+  if(total>65536)throw Error('fixture size or type invalid');
+  raw=data.toString('utf8', 0, total);
+}finally{fs.closeSync(fd);}
 const lines=raw.replace(/\r?\n$/, '').split(/\r?\n/);
 if(lines.length<2 || lines[0]!=='value\texpected')throw Error('invalid or empty fixture');
 const rows=lines.slice(1);
