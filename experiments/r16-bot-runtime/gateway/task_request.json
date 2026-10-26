@@ -1,6 +1,6 @@
 {
   "task_id": "r16-20261026-real-offline-task",
   "mode": "bounded_offline_optimize",
-  "message": "프롬프트 압축 실행\n실행 목표: 허가된 격리 브랜치 FAST 작업\n반복 제거 후 원본 SHA 근거 보존\n반복 제거 후 원본 SHA 근거 보존\n보호: 기존 정각 예약·main·운영 플로우 불변\n미완료: ChatGPT native 개별 실행 원장 확보\n판정: 오프라인 작업을 native 성공으로 주장 금지",
-  "expected_input_sha256": "51aa68dd678a2c17c491067d105779a4e96708e008629d4cd084b6d65967486a"
+  "message": "프롬프트 압축 실행\n실행 목표: 허가된 격리 환경 FAST 작업\n반복 제거 후 원본 SHA 근거 보존\n반복 제거 후 원본 SHA 근거 보존\n보호: 기존 정각 예약·main·운영 플로우 불변\n미완료: ChatGPT native 개별 실행 원장 확보\n판정: 오프라인 작업을 native 성공으로 주장 금지",
+  "expected_input_sha256": "be2b67f00997a6b73c1f04bd94e0b4381a0ffc81e9672bd44d5aaab96de6476c"
 }
