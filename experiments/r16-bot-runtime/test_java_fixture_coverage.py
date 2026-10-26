@@ -80,5 +80,44 @@ class JavaFixtureCoverageTests(unittest.TestCase):
         self.assertNotEqual(0, result.returncode, result.stdout)
 
 
+    def test_oversized_fixture_is_rejected_before_parsing(self):
+        body = "value\\texpected\\n" + ("x" * 65536) + "\\tFAIL\\n"
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shutil.copyfile(ROOT / 'UtcStrictOracle.java', root / 'UtcStrictOracle.java')
+            fixture = root / 'utc_strict_oracle_cases.tsv'
+            fixture.write_text(body, encoding='utf8')
+            result = subprocess.run(
+                ['java', str(root / 'UtcStrictOracle.java'), str(fixture)],
+                cwd=root, capture_output=True, text=True, timeout=30)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn('Fixture size or type invalid', result.stderr)
+
+    def test_more_than_256_cases_are_rejected(self):
+        row = '2026-10-24T05:00:00Z\\tPASS'
+        result = self.run_fixture([self.rows()[0]] + [row] * 257)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn('Too many fixture cases', result.stderr)
+
+    def test_symlink_fixture_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            worker = root / 'worker'
+            worker.mkdir()
+            target = root / 'external.tsv'
+            target.write_text(
+                'value\\texpected\\n2026-10-24T05:00:00Z\\tPASS\\n',
+                encoding='utf8')
+            shutil.copyfile(ROOT / 'UtcStrictOracle.java',
+                            worker / 'UtcStrictOracle.java')
+            fixture = worker / 'utc_strict_oracle_cases.tsv'
+            fixture.symlink_to(target)
+            result = subprocess.run(
+                ['java', str(worker / 'UtcStrictOracle.java'), str(fixture)],
+                cwd=worker, capture_output=True, text=True, timeout=30)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn('Fixture size or type invalid', result.stderr)
+
+
 if __name__ == '__main__':
     unittest.main()
