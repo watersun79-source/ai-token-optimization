@@ -175,6 +175,20 @@ class UnifiedScheduledProofTests(unittest.TestCase):
         self.assertEqual("UNVERIFIED",
                          self.verify(jobs=[dict(jobs[0], id=True)])["status"])
 
+    def test_malformed_receipt_values_remain_structured_unverified(self):
+        values = ("NaN", "Infinity", "-Infinity", "1e999", r'"\ud800"')
+        for value in values:
+            with self.subTest(value=value[:30]):
+                _, _, log = build()
+                log = log.replace('"format":', '"extra": ' + value + ', "format":', 1)
+                try:
+                    result = self.verify(log=log)
+                except (ValueError, UnicodeError, RecursionError) as exc:
+                    self.fail("Malformed receipt escaped verification: " + type(exc).__name__)
+                self.assertEqual("UNVERIFIED", result["status"])
+                self.assertEqual("UNIFIED_RECEIPT_MALFORMED", result["reason"])
+                self.assertFalse(result["native_chatgpt_run_verified"])
+
     def test_empty_or_bad_json_unverified(self):
         self.assertEqual("UNVERIFIED", self.verify(log="")["status"])
         _, _, log = build()

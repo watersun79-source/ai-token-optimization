@@ -101,8 +101,12 @@ def verify(run, jobs, log, *, workflow_sha, source_sha):
     if type(digest) is not str or SHA256.fullmatch(digest) is None:
         return stop("UNVERIFIED", "EVIDENCE_HASH_MISSING")
     unsigned = {k: v for k, v in evidence.items() if k != "evidence_sha256"}
-    canonical = json.dumps(unsigned, ensure_ascii=False, sort_keys=True,
-                           separators=(",", ":"), allow_nan=False).encode("utf-8")
+    try:
+        canonical = json.dumps(unsigned, ensure_ascii=False, sort_keys=True,
+                               separators=(",", ":"), allow_nan=False).encode("utf-8")
+    except ValueError:
+        # Parsed JSON can still contain non-finite floats or lone surrogates.
+        return stop("UNVERIFIED", "UNIFIED_RECEIPT_MALFORMED")
     if hashlib.sha256(canonical).hexdigest() != digest:
         return stop("FAIL", "EVIDENCE_HASH_MISMATCH")
     if (evidence.get("format") != "V81_OFFLINE_UNIFIED_EVIDENCE_V1" or

@@ -541,6 +541,32 @@ class LiveCollectorTests(unittest.TestCase):
                 self.assertTrue(result["observed_schedule"]["official_github_api_get_attempted"])
                 self.assertFalse(result["same_run_github_slack_proven"])
 
+    def test_cli_malformed_observed_receipt_preserves_pin_policy_failure(self):
+        fetch, seen = fake_api()
+        def malformed_log(endpoint):
+            raw = fetch(endpoint)
+            return (raw.replace('"format":', '"extra": NaN, "format":', 1)
+                    if endpoint.endswith("/logs") else raw)
+        argv = ["v81_live_schedule_collector.py", "--repository", REPO,
+                "--protected-source-sha", "a551e6ecc290f625432aba7ce2f7c23cc6117a30",
+                "--report-observed-schedule"]
+        with patch("sys.argv", argv), patch(
+                "v81_live_schedule_collector.gh_read", side_effect=malformed_log), \
+                redirect_stdout(StringIO()) as out:
+            try:
+                code = main()
+            except ValueError as exc:
+                self.fail("Malformed receipt aborted CLI: " + type(exc).__name__)
+        self.assertEqual(1, code)
+        result = json.loads(out.getvalue().split("R16_V81_LIVE_SCHEDULE_CHECK=", 1)[1])
+        self.assertEqual("FAIL", result["protected_pin_policy"])
+        self.assertEqual("PROTECTED_PIN_DRIFT", result["reason"])
+        self.assertEqual("UNVERIFIED", result["observed_schedule"]["status"])
+        self.assertEqual("UNIFIED_RECEIPT_MALFORMED", result["observed_schedule"]["reason"])
+        self.assertFalse(result["native_chatgpt_run_verified"])
+        self.assertFalse(result["same_run_github_slack_proven"])
+        self.assertEqual(5, len(seen))
+
     def test_cli_observation_does_not_duplicate_reads_for_matching_pin(self):
         fetch, seen = fake_api()
         argv = ["v81_live_schedule_collector.py", "--repository", REPO,
