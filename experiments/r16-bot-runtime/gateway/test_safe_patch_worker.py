@@ -46,6 +46,17 @@ class SafePatchTests(unittest.TestCase):
             self.assertEqual(file.stat().st_mode & 0o777, 0o750)
             self.assertEqual(file.read_text(), "value = 2\n")
 
+    def test_noop_patch_refused_without_rewriting_fixture(self):
+        with tempfile.TemporaryDirectory() as root:
+            file = Path(root) / "fixture.txt"
+            file.write_text("unchanged\n", encoding="utf-8")
+            original = file.read_bytes()
+            with self.assertRaisesRegex(ValueError, "no-op patch refused"):
+                apply_patch(root, "fixture.txt",
+                            expected_sha256=sha256(original),
+                            old="unchanged", new="unchanged")
+            self.assertEqual(file.read_bytes(), original)
+
     def test_stale_sha_refused(self):
         with tempfile.TemporaryDirectory() as root:
             file = Path(root) / "fixture.txt"

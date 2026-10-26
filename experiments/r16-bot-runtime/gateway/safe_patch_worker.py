@@ -26,6 +26,8 @@ def apply_patch(scratch_root: str | Path, filename: str, *, expected_sha256: str
         raise ValueError("valid SHA256 precondition required")
     if not isinstance(old, str) or not old or not isinstance(new, str):
         raise ValueError("literal nonempty old and string new required")
+    if old == new:
+        raise ValueError("no-op patch refused")
     if len(old.encode()) > _MAX_BYTES or len(new.encode()) > _MAX_BYTES:
         raise ValueError("patch too large")
     requested_root = Path(scratch_root)
