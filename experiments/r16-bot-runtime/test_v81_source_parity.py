@@ -1,5 +1,6 @@
 """Negative and positive byte-level provenance checks; no external service calls."""
 import hashlib
+import os
 import json
 import zipfile
 from pathlib import Path
@@ -10,6 +11,34 @@ import v81_source_parity as parity
 
 
 class SourceParityTests(unittest.TestCase):
+    def test_public_source_exact_size_limit_is_allowed(self):
+        with TemporaryDirectory() as d:
+            source = Path(d) / "boundary.py"
+            source.write_bytes(b"x" * parity.SOURCE_MAX_BYTES)
+            self.assertEqual(
+                hashlib.sha256(b"x" * parity.SOURCE_MAX_BYTES).hexdigest(),
+                parity._bounded_source_sha256(source),
+            )
+
+    def test_public_source_symlink_rejected_at_open(self):
+        with TemporaryDirectory() as d:
+            root = Path(d)
+            source = root / "original.py"
+            source.write_bytes(b"fixture")
+            link = root / "linked.py"
+            link.symlink_to(source)
+            with self.assertRaisesRegex(ValueError, "SOURCE_NOT_REGULAR_FILE"):
+                parity._bounded_source_sha256(link)
+
+    def test_public_source_fifo_rejected(self):
+        if not hasattr(os, "mkfifo"):
+            self.skipTest("FIFO unsupported on this platform")
+        with TemporaryDirectory() as d:
+            fifo = Path(d) / "named-pipe"
+            os.mkfifo(fifo)
+            with self.assertRaisesRegex(ValueError, "SOURCE_NOT_REGULAR_FILE"):
+                parity._bounded_source_sha256(fifo)
+
     def test_oversized_public_source_fails_closed(self):
         # Public compare() must not read an unbounded source file.
         with TemporaryDirectory() as d:
