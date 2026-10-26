@@ -84,6 +84,25 @@ class SafePatchTests(unittest.TestCase):
                             old="value = 1", new="value = 2")
             self.assertEqual(target.read_bytes(), before)
 
+    def test_symlink_ancestor_scratch_root_refused_without_write(self):
+        with tempfile.TemporaryDirectory() as root:
+            base = Path(root)
+            outside = base / "outside"
+            inner = outside / "work"
+            inner.mkdir(parents=True)
+            target = inner / "fixture.py"
+            target.write_text("value = 1\\n", encoding="utf-8")
+            alias = base / "alias"
+            alias.symlink_to(outside, target_is_directory=True)
+            disguised_root = alias / "work"
+            self.assertFalse(disguised_root.is_symlink())
+            before = target.read_bytes()
+            with self.assertRaisesRegex(ValueError, "symlink scratch root"):
+                apply_patch(disguised_root, "fixture.py",
+                            expected_sha256=sha256(before),
+                            old="value = 1", new="value = 2")
+            self.assertEqual(target.read_bytes(), before)
+
     def test_binary_or_oversize_refused(self):
         with tempfile.TemporaryDirectory() as root:
             file = Path(root) / "fixture.txt"

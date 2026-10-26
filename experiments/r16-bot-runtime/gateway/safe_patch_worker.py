@@ -30,8 +30,11 @@ def apply_patch(scratch_root: str | Path, filename: str, *, expected_sha256: str
         raise ValueError("patch too large")
     requested_root = Path(scratch_root)
     # Check BEFORE resolve(): resolving a symlink hides that it was a link.
-    if requested_root.is_symlink():
-        raise ValueError("symlink scratch root refused")
+    # Refuse symlinks in parent directories as well as the final scratch root.
+    # A linked ancestor otherwise redirects a normal leaf outside the sandbox.
+    lexical_path = requested_root.absolute()
+    if any(component.is_symlink() for component in (lexical_path, *lexical_path.parents)):
+        raise ValueError("symlink scratch root or ancestor refused")
     root = requested_root.resolve(strict=True)
     if not root.is_dir():
         raise ValueError("scratch root must be a real directory")
