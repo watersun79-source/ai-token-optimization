@@ -15,7 +15,7 @@ class TaskExecutorTests(unittest.TestCase):
         self.assertEqual(r["external_model_calls"],0)
 
     def test_yaml_nested_config_values_keep_indentation_and_multiplicity(self):
-        source = "build:\\n  timeout: 30\\ndeploy:\\n  timeout: 30\\n"
+        source = "build:\n  timeout: 30\ndeploy:\n  timeout: 30\n"
         report = compact(source)
         self.assertEqual(report["output"], source)
         self.assertEqual(report["duplicate_lines_removed"], 0)

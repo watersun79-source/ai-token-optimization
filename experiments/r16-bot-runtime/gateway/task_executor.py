@@ -60,7 +60,7 @@ def compact(text):
     # prose, repeated keys/values and indentation are semantically significant.
     # Preserve the entire document to avoid cross-section configuration loss.
     preserve_yaml_map = any(
-        re.fullmatch(r" {1,3}[A-Za-z_][A-Za-z0-9_.-]*\\s*:\\s*.*", line)
+        re.fullmatch(r" {1,3}[A-Za-z_][A-Za-z0-9_.-]*\s*:\s*.*", line)
         for line in text.splitlines()
     )
     preserve_structured = preserve_json or preserve_yaml_map
