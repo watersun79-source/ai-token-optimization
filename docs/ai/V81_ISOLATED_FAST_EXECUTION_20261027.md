@@ -37,3 +37,11 @@ If the private original ZIP becomes securely available in an approved local-only
 - Measured on this bounded input: 41 bytes removed, 1 duplicate line removed; external model calls 0, production writes 0.
 - First attempted queue routing failed CI `40394811614` because the message selected disallowed project roles. The input was corrected to the existing optimizer-only route without relaxing the worker's scope gate.
 - This receipt DOES NOT establish ChatGPT native scheduled-run success, original ZIP source parity, or live full v8.1 deployment.
+
+## Activepieces alternative real test execution — 2026-10-27 KST
+- Run ID: `tt5hwIop1leAkNYYpMtff`. Existing disabled draft flow `uVZrVCKproFivrzsaaZef`, environment `TESTING`, test result `SUCCEEDED`, duration 2.7s.
+- Real steps: GitHub branch HTTP 200 with HEAD `d6fd648687001310c62b15a6324a814f5c199af4`; GitHub Actions HTTP 200 with latest successful run `40395037456`, head `d288f4f196581cd6bf80b5ae1cb74493eb4f5411`; exact Slack parent read `ok=true` and timestamp `1792416391.631669`.
+- The final verification code executed but returned `UNVERIFIED`, because branch HEAD and latest successful CI SHA do not match (a separate documentation-only commit was after the tested SHA).
+- These same-run original calls are Activepieces TESTING calls, NOT proof of a single official native ChatGPT unattended run; `official_chatgpt_native_run_verified=false` and `native_same_run_github_slack_proven=false`.
+- No production flow publication/enablement, main edit, existing native reservation change, secrets upload, paid model invocation or production write. GitHub/Slack operations in this flow are read-only.
+- Next single execution gate: obtain a permitted autonomous schedule/trigger and matched CI provenance without mutating protected production assets.
