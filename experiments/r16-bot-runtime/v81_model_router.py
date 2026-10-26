@@ -32,7 +32,7 @@ def make_plan(task_kind: str, *, failed_checks: int = 0,
     Unknown tasks, malformed failure counts and unknown model identifiers fail
     closed. No silent downgrade of quality on missing model availability.
     """
-    if task_kind not in TASK_MODELS:
+    if not isinstance(task_kind, str) or task_kind not in TASK_MODELS:
         raise ValueError("unknown task kind; fail closed")
     if type(failed_checks) is not int or failed_checks < 0:
         raise ValueError("failed_checks must be nonnegative integer")

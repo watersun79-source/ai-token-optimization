@@ -57,6 +57,13 @@ class ModelRouterTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     make_plan(**kwargs)
 
+    def test_unhashable_task_kind_fails_closed(self):
+        # JSON-originated task kinds can be arrays or objects, not only strings.
+        for bad in ([], {}, ["routine"], {"routine": True}):
+            with self.subTest(kind=type(bad).__name__):
+                with self.assertRaisesRegex(ValueError, "unknown task kind"):
+                    make_plan(bad)
+
     def test_cli_dry_run(self):
         stream = StringIO()
         with contextlib.redirect_stdout(stream):
