@@ -135,8 +135,10 @@ def verify_private_zip_local(path: Path, *, expected_zip_sha256: str = LOCAL_V81
                 any(part in ("", ".", "..") for part in parts[:-1]) or
                 (parts[-1] in ("", ".", "..") and not entry.is_dir()) or
                 name in seen or entry.flag_bits & 1 or
-                (entry.create_system == 3 and
-                 stat.S_IFMT(entry.external_attr >> 16) == stat.S_IFLNK)):
+                # Treat any declared Unix special file as unsafe. Only
+                # regular files, directories, or legacy mode-less entries pass.
+                stat.S_IFMT(entry.external_attr >> 16) not in (
+                    0, stat.S_IFDIR if entry.is_dir() else stat.S_IFREG)):
                 raise ValueError("PRIVATE_ZIP_UNSAFE_ENTRY")
             if entry.compress_type not in (
                     zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED,

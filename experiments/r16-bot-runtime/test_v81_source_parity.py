@@ -301,6 +301,27 @@ class SourceParityTests(unittest.TestCase):
                         parity.verify_private_zip_local(
                             z, expected_zip_sha256=digest, expected_hashes=expected)
 
+    def test_local_private_zip_rejects_unix_special_entries(self):
+        # Crafted local ZIP metadata only; no private archive and no extraction.
+        import stat
+        with TemporaryDirectory() as d:
+            root = Path(d)
+            source = b"synthetic-only"
+            expected = {"runner.py": hashlib.sha256(source).hexdigest()}
+            for label, mode in (("fifo", stat.S_IFIFO), ("character", stat.S_IFCHR)):
+                with self.subTest(kind=label):
+                    path = root / (label + ".zip")
+                    extra = zipfile.ZipInfo("AI_R16_100_BOT_v8/" + label)
+                    extra.create_system = 3
+                    extra.external_attr = (mode | 0o644) << 16
+                    with zipfile.ZipFile(path, "w") as archive:
+                        archive.writestr("AI_R16_100_BOT_v8/runner.py", source)
+                        archive.writestr(extra, b"synthetic-extra")
+                    with self.assertRaisesRegex(ValueError, "PRIVATE_ZIP_UNSAFE_ENTRY"):
+                        parity.verify_private_zip_local(
+                            path, expected_zip_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+                            expected_hashes=expected)
+
     def test_local_private_zip_unsupported_compression_fails_closed(self):
         # Patch only fabricated ZIP headers; never open the original private ZIP.
         import struct
