@@ -56,11 +56,19 @@ def compact(text):
             preserve_json = isinstance(json.loads(text), (dict, list))
         except json.JSONDecodeError:
             pass
+    # An indented key/value pair indicates a YAML-like mapping. Unlike plain
+    # prose, repeated keys/values and indentation are semantically significant.
+    # Preserve the entire document to avoid cross-section configuration loss.
+    preserve_yaml_map = any(
+        re.fullmatch(r" {1,3}[A-Za-z_][A-Za-z0-9_.-]*\\s*:\\s*.*", line)
+        for line in text.splitlines()
+    )
+    preserve_structured = preserve_json or preserve_yaml_map
     seen, kept, removed = set(), [], 0
     in_list = False
     in_code = False
     fence_char, fence_len = "", 0
-    lines = [] if preserve_json else text.splitlines()
+    lines = [] if preserve_structured else text.splitlines()
     for index, line in enumerate(lines):
         fence = FENCE.match(line)
         if in_code:
@@ -138,7 +146,7 @@ def compact(text):
         kept.append(normalized)
     if in_code:
         raise ValueError("unclosed code fence; refuse lossy compaction")
-    output = text if preserve_json else "\n".join(kept)
+    output = text if preserve_structured else "\n".join(kept)
     original_bytes = len(text.encode("utf-8"))
     output_bytes = len(output.encode("utf-8"))
     return {

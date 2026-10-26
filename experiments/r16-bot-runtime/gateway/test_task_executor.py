@@ -14,6 +14,13 @@ class TaskExecutorTests(unittest.TestCase):
         self.assertGreater(r["bytes_saved"],0)
         self.assertEqual(r["external_model_calls"],0)
 
+    def test_yaml_nested_config_values_keep_indentation_and_multiplicity(self):
+        source = "build:\\n  timeout: 30\\ndeploy:\\n  timeout: 30\\n"
+        report = compact(source)
+        self.assertEqual(report["output"], source)
+        self.assertEqual(report["duplicate_lines_removed"], 0)
+        self.assertEqual(report["bytes_saved"], 0)
+
     def test_no_fake_savings(self):
         self.assertEqual(compact("alpha\nbeta")["bytes_saved"],0)
 
