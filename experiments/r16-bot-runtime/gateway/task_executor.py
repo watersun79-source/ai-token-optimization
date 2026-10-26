@@ -41,7 +41,7 @@ SETEXT_UNDERLINE = re.compile(r"^ {0,3}(?:=+|-+)[ \t]*$")
 # Deduplication is only meaningful within a Markdown section, not across titles.
 ATX_HEADING = re.compile(r"^ {0,3}#{1,6}(?:[ \t]|$)")
 # A list item starts a new semantic unit; nested continuation lines are not prose.
-LIST_MARKER = re.compile(r"^ {0,3}(?:[-+*][ \t]|\\d{1,9}[.)][ \t])")
+LIST_MARKER = re.compile(r"^ {0,3}(?:[-+*][ \t]|\d{1,9}[.)][ \t])")
 
 def compact(text):
     if not isinstance(text, str) or not text.strip() or len(text) > MAX_INPUT:
@@ -98,7 +98,7 @@ def compact(text):
             # Dedup only within a list item, never across distinct tasks.
             seen.clear()
             in_list = True
-        elif in_list and line.startswith(("  ", "\\t")):
+        elif in_list and line.startswith(("  ", "\t")):
             # Preserve two-space list continuations and their multiplicity.
             kept.append(line)
             continue
