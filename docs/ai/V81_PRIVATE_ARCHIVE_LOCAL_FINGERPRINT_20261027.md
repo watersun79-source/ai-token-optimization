@@ -5,7 +5,7 @@
 - Embedded archive: 154 entries, total declared uncompressed bytes 384,859; no encrypted, symlink, traversal, or otherwise unsafe entries found in the local structural audit.
 - All **10/10** mapped original source members match the independently recorded SHA-256 values in the parity script. No ZIP entry was extracted or executed, and no private source or fixture bytes were uploaded.
 - Reviewed one concrete difference: original `utc_strict_oracle.js` uses a working-directory-relative fixture and lacks the isolated branch's `__dirname` fixture pin, no-follow open and strict fixture row/header checks. The isolated implementation already retains this hardening; **no source replacement** was made.
-- This verifies original archive **identity and 10 member fingerprints**, not full byte-for-byte parity of the isolated source. Previously reported 3 EXACT / 5 DIFFERENT / 2 ABSENT remain unresolved as deployment parity. `full_v81_deployed=false`.
+- This verifies original archive **identity and 10 member fingerprints**, not full byte-for-byte parity of the isolated source. **Latest checked offline CI source-parity log** (run `40395037456`, tested SHA `d288f4f196581cd6bf80b5ae1cb74493eb4f5411`) reports **2 EXACT / 8 DIFFERENT / 0 ABSENT**; the earlier 3 / 5 / 2 checkpoint is historical, not current. All non-exact files remain non-verbatim. `full_v81_deployed=false`.
 - No claims of ChatGPT native scheduled-run success. Official per-run ID/status and same-run GitHub/Slack ledger remain **UNVERIFIED**.
 
 ## Scope and safety
