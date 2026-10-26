@@ -38,6 +38,8 @@ STRUCTURAL = re.compile(r"^ {0,3}(?:#{1,6}(?:[ \t]|$)|[-+*][ \t]|\d{1,9}[.)][ \t
 
 # Setext headings use the following underline: repetitions are structural, not prose.
 SETEXT_UNDERLINE = re.compile(r"^ {0,3}(?:=+|-+)[ \t]*$")
+# Deduplication is only meaningful within a Markdown section, not across titles.
+ATX_HEADING = re.compile(r"^ {0,3}#{1,6}(?:[ \t]|$)")
 
 def compact(text):
     if not isinstance(text, str) or not text.strip() or len(text) > MAX_INPUT:
@@ -77,6 +79,12 @@ def compact(text):
             # Never deduplicate or normalize executable lines.
             kept.append(line)
             continue
+        # Repeated instructions in different Markdown sections are distinct
+        # tasks. Clear only at ATX or Setext heading boundaries.
+        if ATX_HEADING.match(line) or (
+            index + 1 < len(lines) and SETEXT_UNDERLINE.match(lines[index + 1])
+        ):
+            seen.clear()
         if SETEXT_UNDERLINE.match(line) or (
             index + 1 < len(lines) and SETEXT_UNDERLINE.match(lines[index + 1])
         ):

@@ -227,6 +227,24 @@ class TaskExecutorTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "unclosed code fence"):
                     compact(text)
 
+    def test_same_instruction_in_different_atx_sections_is_not_deleted(self):
+        message = "## Build\nRun checks\nRun checks\n## Deploy\nRun checks"
+        report = compact(message)
+        self.assertEqual(report["output"], "## Build\nRun checks\n## Deploy\nRun checks")
+        self.assertEqual(report["duplicate_lines_removed"], 1)
+
+    def test_same_instruction_in_different_setext_sections_is_not_deleted(self):
+        message = "Build\n=====\nRun checks\nDeploy\n=====\nRun checks"
+        report = compact(message)
+        self.assertEqual(report["output"], message)
+        self.assertEqual(report["duplicate_lines_removed"], 0)
+
+    def test_heading_boundaries_do_not_disable_plain_text_dedup(self):
+        message = "repeat\nrepeat\n# Work\nrepeat\nrepeat"
+        report = compact(message)
+        self.assertEqual(report["output"], "repeat\n# Work\nrepeat")
+        self.assertEqual(report["duplicate_lines_removed"], 2)
+
     def test_repeated_setext_headings_preserved_without_losing_prose_dedup(self):
         message = "note\nnote\nTopic\n=====\nfirst\nTopic\n=====\nsecond"
         report = compact(message)
