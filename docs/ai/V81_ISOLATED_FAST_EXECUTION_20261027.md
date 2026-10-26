@@ -26,3 +26,14 @@
 
 ## Next single safe priority
 If the private original ZIP becomes securely available in an approved local-only runtime, verify its SHA and one reviewed source difference without exposing bytes. Otherwise, pursue one new independently reproducible isolated-code defect; never promote offline CI success to native unattended success.
+
+## Same-day actual queued task (incremental)
+- Executed task: `r16-20261027-execute-real-queue`, approved bounded optimization, not arbitrary autonomous AI or native ChatGPT.
+- Tested branch SHA: `d288f4f196581cd6bf80b5ae1cb74493eb4f5411`.
+- Official GitHub push CI: https://github.com/watersun79-source/ai-token-optimization/actions/runs/40395037456
+- Fast audit job `121825714607`: completed/success.
+- Full regression job `121825887317`: completed/success.
+- Raw job log: `R16_REAL_QUEUED_TASK.status=PASS`, input SHA-256 `f2e584e42b18c1e0b11d72b472098c6c996a4a38462682e3acd5c90124ef00b8`, output SHA-256 `eb17e03e1e82dd670281eaddc66846aa9b77d2ad39d952be5d892ad066d97649`.
+- Measured on this bounded input: 41 bytes removed, 1 duplicate line removed; external model calls 0, production writes 0.
+- First attempted queue routing failed CI `40394811614` because the message selected disallowed project roles. The input was corrected to the existing optimizer-only route without relaxing the worker's scope gate.
+- This receipt DOES NOT establish ChatGPT native scheduled-run success, original ZIP source parity, or live full v8.1 deployment.
