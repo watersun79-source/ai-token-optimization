@@ -34,7 +34,7 @@ class FakeSession:
         self.db.executed.append((sql,params))
         if "ai_v835_reap_exhausted" in sql:
             count = 0
-            for key in tuple(self.expired_claim_ids):
+            for key in tuple(self.db.expired_claim_ids):
                 if key in self.db.jobs and self.db.jobs[key][0] == "CLAIMED":
                     self.db.jobs[key][0] = "DEAD"
                     self.db.jobs[key][2] = None
