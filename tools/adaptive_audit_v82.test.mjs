@@ -11,7 +11,7 @@ function decide(extra = {}, config = {}) {
   return planAdaptiveAudit({ ...base, ...extra }, { now, ...config });
 }
 test("v8.2 and original resource guards", () => {
-  assert.equal(VERSION, "8.2.0");
+  assert.equal(VERSION, "8.2.1");
   const x = decide();
   assert.equal(x.guards.allowWrites, false);
   assert.equal(x.guards.allowDispatch, false);
@@ -43,13 +43,25 @@ test("fresh CI cannot erase divergent source parity", () => {
   assert.equal(x.state, "REVIEW_SOURCE_PARITY");
   assert.equal(x.next, "COMPARE_MAIN_AND_PINNED_SOURCE");
 });
-test("exact parity permits reuse for low risk", () => {
+test("caller-claimed parity cannot override different source SHA", () => {
   const x = decide({ mainCi: valid, parity: "EXACT", changedPaths: ["README.md"] });
-  assert.equal(x.mode, "REUSE");
-  assert.equal(x.next, "NO_DUPLICATE_CHECK");
+  assert.equal(x.state, "REVIEW_SOURCE_PARITY");
+  assert.equal(x.mode, "FULL");
+  assert.equal(x.next, "VERIFY_SOURCE_PARITY_PROVENANCE");
+});
+test("matching metadata with identical SHA is only a reuse candidate", () => {
+  const x = decide({ mainCi: valid, pinnedSha: A, parity: "EXACT", changedPaths: ["README.md"] });
+  assert.equal(x.state, "REUSE_CANDIDATE");
+  assert.equal(x.mode, "FAST");
+  assert.equal(x.next, "VERIFY_OFFICIAL_MAIN_CI_BEFORE_REUSE");
+});
+test("missing changed paths fail closed, not low risk", () => {
+  const x = decide({ mainCi: valid, pinnedSha: A, parity: "EXACT" });
+  assert.equal(x.risk, "UNKNOWN");
+  assert.equal(x.next, "VERIFY_CHANGED_PATHS");
 });
 test("workflow changes trigger full risk review", () => {
-  const x = decide({ mainCi: valid, parity: "EXACT",
+  const x = decide({ mainCi: valid, pinnedSha: A, parity: "EXACT",
     changedPaths: [".github/workflows/validate.yml"] });
   assert.equal(x.risk, "HIGH");
   assert.equal(x.mode, "FULL");
@@ -67,9 +79,31 @@ test("invalid input blocks and does not execute", () => {
 });
 test("pinned offline evidence never certifies ChatGPT native", () => {
   const pinnedCi = { runId: 10, workflow: "ai-r16-hourly.yml",
-    event: "workflow_dispatch", headSha: B,
+    event: "workflow_dispatch", headSha: A, checkoutSha: B,
     status: "completed", conclusion: "success", createdAt: "2026-10-29T23:00:00Z" };
   const x = decide({ mainCi: valid, pinnedCi, parity: "EXACT" });
   assert.equal(x.pinnedCi.state, "MATCHED_METADATA");
   assert.equal(x.nativeStatus, "UNVERIFIED");
+});
+
+test("GitHub hourly head SHA and pinned checkout SHA are distinct evidence", () => {
+  const pinnedCi = { runId: 101, workflow: "ai-r16-hourly.yml", event: "schedule",
+    headSha: A, checkoutSha: B, status: "completed", conclusion: "success",
+    createdAt: "2026-10-29T23:00:00Z" };
+  assert.equal(decide({ pinnedCi }).pinnedCi.state, "MATCHED_METADATA");
+  assert.equal(decide({ pinnedCi: { ...pinnedCi, checkoutSha: A } }).pinnedCi.reason,
+    "PINNED_CHECKOUT_SHA_UNVERIFIED");
+  assert.equal(decide({ pinnedCi: { ...pinnedCi, checkoutSha: undefined } }).pinnedCi.state,
+    "UNVERIFIED");
+});
+test("validation workflow cannot claim unsupported schedule event", () => {
+  const x = decide({ mainCi: { ...valid, event: "schedule" } });
+  assert.equal(x.mainCi.reason, "WORKFLOW_OR_EVENT_MISMATCH");
+  assert.equal(x.next, "VERIFY_OFFICIAL_MAIN_CI");
+});
+test("malformed run metadata is never an official attestation", () => {
+  const spoofed = { ...valid, runId: -1 };
+  const x = decide({ mainCi: spoofed, pinnedSha: A, parity: "EXACT", changedPaths: [] });
+  assert.equal(x.mainCi.state, "UNVERIFIED");
+  assert.notEqual(x.mode, "REUSE");
 });
