@@ -1,9 +1,9 @@
 /**
- * AI BOT v8.2.1 - evidence-bounded adaptive validation planner.
+ * AI BOT v8.2.2 - evidence-bounded adaptive validation planner.
  * Pure offline logic. It never fetches, dispatches, publishes, or calls models.
  * CI records supplied by callers remain untrusted until independently checked.
  */
-export const VERSION = "8.2.1";
+export const VERSION = "8.2.2";
 const SHA = /^[a-f0-9]{40}$/;
 const ALLOWED_EVENTS = Object.freeze({
   "validate.yml": new Set(["push", "pull_request", "workflow_dispatch"]),
@@ -51,9 +51,17 @@ export function planAdaptiveAudit(evidence, options = {}) {
       reason: "INVALID_SHA_CLOCK_OR_AGE_LIMIT", mainCi: { state: "UNVERIFIED" },
       pinnedCi: { state: "UNVERIFIED" } };
   }
-  const paths = Array.isArray(evidence.changedPaths) ?
-    evidence.changedPaths.filter(x => typeof x === "string").slice(0, 256) : null;
-  // Missing change scope is unknown, never silently treated as low risk.
+  // Incomplete, truncated, or non-canonical change lists cannot justify low risk.
+  // Fail closed instead of dropping invalid paths (which could hide high-risk files).
+  const suppliedPaths = evidence.changedPaths;
+  const pathsComplete = Array.isArray(suppliedPaths) &&
+    suppliedPaths.length > 0 && suppliedPaths.length <= 256 &&
+    suppliedPaths.every(x => typeof x === "string" && x.length <= 512 &&
+      x.length > 0 && !x.includes("\\") && !x.includes("\0") &&
+      !x.startsWith("/") && x.split("/").every(part =>
+        part.length > 0 && part !== "." && part !== ".."));
+  const paths = pathsComplete ? suppliedPaths : null;
+  // Missing or untrusted change scope is unknown, never silently treated as low risk.
   const risk = paths === null ? "UNKNOWN" :
     paths.length > 10 || paths.some(x =>
       x.startsWith(".github/workflows/") || x.startsWith("config/") ||
@@ -63,13 +71,16 @@ export function planAdaptiveAudit(evidence, options = {}) {
   const pinnedCi = inspectRun(evidence.pinnedCi, sha1, "ai-r16-hourly.yml", now, ageHours, sha2);
   const parity = ["EXACT", "DIVERGED", "UNKNOWN"].includes(evidence.parity) ?
     evidence.parity : "UNKNOWN";
+  // The default CROSS_SOURCE audit must preserve the pinned-source comparison.
+  // MAIN_ONLY is a distinct planning scope and never authorizes skipping tests.
+  const validationScope = options.validationScope === "MAIN_ONLY" ? "MAIN_ONLY" : "CROSS_SOURCE";
   let state = "NEEDS_EVIDENCE", mode = "FAST", next = "VERIFY_OFFICIAL_MAIN_CI",
       reason = mainCi.reason;
   if (mainCi.state === "FAILED") {
     state = "REQUIRES_ISOLATED_DEBUG"; mode = "FULL";
     next = "DIAGNOSE_MAIN_CI_ON_ISOLATED_BRANCH"; reason = "MAIN_CI_FAILED";
   } else if (mainCi.state === "MATCHED_METADATA") {
-    if (sha1 !== sha2) {
+    if (validationScope === "CROSS_SOURCE" && sha1 !== sha2) {
       state = "REVIEW_SOURCE_PARITY"; mode = "FULL";
       next = parity === "EXACT" ? "VERIFY_SOURCE_PARITY_PROVENANCE" : "COMPARE_MAIN_AND_PINNED_SOURCE";
       reason = "SOURCE_PARITY_NOT_INDEPENDENTLY_VERIFIED";
@@ -88,5 +99,5 @@ export function planAdaptiveAudit(evidence, options = {}) {
     }
   }
   return { ...base, state, mode, next, reason,
-    mainCi, pinnedCi, risk, parity, mainSha: sha1, pinnedSha: sha2 };
+    mainCi, pinnedCi, risk, parity, validationScope, mainSha: sha1, pinnedSha: sha2 };
 }
