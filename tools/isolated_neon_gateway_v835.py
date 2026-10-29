@@ -81,6 +81,8 @@ class Handler(BaseHTTPRequestHandler):
             counts = worker.summary(self.server.database_url)
             self.server.last_db_ok = True
         except Exception:
+            # A previously successful query must never leave stale UP/verified status.
+            self.server.last_db_ok = False
             return self.send(503, {"error": "BACKEND_UNAVAILABLE"})
         return self.send(200, {"version": VERSION, "state_counts": counts,
                                "production_connected": False})
@@ -116,6 +118,8 @@ class Handler(BaseHTTPRequestHandler):
             outcome = worker.run_once(self.server.database_url, limit=2, concurrency=2)
             self.server.last_db_ok = True
         except Exception:
+            # A previously successful query must never leave stale UP/verified status.
+            self.server.last_db_ok = False
             return self.send(503, {"error": "BACKEND_UNAVAILABLE"})
         return self.send(200, {"accepted": True, "new": new,
                                "batch": outcome, "production_connected": False})
