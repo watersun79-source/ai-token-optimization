@@ -1,6 +1,9 @@
 """v8.3.5 SQL-parameter-bound worker regression (no real secrets/connection)."""
 import unittest
-from tools.neon_pg_worker_v835 import VERSION, enqueue, is_synthetic_job, run_once, summary
+import sys
+from types import SimpleNamespace
+from unittest.mock import patch
+from tools.neon_pg_worker_v835 import VERSION, _connection, enqueue, is_synthetic_job, run_once, summary
 
 
 class FakeDb:
@@ -118,3 +121,26 @@ class WorkerV835Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"DATABASE_NOT_CONFIGURED"):
             run_once("")
         self.assertFalse(db.executed)
+
+    def test_real_connection_forces_encrypted_postgres(self):
+        calls = []
+        sentinel = object()
+        def connect(url, **options):
+            calls.append((url, options))
+            return sentinel
+        fake_psycopg = SimpleNamespace(connect=connect)
+        # Deliberately hostile URI: worker keyword override must require TLS.
+        uri = "postgresql://test-user:fake-password@invalid.local/test?sslmode=disable"
+        with patch.dict(sys.modules, {"psycopg": fake_psycopg}):
+            result = _connection(uri)
+        self.assertIs(result, sentinel)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0][0], uri)
+        self.assertEqual(calls[0][1]["sslmode"], "require")
+        self.assertEqual(calls[0][1]["connect_timeout"], 10)
+        self.assertFalse(calls[0][1]["autocommit"])
+
+    def test_real_connection_refuses_missing_or_non_postgres_url(self):
+        for value in (None, "", "sqlite:///test.sqlite", "http://db.invalid/test"):
+            with self.assertRaisesRegex(ValueError, "DATABASE_NOT_CONFIGURED"):
+                _connection(value)
