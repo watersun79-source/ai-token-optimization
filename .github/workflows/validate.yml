@@ -45,3 +45,7 @@ jobs:
       - name: Verify v8.3.2 Render public HTTPS health contract (one shot)
         if: github.event_name == 'pull_request' && github.head_ref == 'ai/v831-durable-recovery-20261030'
         run: python -m tools.verify_render_https_v832
+      # New isolated Render Free service: one independent public GET + unauthorized POST, PR-only.
+      - name: Verify v8.3.4 Render gateway HTTPS and fail-closed authentication (one shot)
+        if: github.event_name == 'pull_request' && github.head_ref == 'ai/v834-authenticated-queue-20261030'
+        run: python -m tools.verify_v834_deployed_gateway
