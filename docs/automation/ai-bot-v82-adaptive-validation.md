@@ -1,10 +1,10 @@
-# AI BOT v8.2.1 — 적응형 증거 검증 (격리 후보)
+# AI BOT v8.2.2 — 적응형 증거 검증 (격리 후보)
 
 ## 상태·범위
 - **적용 위치**: `ai/v82-adaptive-validation-20261030` 격리 브랜치.
 - **운영 배포**: 미적용. ChatGPT 정각 예약, Activepieces 운영 플로우, GitHub `main`, 기존 `ai-r16-hourly.yml` 체크아웃 고정 SHA를 변경하지 않음.
 - **기능**: `tools/adaptive_audit_v82.mjs`가 오프라인 입력 증거를 분석하고 `FAST`, `FULL`, `REUSE`를 선택하는 **판단 계획**만 만듦.
-- **검사**: `node --test tools/adaptive_audit_v82.test.mjs` (16개 단위 테스트). 격리 브랜치 `.github/workflows/validate.yml`에 이 검사 단계 연결.
+- **검사**: `node --test tools/adaptive_audit_v82.test.mjs` (20개 단위 테스트). 격리 브랜치 `.github/workflows/validate.yml`에 이 검사 단계 연결.
 - **주의**: 이 엔진은 GitHub API, 모델 API, Slack, 예약 API를 호출하지 않음. 입력받은 CI 메타데이터는 공식 원본과 별도 대조되기 전까지 인증된 증거가 아님.
 
 ## 적응형 정책
@@ -38,3 +38,9 @@ API/외부 모델 호출 0 · 자동 dispatch 0 · Slack 발송 0 · 예약 조�
 - '일치하는 CI 메타데이터'는 단독으로 검증된 증거가 아님. 낮은 위험의 재사용 후보라도 공식 CI 조회 전 재검사 생략을 승인하지 않음.
 - 공식 v8.2.0 격리 PR 테스트: [run 40946427117](https://github.com/watersun79-source/ai-token-optimization/actions/runs/40946427117) PASS.
 - **v8.2.1 공식 PR CI**는 후속 SHA의 새 실행 ID·결과를 별도로 확인해야 함.
+
+## v8.2.2 실사용 승격 사전 게이트 (2026-10-30)
+- **입력 누락 차단:** `changedPaths`가 빈 목록, 비문자열·상대 경로·역슬래시 경로를 포함하거나 256개를 넘으면 위험도 `UNKNOWN`과 `FULL → VERIFY_CHANGED_PATHS`를 선택. 고위험 파일이 누락된 목록으로 재검사 축소되지 않도록 함.
+- **검증 범위 분리:** 기본 `CROSS_SOURCE`는 본선과 기존 핀 SHA의 차이를 계속 검사. `validationScope: "MAIN_ONLY"`를 명시하면 본선만 평가하며, 서로 다른 핀 SHA 때문에 무조건 전체 소스 비교를 반복하지 않음.
+- **성공 판정 보호:** 본선 전용·저위험으로 보이더라도 `REUSE_CANDIDATE`만 반환하며 GitHub 원본 CI를 별도로 확인하기 전에는 검사 생략을 승인하지 않음.
+- **버전 전환 규칙:** 격리 개발판은 v8.2.2. 운영판 v8.1, 기존 :00 예약과 :15 고정 오프라인 감사는 그대로. 초안 PR #9 미병합. 최신 v8.2.2 공식 CI 실행번호·성공 여부는 별도로 확인.
