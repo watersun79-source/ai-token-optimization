@@ -24,7 +24,9 @@ def _connection(database_url: str):
     if not isinstance(database_url, str) or not database_url.startswith(("postgresql://", "postgres://")):
         raise ValueError("DATABASE_NOT_CONFIGURED")
     import psycopg  # Optional when backend not configured; pin binary wheel at deploy.
-    return psycopg.connect(database_url, connect_timeout=10, autocommit=False)
+    # Force TLS even if a manually configured URI omits SSL or requests disable.
+    # Keyword parameters override conflicting URI options in psycopg/libpq.
+    return psycopg.connect(database_url, connect_timeout=10, autocommit=False, sslmode="require")
 
 
 def _query(database_url: str, sql: str, params: tuple = (), *, factory=None) -> list:
