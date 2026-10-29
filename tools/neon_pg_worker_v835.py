@@ -65,6 +65,17 @@ def run_once(database_url: str, *, worker: str = "v835-isolated", limit: int = 2
         raise ValueError("INVALID_CONCURRENCY")
     if not database_url:
         raise ValueError("DATABASE_NOT_CONFIGURED")
+    # Finalize expired leases already at their retry limit before claiming work.
+    # This SQL function changes only expired synthetic attempts >= 5 to DEAD.
+    # It uses a transaction and does not execute user/model/network jobs.
+    reaped_rows = _query(
+        database_url,
+        "SELECT public.ai_v835_reap_exhausted()",
+        factory=factory,
+    )
+    reaped = reaped_rows[0][0] if reaped_rows else 0
+    if type(reaped) is not int or reaped < 0:
+        raise RuntimeError("INVALID_REAP_RESULT")
     # Atomic SKIP LOCKED claim and token fencing both live on Neon Postgres.
     claims = []
     for _ in range(limit):
@@ -99,6 +110,7 @@ def run_once(database_url: str, *, worker: str = "v835-isolated", limit: int = 2
         "succeeded": statuses.count("SUCCEEDED"),
         "dead": statuses.count("DEAD"),
         "lease_conflicts": statuses.count("LEASE_CONFLICT"),
+        "exhausted_reaped": reaped,
         "durable_backend": "NEON_POSTGRES_TRANSACTIONAL",
         "always_on_verified": False,
     }
