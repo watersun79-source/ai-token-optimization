@@ -37,3 +37,5 @@ jobs:
         run: node tools/json_output_validator.js
       - name: Validate provider-free review metadata guard
         run: node --test tools/free-web-guard/guard.test.mjs
+      - name: Verify AI BOT v8.2 adaptive evidence decisions (offline)
+        run: node --test tools/adaptive_audit_v82.test.mjs
