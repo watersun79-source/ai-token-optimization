@@ -1,18 +1,25 @@
 /**
- * AI BOT v8.2.0 - evidence-bounded adaptive validation planner.
+ * AI BOT v8.2.1 - evidence-bounded adaptive validation planner.
  * Pure offline logic. It never fetches, dispatches, publishes, or calls models.
  * CI records supplied by callers remain untrusted until independently checked.
  */
-export const VERSION = "8.2.0";
+export const VERSION = "8.2.1";
 const SHA = /^[a-f0-9]{40}$/;
-const KNOWN_EVENTS = new Set(["schedule", "workflow_dispatch", "push", "pull_request"]);
+const ALLOWED_EVENTS = Object.freeze({
+  "validate.yml": new Set(["push", "pull_request", "workflow_dispatch"]),
+  "ai-r16-hourly.yml": new Set(["schedule", "workflow_dispatch", "push"]),
+});
 const HOURS = 3_600_000;
 
-function inspectRun(run, expectedSha, expectedWorkflow, now, hours) {
+function inspectRun(run, expectedSha, expectedWorkflow, now, hours, expectedCheckoutSha = null) {
   if (!run || typeof run !== "object") return { state: "UNVERIFIED", reason: "NO_OFFICIAL_RUN_EVIDENCE" };
   if (!Number.isSafeInteger(run.runId) || run.runId <= 0) return { state: "UNVERIFIED", reason: "INVALID_RUN_ID" };
-  if (run.workflow !== expectedWorkflow || !KNOWN_EVENTS.has(run.event)) return { state: "UNVERIFIED", reason: "WORKFLOW_OR_EVENT_MISMATCH" };
+  if (run.workflow !== expectedWorkflow || !ALLOWED_EVENTS[expectedWorkflow]?.has(run.event)) return { state: "UNVERIFIED", reason: "WORKFLOW_OR_EVENT_MISMATCH" };
   if (run.headSha !== expectedSha) return { state: "UNVERIFIED", reason: "SHA_MISMATCH" };
+  // A pinned hourly audit is triggered at the main workflow SHA, but checks out another SHA.
+  // Do not conflate GitHub run head_sha with checked-out source commit.
+  if (expectedCheckoutSha && run.checkoutSha !== expectedCheckoutSha)
+    return { state: "UNVERIFIED", reason: "PINNED_CHECKOUT_SHA_UNVERIFIED" };
   const stamp = Date.parse(run.createdAt);
   if (!Number.isFinite(stamp) || stamp > now + 120000) return { state: "UNVERIFIED", reason: "INVALID_RUN_CLOCK" };
   if (now - stamp > hours * HOURS) return { state: "UNVERIFIED", reason: "STALE_RUN" };
@@ -45,13 +52,15 @@ export function planAdaptiveAudit(evidence, options = {}) {
       pinnedCi: { state: "UNVERIFIED" } };
   }
   const paths = Array.isArray(evidence.changedPaths) ?
-    evidence.changedPaths.filter(x => typeof x === "string").slice(0, 256) : [];
-  const risk = paths.length > 10 || paths.some(x =>
-    x.startsWith(".github/workflows/") || x.startsWith("config/") ||
-    x.startsWith("security/") || x.startsWith("tools/ai_memory_bridge")) ? "HIGH" :
+    evidence.changedPaths.filter(x => typeof x === "string").slice(0, 256) : null;
+  // Missing change scope is unknown, never silently treated as low risk.
+  const risk = paths === null ? "UNKNOWN" :
+    paths.length > 10 || paths.some(x =>
+      x.startsWith(".github/workflows/") || x.startsWith("config/") ||
+      x.startsWith("security/") || x.startsWith("tools/ai_memory_bridge")) ? "HIGH" :
     paths.some(x => x.startsWith("tools/") || x.startsWith("tests/")) ? "MEDIUM" : "LOW";
   const mainCi = inspectRun(evidence.mainCi, sha1, "validate.yml", now, ageHours);
-  const pinnedCi = inspectRun(evidence.pinnedCi, sha2, "ai-r16-hourly.yml", now, ageHours);
+  const pinnedCi = inspectRun(evidence.pinnedCi, sha1, "ai-r16-hourly.yml", now, ageHours, sha2);
   const parity = ["EXACT", "DIVERGED", "UNKNOWN"].includes(evidence.parity) ?
     evidence.parity : "UNKNOWN";
   let state = "NEEDS_EVIDENCE", mode = "FAST", next = "VERIFY_OFFICIAL_MAIN_CI",
@@ -60,15 +69,22 @@ export function planAdaptiveAudit(evidence, options = {}) {
     state = "REQUIRES_ISOLATED_DEBUG"; mode = "FULL";
     next = "DIAGNOSE_MAIN_CI_ON_ISOLATED_BRANCH"; reason = "MAIN_CI_FAILED";
   } else if (mainCi.state === "MATCHED_METADATA") {
-    if (sha1 !== sha2 && parity !== "EXACT") {
+    if (sha1 !== sha2) {
       state = "REVIEW_SOURCE_PARITY"; mode = "FULL";
-      next = "COMPARE_MAIN_AND_PINNED_SOURCE"; reason = "SOURCE_PARITY_NOT_ESTABLISHED";
+      next = parity === "EXACT" ? "VERIFY_SOURCE_PARITY_PROVENANCE" : "COMPARE_MAIN_AND_PINNED_SOURCE";
+      reason = "SOURCE_PARITY_NOT_INDEPENDENTLY_VERIFIED";
+    } else if (risk === "UNKNOWN") {
+      state = "REVIEW_CHANGE_SCOPE"; mode = "FULL";
+      next = "VERIFY_CHANGED_PATHS"; reason = "CHANGE_SCOPE_NOT_SUPPLIED";
     } else if (risk === "HIGH") {
       state = "REVIEW_HIGH_RISK"; mode = "FULL";
       next = "RUN_OFFLINE_FULL_CHECK_ON_ISOLATED_BRANCH"; reason = "RISK_BASED_ESCALATION";
     } else {
-      state = "REUSE_EXISTING_EVIDENCE"; mode = "REUSE";
-      next = "NO_DUPLICATE_CHECK"; reason = "METADATA_MATCHES_REQUESTED_SOURCE";
+      // This module cannot fetch official run provenance. Matching caller metadata
+      // may suggest a reuse candidate, but MUST NOT itself authorize skipping tests.
+      state = "REUSE_CANDIDATE"; mode = "FAST";
+      next = "VERIFY_OFFICIAL_MAIN_CI_BEFORE_REUSE";
+      reason = "UNATTESTED_METADATA_CANNOT_AUTHORIZE_REUSE";
     }
   }
   return { ...base, state, mode, next, reason,
