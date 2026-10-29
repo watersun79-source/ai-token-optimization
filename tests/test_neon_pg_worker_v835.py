@@ -12,6 +12,7 @@ class FakeDb:
         self.jobs = {}
         self.sequence = 0
         self.executed = []
+        self.expired_claim_ids = set()
     def __call__(self, url):
         if url != "postgresql://fake/test":
             raise ValueError("UNEXPECTED_URL")
@@ -31,7 +32,16 @@ class FakeSession:
         return self
     def execute(self, sql, params=()):
         self.db.executed.append((sql,params))
-        if "INSERT INTO" in sql:
+        if "ai_v835_reap_exhausted" in sql:
+            count = 0
+            for key in tuple(self.expired_claim_ids):
+                if key in self.db.jobs and self.db.jobs[key][0] == "CLAIMED":
+                    self.db.jobs[key][0] = "DEAD"
+                    self.db.jobs[key][2] = None
+                    self.db.jobs[key][3] = None
+                    count += 1
+            self.rows = [(count,)]
+        elif "INSERT INTO" in sql:
             job_id = params[0]
             is_new = job_id not in self.db.jobs
             if is_new:
@@ -79,6 +89,7 @@ class WorkerV835Tests(unittest.TestCase):
         result=run_once(self.url,worker="test-worker",factory=db)
         self.assertEqual(result["claimed"],1)
         self.assertEqual(result["succeeded"],1)
+        self.assertEqual(result["exhausted_reaped"],0)
         self.assertFalse(result["always_on_verified"])
         self.assertEqual(summary(self.url,factory=db),{"SUCCEEDED":1})
 
@@ -144,3 +155,34 @@ class WorkerV835Tests(unittest.TestCase):
         for value in (None, "", "sqlite:///test.sqlite", "http://db.invalid/test"):
             with self.assertRaisesRegex(ValueError, "DATABASE_NOT_CONFIGURED"):
                 _connection(value)
+
+    def test_exhausted_expired_lease_is_reaped_not_reclaimed(self):
+        db = FakeDb()
+        key = "synthetic-v83-exhausted"
+        enqueue(self.url, key, factory=db)
+        # An expired claim at the maximum retry limit; only this synthetic
+        # record is eligible for the terminal-state cleanup.
+        db.jobs[key] = ["CLAIMED", 5, "crashed-worker", "old-lease-token"]
+        db.expired_claim_ids.add(key)
+        outcome = run_once(self.url, worker="replacement-worker", factory=db)
+        self.assertEqual(outcome["exhausted_reaped"], 1)
+        self.assertEqual(outcome["claimed"], 0)
+        self.assertEqual(outcome["succeeded"], 0)
+        self.assertEqual(summary(self.url, factory=db), {"DEAD": 1})
+        repeated = run_once(self.url, factory=db)
+        self.assertEqual(repeated["exhausted_reaped"], 0)
+        self.assertEqual(repeated["claimed"], 0)
+
+    def test_reaper_failure_prevents_any_claim_or_worker(self):
+        db = FakeDb()
+        enqueue(self.url, "synthetic-v83-reaper-error", factory=db)
+        original = FakeSession.execute
+        def broken(session, sql, params=()):
+            if "ai_v835_reap_exhausted" in sql:
+                raise RuntimeError("BACKEND_TEMPORARILY_UNAVAILABLE")
+            return original(session, sql, params)
+        with patch.object(FakeSession, "execute", broken):
+            with self.assertRaisesRegex(RuntimeError, "BACKEND_TEMPORARILY_UNAVAILABLE"):
+                run_once(self.url, factory=db)
+        self.assertEqual(db.jobs["synthetic-v83-reaper-error"][0], "QUEUED")
+        self.assertFalse(any("ai_v835_claim_synthetic" in sql for sql,_ in db.executed))
