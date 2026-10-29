@@ -107,13 +107,13 @@ class AuthenticatedQueueTests(unittest.TestCase):
         self.assertEqual(DurableLeaseQueue(self.db).summary(), {"SUCCEEDED": 1})
 
     def test_state_survives_real_server_process_restart_with_same_disk(self):
-        self._start()
+        before = self._start()
         job = {"task_id": "synthetic-v83-restart", "kind": "offline_check"}
         old = self._http("/private/submit", body=job, key=self.KEY, method="POST")
         self.assertEqual(old[1]["state"], "SUCCEEDED")
         self._stop()
         status = self._start()
-        self.assertNotEqual(old[1].get("boot_id"), status["boot_id"])
+        self.assertNotEqual(before["boot_id"], status["boot_id"])
         code, observed = self._http("/private/state", key=self.KEY)
         self.assertEqual(code, 200)
         self.assertEqual(observed["queue"], {"SUCCEEDED": 1})
