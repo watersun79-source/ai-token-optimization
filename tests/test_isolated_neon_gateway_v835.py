@@ -80,11 +80,27 @@ class GatewayTests(unittest.TestCase):
             enq.assert_not_called()
 
     def test_backend_failure_returns_only_sanitized_error(self):
+        # Simulate a previously connected database becoming unavailable.
+        self.server.last_db_ok = True
         with patch("tools.isolated_neon_gateway_v835.worker.summary",
                    side_effect=RuntimeError("SECRET_IN_EXCEPTION")):
             status, data = self.get("/private/state",api_key=self.key)
             self.assertEqual(status,503)
             self.assertEqual(data,{"error":"BACKEND_UNAVAILABLE"})
+            self.assertFalse(self.server.last_db_ok)
+            self.assertFalse(self.get("/healthz")[1]["database_connection_verified"])
+
+    def test_write_failure_clears_previously_verified_database_state(self):
+        self.server.last_db_ok = True
+        with patch("tools.isolated_neon_gateway_v835.worker.enqueue",
+                   side_effect=RuntimeError("SECRET_NO_PRINTING")):
+            status, response = self.get(
+                "/private/submit", api_key=self.key,
+                body={"task_id":"synthetic-v83-failed-backend","kind":"offline_check"},
+                method="POST")
+            self.assertEqual(status,503)
+            self.assertEqual(response,{"error":"BACKEND_UNAVAILABLE"})
+            self.assertFalse(self.get("/healthz")[1]["database_connection_verified"])
 
     def test_no_database_or_short_key_does_not_accept_jobs(self):
         self.server.enabled=False
