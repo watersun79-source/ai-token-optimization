@@ -11,7 +11,7 @@ function decide(extra = {}, config = {}) {
   return planAdaptiveAudit({ ...base, ...extra }, { now, ...config });
 }
 test("v8.2 and original resource guards", () => {
-  assert.equal(VERSION, "8.2.1");
+  assert.equal(VERSION, "8.2.2");
   const x = decide();
   assert.equal(x.guards.allowWrites, false);
   assert.equal(x.guards.allowDispatch, false);
@@ -106,4 +106,42 @@ test("malformed run metadata is never an official attestation", () => {
   const x = decide({ mainCi: spoofed, pinnedSha: A, parity: "EXACT", changedPaths: [] });
   assert.equal(x.mainCi.state, "UNVERIFIED");
   assert.notEqual(x.mode, "REUSE");
+});
+
+test("v8.2.2 invalid changed file lists cannot become low-risk evidence", () => {
+  const candidate = { mainCi: valid, pinnedSha: A, parity: "EXACT" };
+  for (const changedPaths of [
+    [], ["README.md", null], ["README.md", ".github/workflows/x.yml", 42],
+    ["./.github/workflows/a.yml"], ["../security/guard.mjs"],
+    ["/security/guard.mjs"], ["docs\\..\\security\\guard.mjs"],
+    Array.from({ length: 257 }, (_, i) => "docs/n" + i + ".md"),
+  ]) {
+    const x = decide({ ...candidate, changedPaths });
+    assert.equal(x.risk, "UNKNOWN");
+    assert.equal(x.state, "REVIEW_CHANGE_SCOPE");
+    assert.equal(x.mode, "FULL");
+  }
+});
+test("v8.2.2 canonical policy paths still escalate full review", () => {
+  const x = decide({ mainCi: valid, pinnedSha: A, parity: "EXACT",
+    changedPaths: ["README.md", "config/policy.json"] });
+  assert.equal(x.risk, "HIGH");
+  assert.equal(x.next, "RUN_OFFLINE_FULL_CHECK_ON_ISOLATED_BRANCH");
+});
+test("v8.2.2 MAIN_ONLY avoids unrelated pinned-source parity check", () => {
+  const x = decide({ mainCi: valid, changedPaths: ["docs/notes.md"] },
+    { validationScope: "MAIN_ONLY" });
+  assert.equal(x.validationScope, "MAIN_ONLY");
+  assert.equal(x.state, "REUSE_CANDIDATE");
+  assert.equal(x.next, "VERIFY_OFFICIAL_MAIN_CI_BEFORE_REUSE");
+  assert.equal(x.nativeStatus, "UNVERIFIED");
+});
+test("v8.2.2 default and unknown scopes must retain full source-parity gate", () => {
+  for (const scope of [undefined, "UNSAFE", "CROSS_SOURCE"]) {
+    const x = decide({ mainCi: valid, changedPaths: ["docs/notes.md"] },
+      { validationScope: scope });
+    assert.equal(x.validationScope, "CROSS_SOURCE");
+    assert.equal(x.mode, "FULL");
+    assert.equal(x.next, "COMPARE_MAIN_AND_PINNED_SOURCE");
+  }
 });
