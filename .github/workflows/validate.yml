@@ -39,3 +39,5 @@ jobs:
         run: node --test tools/free-web-guard/guard.test.mjs
       - name: Verify AI BOT v8.2 adaptive evidence decisions (offline)
         run: node --test tools/adaptive_audit_v82.test.mjs
+      - name: Verify AI BOT v8.3 event-driven parallel executor (offline)
+        run: node --test tools/adaptive_parallel_v83.test.mjs
