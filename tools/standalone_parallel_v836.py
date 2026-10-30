@@ -1,4 +1,4 @@
-"""v8.3.7 isolated multi-process SQLite runner with recovery evidence; no hosting.
+"""v8.3.8 resource-bounded adaptive SQLite parallel runner; no hosting.
 
 Only v8.3.3's synthetic offline handler can be invoked. The durable SQLite
 file must live on the same persistent local disk for all child processes.
@@ -10,15 +10,79 @@ import argparse
 from concurrent.futures import ThreadPoolExecutor
 import json
 import os
+import math
+import time
 from pathlib import Path
 import subprocess
 import sys
 
 from tools.durable_queue_v831 import DurableLeaseQueue
 
-VERSION = "8.3.7"
-MAX_PROCESSES = 4
+VERSION = "8.3.8"
+MAX_PROCESSES = 256  # Architectural hard bound; resource quota is normally lower.
 MAX_PER_PROCESS = 16
+MEMORY_PER_CHILD_MIB = 96
+MEMORY_RESERVE_MIB = 256
+
+
+def _read_cgroup_number(path: str) -> int | None:
+    try:
+        raw = Path(path).read_text(encoding="ascii").strip()
+        if raw == "max":
+            return None
+        num = int(raw)
+        return num if num > 0 else None
+    except (OSError, ValueError):
+        return None
+
+
+def _cpu_capacity() -> int:
+    cpus = max(1, os.cpu_count() or 1)
+    if hasattr(os, "sched_getaffinity"):
+        try:
+            cpus = min(cpus, len(os.sched_getaffinity(0)))
+        except (OSError, ValueError):
+            pass
+    try:
+        quota, period = Path("/sys/fs/cgroup/cpu.max").read_text(
+            encoding="ascii").split()[:2]
+        if quota != "max":
+            cpus = min(cpus, max(1, math.ceil(int(quota) / int(period))))
+    except (OSError, ValueError, ZeroDivisionError):
+        pass
+    return max(1, cpus)
+
+
+def _memory_capacity() -> int:
+    limit = _read_cgroup_number("/sys/fs/cgroup/memory.max")
+    if limit is None:
+        try:
+            info = Path("/proc/meminfo").read_text(encoding="ascii")
+            line = next(row for row in info.splitlines()
+                        if row.startswith("MemAvailable:"))
+            limit = int(line.split()[1]) * 1024
+        except (OSError, ValueError, StopIteration, IndexError):
+            return 8  # Conservative non-Linux default without resource evidence.
+    mib = limit // (1024 * 1024)
+    return max(1, (mib - MEMORY_RESERVE_MIB) // MEMORY_PER_CHILD_MIB)
+
+
+def runtime_process_ceiling() -> int:
+    """Never assume 256 workers are safe on a small/free runner."""
+    return max(1, min(MAX_PROCESSES, _cpu_capacity() * 2, _memory_capacity()))
+
+
+def choose_processes(requested: int | str, backlog: int, per_process: int,
+                     *, resource_cap: int | None = None) -> int:
+    """Deterministic adaptive bound: hardware, memory and available work."""
+    _bounded_int(backlog, 0, 10**9, "INVALID_BACKLOG")
+    _bounded_int(per_process, 1, MAX_PER_PROCESS, "INVALID_BATCH_LIMIT")
+    if requested != "auto":
+        _bounded_int(requested, 1, MAX_PROCESSES, "INVALID_PROCESS_COUNT")
+    cap = runtime_process_ceiling() if resource_cap is None else _bounded_int(
+        resource_cap, 1, MAX_PROCESSES, "INVALID_RESOURCE_LIMIT")
+    useful = max(1, math.ceil(backlog / per_process))
+    return min(cap, useful, cap if requested == "auto" else requested)
 ROOT = str(Path(__file__).resolve().parent.parent)
 
 
@@ -58,22 +122,27 @@ def _run_child(path: str, index: int, limit: int) -> dict:
         return {"ok": False, "reason": "CHILD_UNVERIFIED"}
 
 
-def run_parallel(database_path: str, *, processes: int = 4, per_process: int = 4) -> dict:
-    """Execute at most four independent child processes once; no polling.
+def run_parallel(database_path: str, *, processes: int | str = "auto",
+                 per_process: int = 4) -> dict:
+    """One finite batch; adaptive process count is an upper bound, not a target.
 
-    The shared existing SQLite lease queue serializes CLAIM transactions and
-    fences completions by token. This launcher does not guarantee exactly-once
-    effects or persistence if the filesystem itself is ephemeral.
+    SQLite serializes its writes. Increasing processes is not evidence of
+    increasing throughput; use the separate isolated benchmark to measure.
     """
-    _bounded_int(processes, 1, MAX_PROCESSES, "INVALID_PROCESS_COUNT")
+    if processes != "auto":
+        _bounded_int(processes, 1, MAX_PROCESSES, "INVALID_PROCESS_COUNT")
     _bounded_int(per_process, 1, MAX_PER_PROCESS, "INVALID_BATCH_LIMIT")
     if not isinstance(database_path, str) or not database_path or database_path == ":memory:":
         raise ValueError("PERSISTENT_DB_PATH_REQUIRED")
     path = os.path.abspath(database_path)
     queue = DurableLeaseQueue(path)
-    with ThreadPoolExecutor(max_workers=processes) as executor:
+    backlog = queue.summary().get("QUEUED", 0)
+    selected = choose_processes(processes, backlog, per_process)
+    began = time.perf_counter()
+    with ThreadPoolExecutor(max_workers=selected) as executor:
         workers = list(executor.map(lambda idx: _run_child(path, idx, per_process),
-                                    range(processes)))
+                                    range(selected)))
+    elapsed = max(time.perf_counter() - began, 0.000001)
     failures = sum(not worker["ok"] for worker in workers)
     claimed = sum(worker.get("claimed", 0) for worker in workers)
     succeeded = sum(worker.get("succeeded", 0) for worker in workers)
@@ -91,7 +160,11 @@ def run_parallel(database_path: str, *, processes: int = 4, per_process: int = 4
     else:
         verdict = "PASS" if succeeded else "IDLE"
     return {"version": VERSION, "scope": "ISOLATED_LOCAL_SYNTHETIC_ONLY",
-            "processes_started": processes, "processes_reported": processes - failures,
+            "processes_requested": processes, "processes_started": selected,
+            "processes_reported": selected - failures,
+            "runtime_process_cap": runtime_process_ceiling(),
+            "elapsed_ms": round(elapsed * 1000, 2),
+            "throughput_jobs_per_sec": round(succeeded / elapsed, 2),
             "claimed": claimed, "succeeded": succeeded, "dead": dead,
             "lease_conflicts": conflicts, "child_failures": failures,
             "recovered_requeued": recovered_requeued,
@@ -104,10 +177,12 @@ def run_parallel(database_path: str, *, processes: int = 4, per_process: int = 4
 def main() -> int:
     parser = argparse.ArgumentParser(description="One-shot offline SQLite parallel workers")
     parser.add_argument("--db", required=True)
-    parser.add_argument("--processes", type=int, default=4)
+    parser.add_argument("--processes", default="auto",
+                        help="auto or integer 1..256; real count is resource-bound")
     parser.add_argument("--per-process", type=int, default=4)
     args = parser.parse_args()
-    report = run_parallel(args.db, processes=args.processes, per_process=args.per_process)
+    requested = args.processes if args.processes == "auto" else int(args.processes)
+    report = run_parallel(args.db, processes=requested, per_process=args.per_process)
     print(json.dumps(report, sort_keys=True))
     return 0 if report["verdict"] in {"PASS", "IDLE", "PARTIAL"} else 1
 
