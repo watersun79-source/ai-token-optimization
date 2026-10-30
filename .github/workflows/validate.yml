@@ -37,3 +37,31 @@ jobs:
         run: node tools/json_output_validator.js
       - name: Validate provider-free review metadata guard
         run: node --test tools/free-web-guard/guard.test.mjs
+      - name: Verify AI BOT v8.2 adaptive evidence decisions (offline)
+        run: node --test tools/adaptive_audit_v82.test.mjs
+      - name: Verify AI BOT v8.3 event-driven parallel executor (offline)
+        run: node --test tools/adaptive_parallel_v83.test.mjs
+      # Isolated v8.3.8 only: no network/secrets; two rounds of synthetic SQLite jobs.
+      - name: Benchmark bounded adaptive standalone processes (isolated only)
+        if: github.event_name == 'pull_request' && github.head_ref == 'ai/v838-adaptive-parallel-performance-20261030'
+        run: python -m tools.benchmark_standalone_v838 --jobs 48 --repeats 2
+      # v8.3.9 isolated: finite 10-second repeated real subprocess stress, no remote calls.
+      - name: Soak adaptive standalone worker with local SQLite (isolated only)
+        if: github.event_name == 'pull_request' && github.head_ref == 'ai/v839-workload-aware-soak-20261030'
+        run: python -m tools.soak_standalone_v839 --seconds 10 --jobs 12
+      # New isolated 256-slot test: one Python process, 256 overlapping synthetic async waits.
+      - name: Verify 256 in-flight synthetic async coroutines and SQLite persistence (isolated only)
+        if: github.event_name == 'pull_request' && github.head_ref == 'ai/v840-256-async-concurrency-20261031'
+        run: python -m tools.probe_256_async_v840
+      # One bounded public HTTPS read on this isolated draft PR ONLY.
+      - name: Verify v8.3.2 Render public HTTPS health contract (one shot)
+        if: github.event_name == 'pull_request' && github.head_ref == 'ai/v831-durable-recovery-20261030'
+        run: python -m tools.verify_render_https_v832
+      # New isolated Render Free service: one independent public GET + unauthorized POST, PR-only.
+      - name: Verify v8.3.4 Render gateway HTTPS and fail-closed authentication (one shot)
+        if: github.event_name == 'pull_request' && github.head_ref == 'ai/v834-authenticated-queue-20261030'
+        run: python -m tools.verify_v834_deployed_gateway
+      # One public GET plus one unauthenticated POST; no credentials or job execution.
+      - name: Verify v8.3.5 Render gateway public HTTPS and unauthorized 401 (one shot)
+        if: github.event_name == 'pull_request' && github.head_ref == 'ai/v835-neon-atomic-queue-20261030'
+        run: python -m tools.verify_v835_public_security
