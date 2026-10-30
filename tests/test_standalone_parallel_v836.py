@@ -10,7 +10,7 @@ from unittest import mock
 
 from tools.durable_queue_v831 import DurableLeaseQueue
 from tools.standalone_parallel_v836 import (
-    MAX_PROCESSES, VERSION, choose_processes, run_parallel,
+    DEFAULT_REQUESTED_PROCESSES, MAX_PROCESSES, VERSION, choose_processes, run_parallel,
     runtime_process_ceiling,
 )
 
@@ -30,7 +30,7 @@ class StandaloneParallelTests(unittest.TestCase):
         for name in names:
             self.add(name)
         report = run_parallel(self.db, processes=4, per_process=5)
-        self.assertEqual(VERSION, "8.3.9")
+        self.assertEqual(VERSION, "8.3.10")
         self.assertEqual(report["verdict"], "PASS")
         self.assertEqual(report["processes_reported"], 4)
         self.assertEqual(report["succeeded"], 20)
@@ -149,6 +149,42 @@ class StandaloneParallelTests(unittest.TestCase):
         self.assertEqual(report["workload_profile_hint"], "cpu")
         self.assertEqual(report["processes_started"], 1)
         self.assertEqual(self.queue.get("synthetic-v83-v839-profile")["attempt"], 1)
+
+
+    def test_default_64_requested_but_cpu_memory_cap_still_enforced(self):
+        self.assertEqual(DEFAULT_REQUESTED_PROCESSES, 64)
+        self.assertEqual(choose_processes(64, 256, 4, resource_cap=64), 64)
+        self.assertEqual(choose_processes(64, 256, 4, resource_cap=8), 8)
+        self.assertEqual(choose_processes(64, 2, 4, resource_cap=64), 1)
+        self.assertEqual(choose_processes(64, 256, 4, resource_cap=1), 1)
+        for i in range(12):
+            self.add(f"synthetic-v83-v8310-cap-{i}")
+        with mock.patch("tools.standalone_parallel_v836.runtime_process_ceiling",
+                        return_value=2):
+            report = run_parallel(self.db)
+        self.assertEqual(report["processes_requested"], 64)
+        self.assertEqual(report["processes_started"], 2)
+        self.assertEqual(report["succeeded"], 8)
+        self.assertEqual(report["queue_state"], {"SUCCEEDED": 8, "QUEUED": 4})
+        self.assertEqual(report["verdict"], "PARTIAL")
+
+    def test_explicit_64_request_drains_all_synthetic_jobs_without_duplicates(self):
+        tasks = [f"synthetic-v83-v8310-job-{i}" for i in range(64)]
+        for name in tasks:
+            self.add(name)
+        reports = []
+        while self.queue.summary().get("QUEUED", 0):
+            report = run_parallel(self.db, processes=64, per_process=4)
+            self.assertIn(report["verdict"], {"PASS", "PARTIAL"})
+            self.assertEqual(report["child_failures"], 0)
+            self.assertEqual(report["lease_conflicts"], 0)
+            self.assertLessEqual(report["processes_started"], 64)
+            reports.append(report)
+            self.assertLess(len(reports), 17)
+        self.assertEqual(sum(v["succeeded"] for v in reports), 64)
+        self.assertEqual(DurableLeaseQueue(self.db).summary(), {"SUCCEEDED": 64})
+        self.assertTrue(all(self.queue.get(name)["attempt"] == 1 for name in tasks))
+        self.assertEqual(run_parallel(self.db)["claimed"], 0)
 
     def test_killed_real_claiming_process_recovers_after_lease_expiry(self):
         """A real child claims work, is SIGKILLed, then a new batch resumes it."""
