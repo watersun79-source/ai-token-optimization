@@ -103,7 +103,7 @@ class StandaloneParallelTests(unittest.TestCase):
         with mock.patch("tools.standalone_parallel_v836.runtime_process_ceiling",
                         return_value=16):
             report = run_parallel(self.db, processes="auto", per_process=4)
-        self.assertEqual(report["version"], "8.3.9")
+        self.assertEqual(report["version"], "8.3.10")
         self.assertEqual(report["processes_started"], 1)
         self.assertEqual(report["processes_requested"], "auto")
         self.assertGreater(report["elapsed_ms"], 0)
