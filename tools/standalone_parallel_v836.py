@@ -1,4 +1,4 @@
-"""v8.3.9 workload-aware, resource-bounded SQLite process runner; no hosting.
+"""v8.3.10 default 64-request isolated SQLite process runner; no hosting.
 
 Only v8.3.3's synthetic offline handler can be invoked. The durable SQLite
 file must live on the same persistent local disk for all child processes.
@@ -18,8 +18,9 @@ import sys
 
 from tools.durable_queue_v831 import DurableLeaseQueue
 
-VERSION = "8.3.9"
-MAX_PROCESSES = 256  # Architectural hard bound; resource quota is normally lower.
+VERSION = "8.3.10"
+MAX_PROCESSES = 256  # Architectural hard bound; actual count is CPU/memory/backlog limited.
+DEFAULT_REQUESTED_PROCESSES = 64  # Target ceiling, NOT 64 live workers guaranteed.
 MAX_PER_PROCESS = 16
 MEMORY_PER_CHILD_MIB = 96
 MEMORY_RESERVE_MIB = 256
@@ -141,7 +142,7 @@ def _run_child(path: str, index: int, limit: int) -> dict:
         return {"ok": False, "reason": "CHILD_UNVERIFIED"}
 
 
-def run_parallel(database_path: str, *, processes: int | str = "auto",
+def run_parallel(database_path: str, *, processes: int | str = DEFAULT_REQUESTED_PROCESSES,
                  per_process: int = 4, profile: str = "mixed") -> dict:
     """One finite batch; adaptive process count is an upper bound, not a target.
 
@@ -198,8 +199,8 @@ def run_parallel(database_path: str, *, processes: int | str = "auto",
 def main() -> int:
     parser = argparse.ArgumentParser(description="One-shot offline SQLite parallel workers")
     parser.add_argument("--db", required=True)
-    parser.add_argument("--processes", default="auto",
-                        help="auto or integer 1..256; real count is resource-bound")
+    parser.add_argument("--processes", default=str(DEFAULT_REQUESTED_PROCESSES),
+                        help="default 64; auto or integer 1..256; resource-bound")
     parser.add_argument("--per-process", type=int, default=4)
     parser.add_argument("--profile", choices=tuple(PROFILES), default="mixed",
                         help="cpu | mixed | waiting; this is only a scheduling hint")
