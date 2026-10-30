@@ -18,6 +18,7 @@ from tools import neon_pg_worker_v835 as worker
 VERSION = "8.3.5"
 BOOT_ID = uuid.uuid4().hex[:20]
 STARTED = time.monotonic()
+DB_VERIFICATION_TTL_SECONDS = 60
 SAFE_ID = re.compile(r"^synthetic-v83-[a-z0-9-]{1,52}$")
 
 
@@ -36,8 +37,24 @@ class App(ThreadingHTTPServer):
             and len(api_key) >= 32
         )
         self.last_db_ok = False
+        self.last_db_check_at = None
         # Global backend admission control shared across every HTTP handler.
         self.db_slots = threading.BoundedSemaphore(value=2)
+
+
+    def mark_db_verified(self):
+        self.last_db_check_at = time.monotonic()
+        self.last_db_ok = True
+
+    def invalidate_db_verification(self):
+        self.last_db_ok = False
+        self.last_db_check_at = None
+
+    def db_ready(self):
+        checked = self.last_db_check_at
+        elapsed = time.monotonic() - checked if checked is not None else -1
+        return bool(self.enabled and self.last_db_ok and
+                    0 <= elapsed < DB_VERIFICATION_TTL_SECONDS)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -72,8 +89,9 @@ class Handler(BaseHTTPRequestHandler):
                 "synthetic_only": True, "backend": "neon_postgres",
                 # Configuration alone never certifies Neon login or readiness.
                 "configuration_present": self.server.enabled,
-                "intake_enabled": self.server.enabled and self.server.last_db_ok,
-                "database_connection_verified": self.server.last_db_ok,
+                # A previous successful read is not proof of current availability.
+                "intake_enabled": self.server.db_ready(),
+                "database_connection_verified": self.server.db_ready(),
                 "always_on_verified": False,
                 "automatic_recovery_verified": False,
                 "production_connected": False,
@@ -86,10 +104,10 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(429, {"error": "BUSY_RETRY"})
         try:
             counts = worker.summary(self.server.database_url)
-            self.server.last_db_ok = True
+            self.server.mark_db_verified()
         except Exception:
             # A previously successful query must never leave stale UP/verified status.
-            self.server.last_db_ok = False
+            self.server.invalidate_db_verification()
             return self.send(503, {"error": "BACKEND_UNAVAILABLE"})
         finally:
             self.server.db_slots.release()
@@ -122,7 +140,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(400, {"error": "UNSAFE_JOB"})
         # Authenticated reads may establish Neon readiness. Until one succeeds,
         # reject any state-changing work without queuing, including recovery.
-        if not self.server.last_db_ok:
+        if not self.server.db_ready():
             return self.send(503, {"error": "DATABASE_NOT_VERIFIED"})
         if not self.server.db_slots.acquire(blocking=False):
             return self.send(429, {"error": "BUSY_RETRY"})
@@ -131,10 +149,10 @@ class Handler(BaseHTTPRequestHandler):
                 self.path == "/private/submit") else None
             # Deliberately bounded; no timer, no recurring queue scan.
             outcome = worker.run_once(self.server.database_url, limit=2, concurrency=2)
-            self.server.last_db_ok = True
+            self.server.mark_db_verified()
         except Exception:
             # A previously successful query must never leave stale UP/verified status.
-            self.server.last_db_ok = False
+            self.server.invalidate_db_verification()
             return self.send(503, {"error": "BACKEND_UNAVAILABLE"})
         finally:
             self.server.db_slots.release()
