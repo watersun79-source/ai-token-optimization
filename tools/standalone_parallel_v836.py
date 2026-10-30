@@ -1,4 +1,4 @@
-"""v8.3.8 resource-bounded adaptive SQLite parallel runner; no hosting.
+"""v8.3.9 workload-aware, resource-bounded SQLite process runner; no hosting.
 
 Only v8.3.3's synthetic offline handler can be invoked. The durable SQLite
 file must live on the same persistent local disk for all child processes.
@@ -18,7 +18,7 @@ import sys
 
 from tools.durable_queue_v831 import DurableLeaseQueue
 
-VERSION = "8.3.8"
+VERSION = "8.3.9"
 MAX_PROCESSES = 256  # Architectural hard bound; resource quota is normally lower.
 MAX_PER_PROCESS = 16
 MEMORY_PER_CHILD_MIB = 96
@@ -54,32 +54,51 @@ def _cpu_capacity() -> int:
 
 
 def _memory_capacity() -> int:
+    """Estimate available (not merely total) RAM under cgroup v2."""
     limit = _read_cgroup_number("/sys/fs/cgroup/memory.max")
-    if limit is None:
+    if limit is not None:
+        used = _read_cgroup_number("/sys/fs/cgroup/memory.current")
+        # No usage evidence must fail small, not treat a quota as free RAM.
+        if used is None:
+            return 1
+        available = max(0, limit - used)
+    else:
         try:
             info = Path("/proc/meminfo").read_text(encoding="ascii")
             line = next(row for row in info.splitlines()
                         if row.startswith("MemAvailable:"))
-            limit = int(line.split()[1]) * 1024
+            available = int(line.split()[1]) * 1024
         except (OSError, ValueError, StopIteration, IndexError):
-            return 8  # Conservative non-Linux default without resource evidence.
-    mib = limit // (1024 * 1024)
+            return 1
+    mib = available // (1024 * 1024)
     return max(1, (mib - MEMORY_RESERVE_MIB) // MEMORY_PER_CHILD_MIB)
 
 
-def runtime_process_ceiling() -> int:
-    """Never assume 256 workers are safe on a small/free runner."""
-    return max(1, min(MAX_PROCESSES, _cpu_capacity() * 2, _memory_capacity()))
+PROFILES = {"cpu": 1, "mixed": 2, "waiting": 4}
+
+
+def _checked_profile(profile: str) -> str:
+    if not isinstance(profile, str) or profile not in PROFILES:
+        raise ValueError("INVALID_WORKLOAD_PROFILE")
+    return profile
+
+
+def runtime_process_ceiling(profile: str = "mixed") -> int:
+    """CPU / mixed / waiting are *hints*; always respect free RAM and 256 cap."""
+    return max(1, min(MAX_PROCESSES, _cpu_capacity() * PROFILES[_checked_profile(profile)],
+                      _memory_capacity()))
 
 
 def choose_processes(requested: int | str, backlog: int, per_process: int,
-                     *, resource_cap: int | None = None) -> int:
-    """Deterministic adaptive bound: hardware, memory and available work."""
+                     *, resource_cap: int | None = None,
+                     profile: str = "mixed") -> int:
+    """Deterministic hardware/memory/backlog limit, not a performance guarantee."""
+    _checked_profile(profile)
     _bounded_int(backlog, 0, 10**9, "INVALID_BACKLOG")
     _bounded_int(per_process, 1, MAX_PER_PROCESS, "INVALID_BATCH_LIMIT")
     if requested != "auto":
         _bounded_int(requested, 1, MAX_PROCESSES, "INVALID_PROCESS_COUNT")
-    cap = runtime_process_ceiling() if resource_cap is None else _bounded_int(
+    cap = runtime_process_ceiling(profile) if resource_cap is None else _bounded_int(
         resource_cap, 1, MAX_PROCESSES, "INVALID_RESOURCE_LIMIT")
     useful = max(1, math.ceil(backlog / per_process))
     return min(cap, useful, cap if requested == "auto" else requested)
@@ -123,12 +142,13 @@ def _run_child(path: str, index: int, limit: int) -> dict:
 
 
 def run_parallel(database_path: str, *, processes: int | str = "auto",
-                 per_process: int = 4) -> dict:
+                 per_process: int = 4, profile: str = "mixed") -> dict:
     """One finite batch; adaptive process count is an upper bound, not a target.
 
     SQLite serializes its writes. Increasing processes is not evidence of
     increasing throughput; use the separate isolated benchmark to measure.
     """
+    _checked_profile(profile)
     if processes != "auto":
         _bounded_int(processes, 1, MAX_PROCESSES, "INVALID_PROCESS_COUNT")
     _bounded_int(per_process, 1, MAX_PER_PROCESS, "INVALID_BATCH_LIMIT")
@@ -137,7 +157,7 @@ def run_parallel(database_path: str, *, processes: int | str = "auto",
     path = os.path.abspath(database_path)
     queue = DurableLeaseQueue(path)
     backlog = queue.summary().get("QUEUED", 0)
-    selected = choose_processes(processes, backlog, per_process)
+    selected = choose_processes(processes, backlog, per_process, profile=profile)
     began = time.perf_counter()
     with ThreadPoolExecutor(max_workers=selected) as executor:
         workers = list(executor.map(lambda idx: _run_child(path, idx, per_process),
@@ -162,7 +182,8 @@ def run_parallel(database_path: str, *, processes: int | str = "auto",
     return {"version": VERSION, "scope": "ISOLATED_LOCAL_SYNTHETIC_ONLY",
             "processes_requested": processes, "processes_started": selected,
             "processes_reported": selected - failures,
-            "runtime_process_cap": runtime_process_ceiling(),
+            "workload_profile_hint": profile,
+            "runtime_process_cap": runtime_process_ceiling(profile),
             "elapsed_ms": round(elapsed * 1000, 2),
             "throughput_jobs_per_sec": round(succeeded / elapsed, 2),
             "claimed": claimed, "succeeded": succeeded, "dead": dead,
@@ -180,9 +201,12 @@ def main() -> int:
     parser.add_argument("--processes", default="auto",
                         help="auto or integer 1..256; real count is resource-bound")
     parser.add_argument("--per-process", type=int, default=4)
+    parser.add_argument("--profile", choices=tuple(PROFILES), default="mixed",
+                        help="cpu | mixed | waiting; this is only a scheduling hint")
     args = parser.parse_args()
     requested = args.processes if args.processes == "auto" else int(args.processes)
-    report = run_parallel(args.db, processes=requested, per_process=args.per_process)
+    report = run_parallel(args.db, processes=requested, per_process=args.per_process,
+                          profile=args.profile)
     print(json.dumps(report, sort_keys=True))
     return 0 if report["verdict"] in {"PASS", "IDLE", "PARTIAL"} else 1
 
