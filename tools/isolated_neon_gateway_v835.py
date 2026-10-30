@@ -144,15 +144,28 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(503, {"error": "DATABASE_NOT_VERIFIED"})
         if not self.server.db_slots.acquire(blocking=False):
             return self.send(429, {"error": "BUSY_RETRY"})
+        # Enqueue is a separate committed Neon transaction from run_once.
+        # Never report "not accepted" if its durable insert already succeeded.
+        durable_enqueue_ack = False
+        new = None
         try:
-            new = worker.enqueue(self.server.database_url, data["task_id"]) if (
-                self.path == "/private/submit") else None
+            if self.path == "/private/submit":
+                new = worker.enqueue(self.server.database_url, data["task_id"])
+                durable_enqueue_ack = True
             # Deliberately bounded; no timer, no recurring queue scan.
             outcome = worker.run_once(self.server.database_url, limit=2, concurrency=2)
             self.server.mark_db_verified()
         except Exception:
-            # A previously successful query must never leave stale UP/verified status.
+            # The batch may have partially executed; do not claim success.
             self.server.invalidate_db_verification()
+            if durable_enqueue_ack:
+                return self.send(202, {
+                    "accepted": True, "new": new,
+                    "execution_status": "UNVERIFIED",
+                    "recovery_required": True,
+                    "automatic_recovery": False,
+                    "production_connected": False,
+                })
             return self.send(503, {"error": "BACKEND_UNAVAILABLE"})
         finally:
             self.server.db_slots.release()
