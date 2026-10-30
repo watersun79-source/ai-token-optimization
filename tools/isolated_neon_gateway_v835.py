@@ -70,7 +70,9 @@ class Handler(BaseHTTPRequestHandler):
                 "status": "UP", "version": VERSION, "boot_id": BOOT_ID,
                 "uptime_seconds": int(time.monotonic() - STARTED),
                 "synthetic_only": True, "backend": "neon_postgres",
-                "intake_enabled": self.server.enabled,
+                # Configuration alone never certifies Neon login or readiness.
+                "configuration_present": self.server.enabled,
+                "intake_enabled": self.server.enabled and self.server.last_db_ok,
                 "database_connection_verified": self.server.last_db_ok,
                 "always_on_verified": False,
                 "automatic_recovery_verified": False,
@@ -118,6 +120,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(400, {"error": "UNSAFE_JOB"})
             if not isinstance(data["task_id"], str) or not SAFE_ID.fullmatch(data["task_id"]):
                 return self.send(400, {"error": "UNSAFE_JOB"})
+        # Authenticated reads may establish Neon readiness. Until one succeeds,
+        # reject any state-changing work without queuing, including recovery.
+        if not self.server.last_db_ok:
+            return self.send(503, {"error": "DATABASE_NOT_VERIFIED"})
         if not self.server.db_slots.acquire(blocking=False):
             return self.send(429, {"error": "BUSY_RETRY"})
         try:
