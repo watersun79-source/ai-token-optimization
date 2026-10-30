@@ -58,7 +58,7 @@ class GatewayTests(unittest.TestCase):
             enqueue.assert_not_called()
 
     def test_authorized_synthetic_job_runs_once(self):
-        self.server.last_db_ok = True
+        self.server.mark_db_verified()
         with patch("tools.isolated_neon_gateway_v835.worker.enqueue",return_value=True) as enq, \
              patch("tools.isolated_neon_gateway_v835.worker.run_once",
                    return_value={"claimed":1,"succeeded":1}) as run:
@@ -82,7 +82,7 @@ class GatewayTests(unittest.TestCase):
 
     def test_backend_failure_returns_only_sanitized_error(self):
         # Simulate a previously connected database becoming unavailable.
-        self.server.last_db_ok = True
+        self.server.mark_db_verified()
         with patch("tools.isolated_neon_gateway_v835.worker.summary",
                    side_effect=RuntimeError("SECRET_IN_EXCEPTION")):
             status, data = self.get("/private/state",api_key=self.key)
@@ -92,7 +92,7 @@ class GatewayTests(unittest.TestCase):
             self.assertFalse(self.get("/healthz")[1]["database_connection_verified"])
 
     def test_write_failure_clears_previously_verified_database_state(self):
-        self.server.last_db_ok = True
+        self.server.mark_db_verified()
         with patch("tools.isolated_neon_gateway_v835.worker.enqueue",
                    side_effect=RuntimeError("SECRET_NO_PRINTING")):
             status, response = self.get(
@@ -110,7 +110,7 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(status,401)
 
     def test_recovery_requires_empty_body(self):
-        self.server.last_db_ok = True
+        self.server.mark_db_verified()
         with patch("tools.isolated_neon_gateway_v835.worker.run_once",
                    return_value={"claimed":0,"succeeded":0}) as mock:
             bad,_=self.get("/private/recover",api_key=self.key,body={"force":True},method="POST")
@@ -160,7 +160,7 @@ class GatewayTests(unittest.TestCase):
             self.assertEqual(self.get("/private/state", api_key=self.key)[0], 200)
 
     def test_busy_post_never_enqueues_or_executes_work(self):
-        self.server.last_db_ok = True
+        self.server.mark_db_verified()
         self.assertTrue(self.server.db_slots.acquire(blocking=False))
         self.assertTrue(self.server.db_slots.acquire(blocking=False))
         try:
@@ -217,6 +217,41 @@ class GatewayTests(unittest.TestCase):
                                   method="POST")
         self.assertEqual(code, 503)
         self.assertEqual(rejected, {"error": "DATABASE_NOT_VERIFIED"})
+
+
+    def test_neon_verification_expires_without_fresh_auth_probe(self):
+        from tools.isolated_neon_gateway_v835 import DB_VERIFICATION_TTL_SECONDS
+        self.server.mark_db_verified()
+        self.assertTrue(self.get("/healthz")[1]["intake_enabled"])
+        # Simulate elapsed monotonic time without a real sleep.
+        self.server.last_db_check_at -= DB_VERIFICATION_TTL_SECONDS + 1
+        health = self.get("/healthz")[1]
+        self.assertFalse(health["intake_enabled"])
+        self.assertFalse(health["database_connection_verified"])
+        with patch("tools.isolated_neon_gateway_v835.worker.enqueue") as enqueue:
+            status, result = self.get(
+                "/private/submit", api_key=self.key,
+                body={"task_id": "synthetic-v83-expired-preflight", "kind": "offline_check"},
+                method="POST")
+            self.assertEqual(status, 503)
+            self.assertEqual(result, {"error": "DATABASE_NOT_VERIFIED"})
+            enqueue.assert_not_called()
+        with patch("tools.isolated_neon_gateway_v835.worker.summary",
+                   return_value={"QUEUED": 0}):
+            status, _ = self.get("/private/state", api_key=self.key)
+            self.assertEqual(status, 200)
+        self.assertTrue(self.get("/healthz")[1]["database_connection_verified"])
+
+    def test_neon_failed_probe_invalidates_ready_timestamp(self):
+        self.server.mark_db_verified()
+        self.assertIsNotNone(self.server.last_db_check_at)
+        with patch("tools.isolated_neon_gateway_v835.worker.summary",
+                   side_effect=RuntimeError("test-backend-unavailable")):
+            status, result = self.get("/private/state", api_key=self.key)
+            self.assertEqual(status, 503)
+            self.assertEqual(result, {"error": "BACKEND_UNAVAILABLE"})
+        self.assertIsNone(self.server.last_db_check_at)
+        self.assertFalse(self.get("/healthz")[1]["database_connection_verified"])
 
     def test_private_state_requires_authorization(self):
         self.assertEqual(self.get("/private/state")[0],401)
