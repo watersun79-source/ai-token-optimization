@@ -53,6 +53,13 @@ jobs:
       - name: Verify 256 in-flight synthetic async coroutines and SQLite persistence (isolated only)
         if: github.event_name == 'pull_request' && github.head_ref == 'ai/v840-256-async-concurrency-20261031'
         run: python -m tools.probe_256_async_v840
+      # v8.4.1: one-shot local SDK preflight and fake-token tests only; no network/models/credentials.
+      - name: Verify Neon AI Gateway offline billing guard (isolated only)
+        if: github.event_name == 'pull_request' && github.head_ref == 'ai/v841-neon-gateway-offline-guard-20261031'
+        run: |
+          node --test tools/neon_gateway_preflight_v841.test.mjs
+          node tools/neon_gateway_preflight_v841.mjs --self-test
+          node --check examples/neon_gateway_manual_one_call_v841.mjs
       # One bounded public HTTPS read on this isolated draft PR ONLY.
       - name: Verify v8.3.2 Render public HTTPS health contract (one shot)
         if: github.event_name == 'pull_request' && github.head_ref == 'ai/v831-durable-recovery-20261030'
