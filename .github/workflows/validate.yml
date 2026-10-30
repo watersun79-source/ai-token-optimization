@@ -45,6 +45,10 @@ jobs:
       - name: Benchmark bounded adaptive standalone processes (isolated only)
         if: github.event_name == 'pull_request' && github.head_ref == 'ai/v838-adaptive-parallel-performance-20261030'
         run: python -m tools.benchmark_standalone_v838 --jobs 48 --repeats 2
+      # v8.3.9 isolated: finite 10-second repeated real subprocess stress, no remote calls.
+      - name: Soak adaptive standalone worker with local SQLite (isolated only)
+        if: github.event_name == 'pull_request' && github.head_ref == 'ai/v839-workload-aware-soak-20261030'
+        run: python -m tools.soak_standalone_v839 --seconds 10 --jobs 12
       # One bounded public HTTPS read on this isolated draft PR ONLY.
       - name: Verify v8.3.2 Render public HTTPS health contract (one shot)
         if: github.event_name == 'pull_request' && github.head_ref == 'ai/v831-durable-recovery-20261030'
