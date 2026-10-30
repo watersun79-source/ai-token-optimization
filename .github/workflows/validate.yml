@@ -41,6 +41,10 @@ jobs:
         run: node --test tools/adaptive_audit_v82.test.mjs
       - name: Verify AI BOT v8.3 event-driven parallel executor (offline)
         run: node --test tools/adaptive_parallel_v83.test.mjs
+      # Isolated v8.3.8 only: no network/secrets; two rounds of synthetic SQLite jobs.
+      - name: Benchmark bounded adaptive standalone processes (isolated only)
+        if: github.event_name == 'pull_request' && github.head_ref == 'ai/v838-adaptive-parallel-performance-20261030'
+        run: python -m tools.benchmark_standalone_v838 --jobs 48 --repeats 2
       # One bounded public HTTPS read on this isolated draft PR ONLY.
       - name: Verify v8.3.2 Render public HTTPS health contract (one shot)
         if: github.event_name == 'pull_request' && github.head_ref == 'ai/v831-durable-recovery-20261030'
