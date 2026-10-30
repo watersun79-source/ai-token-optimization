@@ -117,6 +117,64 @@ class GatewayTests(unittest.TestCase):
             self.assertEqual(ok,200)
             mock.assert_called_once()
 
+
+    def test_global_limit_rejects_third_concurrent_backend_request(self):
+        arrived = threading.Event()
+        release = threading.Event()
+        lock = threading.Lock()
+        active = [0]
+        peak = [0]
+
+        def slow_backend(_url):
+            with lock:
+                active[0] += 1
+                peak[0] = max(peak[0], active[0])
+                if active[0] == 2:
+                    arrived.set()
+            try:
+                if not release.wait(timeout=2.5):
+                    raise RuntimeError("TEST_RELEASE_NOT_SIGNALED")
+                return {"QUEUED": 0}
+            finally:
+                with lock:
+                    active[0] -= 1
+
+        with patch("tools.isolated_neon_gateway_v835.worker.summary",
+                   side_effect=slow_backend) as read:
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                first = pool.submit(self.get, "/private/state", api_key=self.key)
+                second = pool.submit(self.get, "/private/state", api_key=self.key)
+                try:
+                    self.assertTrue(arrived.wait(timeout=1.5))
+                    code, body = self.get("/private/state", api_key=self.key)
+                    self.assertEqual(code, 429)
+                    self.assertEqual(body, {"error": "BUSY_RETRY"})
+                    self.assertEqual(read.call_count, 2)
+                    self.assertEqual(peak[0], 2)
+                finally:
+                    release.set()
+                self.assertEqual(first.result(timeout=3)[0], 200)
+                self.assertEqual(second.result(timeout=3)[0], 200)
+            self.assertEqual(self.get("/private/state", api_key=self.key)[0], 200)
+
+    def test_busy_post_never_enqueues_or_executes_work(self):
+        self.assertTrue(self.server.db_slots.acquire(blocking=False))
+        self.assertTrue(self.server.db_slots.acquire(blocking=False))
+        try:
+            with patch("tools.isolated_neon_gateway_v835.worker.enqueue") as enqueue, \
+                 patch("tools.isolated_neon_gateway_v835.worker.run_once") as runner:
+                code, data = self.get(
+                    "/private/submit", api_key=self.key,
+                    body={"task_id": "synthetic-v83-when-busy", "kind": "offline_check"},
+                    method="POST")
+                self.assertEqual(code, 429)
+                self.assertEqual(data, {"error": "BUSY_RETRY"})
+                enqueue.assert_not_called()
+                runner.assert_not_called()
+        finally:
+            self.server.db_slots.release()
+            self.server.db_slots.release()
+
     def test_private_state_requires_authorization(self):
         self.assertEqual(self.get("/private/state")[0],401)
         self.assertEqual(self.get("/unknown")[0],404)
