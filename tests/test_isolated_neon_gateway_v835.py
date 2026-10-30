@@ -58,6 +58,7 @@ class GatewayTests(unittest.TestCase):
             enqueue.assert_not_called()
 
     def test_authorized_synthetic_job_runs_once(self):
+        self.server.last_db_ok = True
         with patch("tools.isolated_neon_gateway_v835.worker.enqueue",return_value=True) as enq, \
              patch("tools.isolated_neon_gateway_v835.worker.run_once",
                    return_value={"claimed":1,"succeeded":1}) as run:
@@ -109,6 +110,7 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(status,401)
 
     def test_recovery_requires_empty_body(self):
+        self.server.last_db_ok = True
         with patch("tools.isolated_neon_gateway_v835.worker.run_once",
                    return_value={"claimed":0,"succeeded":0}) as mock:
             bad,_=self.get("/private/recover",api_key=self.key,body={"force":True},method="POST")
@@ -158,6 +160,7 @@ class GatewayTests(unittest.TestCase):
             self.assertEqual(self.get("/private/state", api_key=self.key)[0], 200)
 
     def test_busy_post_never_enqueues_or_executes_work(self):
+        self.server.last_db_ok = True
         self.assertTrue(self.server.db_slots.acquire(blocking=False))
         self.assertTrue(self.server.db_slots.acquire(blocking=False))
         try:
@@ -174,6 +177,46 @@ class GatewayTests(unittest.TestCase):
         finally:
             self.server.db_slots.release()
             self.server.db_slots.release()
+
+
+    def test_configured_secret_does_not_prove_neon_authentication(self):
+        code, health = self.get("/healthz")
+        self.assertEqual(code, 200)
+        self.assertTrue(health["configuration_present"])
+        self.assertFalse(health["intake_enabled"])
+        self.assertFalse(health["database_connection_verified"])
+        with patch("tools.isolated_neon_gateway_v835.worker.enqueue") as enqueue, \
+             patch("tools.isolated_neon_gateway_v835.worker.run_once") as run:
+            code, response = self.get("/private/submit", api_key=self.key,
+                body={"task_id": "synthetic-v83-auth-unverified", "kind": "offline_check"},
+                method="POST")
+            self.assertEqual(code, 503)
+            self.assertEqual(response, {"error": "DATABASE_NOT_VERIFIED"})
+            enqueue.assert_not_called()
+            run.assert_not_called()
+        with patch("tools.isolated_neon_gateway_v835.worker.summary", return_value={}) as validate:
+            code, result = self.get("/private/state", api_key=self.key)
+            self.assertEqual(code, 200)
+            self.assertEqual(result["state_counts"], {})
+            validate.assert_called_once()
+        check = self.get("/healthz")[1]
+        self.assertTrue(check["intake_enabled"])
+        self.assertTrue(check["database_connection_verified"])
+
+    def test_failed_neon_auth_never_enables_work(self):
+        with patch("tools.isolated_neon_gateway_v835.worker.summary",
+                   side_effect=RuntimeError("secret_auth_failure")):
+            code, response = self.get("/private/state", api_key=self.key)
+            self.assertEqual(code, 503)
+            self.assertEqual(response, {"error": "BACKEND_UNAVAILABLE"})
+        check = self.get("/healthz")[1]
+        self.assertTrue(check["configuration_present"])
+        self.assertFalse(check["intake_enabled"])
+        self.assertFalse(check["database_connection_verified"])
+        code, rejected = self.get("/private/recover", api_key=self.key, body={},
+                                  method="POST")
+        self.assertEqual(code, 503)
+        self.assertEqual(rejected, {"error": "DATABASE_NOT_VERIFIED"})
 
     def test_private_state_requires_authorization(self):
         self.assertEqual(self.get("/private/state")[0],401)
