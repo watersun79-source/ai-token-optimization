@@ -1,8 +1,10 @@
-"""v8.3.6 offline real child-process SQLite integration and regression tests."""
+"""v8.3.7 offline process-crash/restart, durable SQLite and parallel tests."""
 import hashlib
 import os
 import subprocess
+import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -25,7 +27,7 @@ class StandaloneParallelTests(unittest.TestCase):
         for name in names:
             self.add(name)
         report = run_parallel(self.db, processes=4, per_process=5)
-        self.assertEqual(VERSION, "8.3.6")
+        self.assertEqual(VERSION, "8.3.7")
         self.assertEqual(report["verdict"], "PASS")
         self.assertEqual(report["processes_reported"], 4)
         self.assertEqual(report["succeeded"], 20)
@@ -68,6 +70,65 @@ class StandaloneParallelTests(unittest.TestCase):
                 run_parallel(self.db, **opts)
         with self.assertRaisesRegex(ValueError, "PERSISTENT_DB_PATH_REQUIRED"):
             run_parallel(":memory:")
+
+
+    def test_killed_real_claiming_process_recovers_after_lease_expiry(self):
+        """A real child claims work, is SIGKILLed, then a new batch resumes it."""
+        name = "synthetic-v83-v837-crashed"
+        self.add(name)
+        marker = os.path.join(self.tmp.name, "claim.marker")
+        code = (
+            "import sys,time\n"
+            "from pathlib import Path\n"
+            "from tools.durable_queue_v831 import DurableLeaseQueue\n"
+            "q=DurableLeaseQueue(sys.argv[1])\n"
+            "lease=q.claim('crashed-v837',lease_seconds=1)\n"
+            "assert lease is not None and lease['attempt']==1\n"
+            "Path(sys.argv[2]).write_text('CLAIMED')\n"
+            "time.sleep(30)\n"
+        )
+        child = subprocess.Popen(
+            [sys.executable, "-c", code, self.db, marker],
+            cwd=os.getcwd(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            deadline = time.monotonic() + 5
+            while not os.path.exists(marker) and time.monotonic() < deadline:
+                if child.poll() is not None:
+                    break
+                time.sleep(0.02)
+            self.assertTrue(os.path.exists(marker), "CHILD_CLAIM_NOT_OBSERVED")
+            self.assertIsNone(child.poll())
+            owned = self.queue.get(name)
+            self.assertEqual(owned["state"], "CLAIMED")
+            expiry = owned["lease_until"]
+        finally:
+            if child.poll() is None:
+                child.kill()  # This is only this test's own offline child.
+            child.wait(timeout=5)
+
+        self.assertNotEqual(child.returncode, 0)
+        time.sleep(max(0.0, expiry - time.time() + 0.2))
+        result = run_parallel(self.db, processes=4, per_process=2)
+        self.assertEqual(result["verdict"], "PASS")
+        self.assertEqual(result["recovered_requeued"], 1)
+        self.assertEqual(result["succeeded"], 1)
+        self.assertEqual(result["lease_conflicts"], 0)
+        final = DurableLeaseQueue(self.db).get(name)
+        self.assertEqual(final["state"], "SUCCEEDED")
+        self.assertEqual(final["attempt"], 2)
+        self.assertEqual(run_parallel(self.db)["claimed"], 0)
+
+    def test_unexpired_lease_not_stolen_by_parallel_workers(self):
+        name = "synthetic-v83-v837-owned"
+        self.add(name)
+        own = self.queue.claim("still-alive", lease_seconds=60)
+        self.assertEqual(own["attempt"], 1)
+        report = run_parallel(self.db, processes=4, per_process=4)
+        self.assertEqual(report["verdict"], "PARTIAL")
+        self.assertEqual(report["claimed"], 0)
+        self.assertEqual(report["recovered_requeued"], 0)
+        self.assertEqual(report["queue_state"], {"CLAIMED": 1})
+        self.assertEqual(self.queue.get(name)["lease_owner"], "still-alive")
 
     def test_child_timeout_is_unverified_and_does_not_log_secret(self):
         self.add("synthetic-v83-v836-timeout")
