@@ -253,6 +253,59 @@ class GatewayTests(unittest.TestCase):
         self.assertIsNone(self.server.last_db_check_at)
         self.assertFalse(self.get("/healthz")[1]["database_connection_verified"])
 
+    def test_committed_enqueue_still_acknowledged_when_batch_fails(self):
+        self.server.mark_db_verified()
+        with patch("tools.isolated_neon_gateway_v835.worker.enqueue",
+                   return_value=True) as enqueue, \
+             patch("tools.isolated_neon_gateway_v835.worker.run_once",
+                   side_effect=RuntimeError("SENSITIVE_DRIVER_FAILURE")) as batch:
+            status, result = self.get(
+                "/private/submit", api_key=self.key,
+                body={"task_id": "synthetic-v83-ack-partial", "kind": "offline_check"},
+                method="POST")
+            self.assertEqual(status, 202)
+            self.assertEqual(result, {
+                "accepted": True, "new": True,
+                "execution_status": "UNVERIFIED",
+                "recovery_required": True,
+                "automatic_recovery": False,
+                "production_connected": False,
+            })
+            enqueue.assert_called_once()
+            batch.assert_called_once()
+            self.assertFalse(self.get("/healthz")[1]["database_connection_verified"])
+            self.assertNotIn("SENSITIVE_DRIVER_FAILURE", json.dumps(result))
+
+    def test_duplicate_enqueue_ack_is_not_lost_on_batch_failure(self):
+        self.server.mark_db_verified()
+        with patch("tools.isolated_neon_gateway_v835.worker.enqueue",
+                   return_value=False) as enqueue, \
+             patch("tools.isolated_neon_gateway_v835.worker.run_once",
+                   side_effect=RuntimeError("BATCH_DOWN")):
+            status, result = self.get(
+                "/private/submit", api_key=self.key,
+                body={"task_id": "synthetic-v83-ack-duplicate", "kind": "offline_check"},
+                method="POST")
+            self.assertEqual(status, 202)
+            self.assertTrue(result["accepted"])
+            self.assertFalse(result["new"])
+            self.assertEqual(result["execution_status"], "UNVERIFIED")
+            enqueue.assert_called_once()
+
+    def test_enqueue_failure_is_not_falsely_acknowledged(self):
+        self.server.mark_db_verified()
+        with patch("tools.isolated_neon_gateway_v835.worker.enqueue",
+                   side_effect=RuntimeError("INSERT_NOT_COMMITTED")) as enqueue, \
+             patch("tools.isolated_neon_gateway_v835.worker.run_once") as batch:
+            status, result = self.get(
+                "/private/submit", api_key=self.key,
+                body={"task_id": "synthetic-v83-ack-not-saved", "kind": "offline_check"},
+                method="POST")
+            self.assertEqual(status, 503)
+            self.assertEqual(result, {"error": "BACKEND_UNAVAILABLE"})
+            enqueue.assert_called_once()
+            batch.assert_not_called()
+
     def test_private_state_requires_authorization(self):
         self.assertEqual(self.get("/private/state")[0],401)
         self.assertEqual(self.get("/unknown")[0],404)
