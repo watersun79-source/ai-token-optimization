@@ -9,7 +9,10 @@ import unittest
 from unittest import mock
 
 from tools.durable_queue_v831 import DurableLeaseQueue
-from tools.standalone_parallel_v836 import VERSION, run_parallel
+from tools.standalone_parallel_v836 import (
+    MAX_PROCESSES, VERSION, choose_processes, run_parallel,
+    runtime_process_ceiling,
+)
 
 
 class StandaloneParallelTests(unittest.TestCase):
@@ -27,7 +30,7 @@ class StandaloneParallelTests(unittest.TestCase):
         for name in names:
             self.add(name)
         report = run_parallel(self.db, processes=4, per_process=5)
-        self.assertEqual(VERSION, "8.3.7")
+        self.assertEqual(VERSION, "8.3.8")
         self.assertEqual(report["verdict"], "PASS")
         self.assertEqual(report["processes_reported"], 4)
         self.assertEqual(report["succeeded"], 20)
@@ -63,7 +66,7 @@ class StandaloneParallelTests(unittest.TestCase):
         self.assertEqual(self.queue.get("not-synthetic")["state"], "DEAD")
 
     def test_boundaries_fail_before_starting_any_child(self):
-        for opts in ({"processes": 0}, {"processes": 5},
+        for opts in ({"processes": 0}, {"processes": 257},
                      {"processes": True}, {"per_process": 0},
                      {"per_process": 17}, {"per_process": True}):
             with self.assertRaises(ValueError):
@@ -71,6 +74,41 @@ class StandaloneParallelTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "PERSISTENT_DB_PATH_REQUIRED"):
             run_parallel(":memory:")
 
+
+
+    def test_adaptive_process_count_caps_to_backlog(self):
+        self.assertEqual(choose_processes("auto", 0, 4, resource_cap=64), 1)
+        self.assertEqual(choose_processes("auto", 3, 4, resource_cap=64), 1)
+        self.assertEqual(choose_processes("auto", 64, 4, resource_cap=64), 16)
+        self.assertEqual(choose_processes(256, 64, 4, resource_cap=8), 8)
+        self.assertEqual(choose_processes(32, 64, 4, resource_cap=64), 16)
+        self.assertEqual(MAX_PROCESSES, 256)
+        with self.assertRaisesRegex(ValueError, "INVALID_RESOURCE_LIMIT"):
+            choose_processes("auto", 12, 4, resource_cap=0)
+
+    def test_cpu_quota_caps_resource_ceiling(self):
+        with mock.patch("tools.standalone_parallel_v836._cpu_capacity", return_value=2), \
+             mock.patch("tools.standalone_parallel_v836._memory_capacity", return_value=80):
+            self.assertEqual(runtime_process_ceiling(), 4)
+            self.assertEqual(choose_processes(256, 1000, 4), 4)
+
+    def test_memory_quota_caps_processes(self):
+        with mock.patch("tools.standalone_parallel_v836._cpu_capacity", return_value=64), \
+             mock.patch("tools.standalone_parallel_v836._memory_capacity", return_value=3):
+            self.assertEqual(runtime_process_ceiling(), 3)
+            self.assertEqual(choose_processes("auto", 80, 4), 3)
+
+    def test_auto_processes_honor_small_queue_and_persist_metrics(self):
+        self.add("synthetic-v83-v838-automatic")
+        with mock.patch("tools.standalone_parallel_v836.runtime_process_ceiling",
+                        return_value=16):
+            report = run_parallel(self.db, processes="auto", per_process=4)
+        self.assertEqual(report["version"], "8.3.8")
+        self.assertEqual(report["processes_started"], 1)
+        self.assertEqual(report["processes_requested"], "auto")
+        self.assertGreater(report["elapsed_ms"], 0)
+        self.assertGreater(report["throughput_jobs_per_sec"], 0)
+        self.assertEqual(report["queue_state"], {"SUCCEEDED": 1})
 
     def test_killed_real_claiming_process_recovers_after_lease_expiry(self):
         """A real child claims work, is SIGKILLed, then a new batch resumes it."""
