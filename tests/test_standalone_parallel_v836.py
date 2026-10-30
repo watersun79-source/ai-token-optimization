@@ -30,7 +30,7 @@ class StandaloneParallelTests(unittest.TestCase):
         for name in names:
             self.add(name)
         report = run_parallel(self.db, processes=4, per_process=5)
-        self.assertEqual(VERSION, "8.3.8")
+        self.assertEqual(VERSION, "8.3.9")
         self.assertEqual(report["verdict"], "PASS")
         self.assertEqual(report["processes_reported"], 4)
         self.assertEqual(report["succeeded"], 20)
@@ -103,12 +103,52 @@ class StandaloneParallelTests(unittest.TestCase):
         with mock.patch("tools.standalone_parallel_v836.runtime_process_ceiling",
                         return_value=16):
             report = run_parallel(self.db, processes="auto", per_process=4)
-        self.assertEqual(report["version"], "8.3.8")
+        self.assertEqual(report["version"], "8.3.9")
         self.assertEqual(report["processes_started"], 1)
         self.assertEqual(report["processes_requested"], "auto")
         self.assertGreater(report["elapsed_ms"], 0)
         self.assertGreater(report["throughput_jobs_per_sec"], 0)
         self.assertEqual(report["queue_state"], {"SUCCEEDED": 1})
+
+
+    def test_workload_profiles_effective_cpu_cap(self):
+        with mock.patch("tools.standalone_parallel_v836._cpu_capacity", return_value=3), \
+             mock.patch("tools.standalone_parallel_v836._memory_capacity", return_value=100):
+            self.assertEqual(runtime_process_ceiling("cpu"), 3)
+            self.assertEqual(runtime_process_ceiling("mixed"), 6)
+            self.assertEqual(runtime_process_ceiling("waiting"), 12)
+            self.assertEqual(choose_processes("auto", 100, 4, profile="cpu"), 3)
+            self.assertEqual(choose_processes("auto", 100, 4, profile="waiting"), 12)
+        with self.assertRaisesRegex(ValueError, "INVALID_WORKLOAD_PROFILE"):
+            choose_processes("auto", 10, 4, profile="external")
+        with self.assertRaisesRegex(ValueError, "INVALID_WORKLOAD_PROFILE"):
+            run_parallel(self.db, profile="external")
+
+    def test_cgroup_memory_remaining_is_not_total_quota(self):
+        from tools.standalone_parallel_v836 import _memory_capacity
+        mib = 1024 * 1024
+        with mock.patch("tools.standalone_parallel_v836._read_cgroup_number",
+                        side_effect=lambda path: (1024*mib if path.endswith("memory.max")
+                                                 else 640*mib)):
+            self.assertEqual(_memory_capacity(), 1)  # only 384MiB free, 256MiB reserved
+        with mock.patch("tools.standalone_parallel_v836._read_cgroup_number",
+                        side_effect=lambda path: (2048*mib if path.endswith("memory.max")
+                                                 else 512*mib)):
+            self.assertEqual(_memory_capacity(), 13)
+        with mock.patch("tools.standalone_parallel_v836._read_cgroup_number",
+                        side_effect=lambda path: (1024*mib if path.endswith("memory.max")
+                                                 else None)):
+            self.assertEqual(_memory_capacity(), 1)  # fail closed on no usage evidence
+
+    def test_profile_report_is_explicit_hint_not_real_workload(self):
+        self.add("synthetic-v83-v839-profile")
+        with mock.patch("tools.standalone_parallel_v836._cpu_capacity", return_value=2), \
+             mock.patch("tools.standalone_parallel_v836._memory_capacity", return_value=12):
+            report = run_parallel(self.db, profile="cpu")
+        self.assertEqual(report["verdict"], "PASS")
+        self.assertEqual(report["workload_profile_hint"], "cpu")
+        self.assertEqual(report["processes_started"], 1)
+        self.assertEqual(self.queue.get("synthetic-v83-v839-profile")["attempt"], 1)
 
     def test_killed_real_claiming_process_recovers_after_lease_expiry(self):
         """A real child claims work, is SIGKILLed, then a new batch resumes it."""
