@@ -49,6 +49,10 @@ jobs:
       - name: Soak adaptive standalone worker with local SQLite (isolated only)
         if: github.event_name == 'pull_request' && github.head_ref == 'ai/v839-workload-aware-soak-20261030'
         run: python -m tools.soak_standalone_v839 --seconds 10 --jobs 12
+      # New isolated 256-slot test: one Python process, 256 overlapping synthetic async waits.
+      - name: Verify 256 in-flight synthetic async coroutines and SQLite persistence (isolated only)
+        if: github.event_name == 'pull_request' && github.head_ref == 'ai/v840-256-async-concurrency-20261031'
+        run: python -m tools.probe_256_async_v840
       # One bounded public HTTPS read on this isolated draft PR ONLY.
       - name: Verify v8.3.2 Render public HTTPS health contract (one shot)
         if: github.event_name == 'pull_request' && github.head_ref == 'ai/v831-durable-recovery-20261030'
