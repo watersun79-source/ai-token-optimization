@@ -1,4 +1,4 @@
-"""v8.3.6 isolated multi-process SQLite test runner; never hosts or schedules.
+"""v8.3.7 isolated multi-process SQLite runner with recovery evidence; no hosting.
 
 Only v8.3.3's synthetic offline handler can be invoked. The durable SQLite
 file must live on the same persistent local disk for all child processes.
@@ -16,7 +16,7 @@ import sys
 
 from tools.durable_queue_v831 import DurableLeaseQueue
 
-VERSION = "8.3.6"
+VERSION = "8.3.7"
 MAX_PROCESSES = 4
 MAX_PER_PROCESS = 16
 ROOT = str(Path(__file__).resolve().parent.parent)
@@ -30,7 +30,7 @@ def _bounded_int(value: int, low: int, high: int, code: str) -> int:
 
 def _run_child(path: str, index: int, limit: int) -> dict:
     command = [sys.executable, "-m", "tools.isolated_worker_v833",
-               "--db", path, "--worker-id", f"standalone-v836-{index}",
+               "--db", path, "--worker-id", f"standalone-v837-{index}",
                "--limit", str(limit), "--concurrency", "1"]
     try:
         child = subprocess.run(command, cwd=ROOT, capture_output=True,
@@ -43,8 +43,16 @@ def _run_child(path: str, index: int, limit: int) -> dict:
             isinstance(v, bool) or not isinstance(v, int) or v < 0 for v in values
         ) or values[0] > limit or sum(values[1:]) != values[0]:
             return {"ok": False, "reason": "CHILD_REPORT_INVALID"}
+        recovered = report.get("recovered")
+        if not isinstance(recovered, dict) or any(
+            type(recovered.get(key)) is not int or recovered[key] < 0
+            for key in ("requeued", "dead")
+        ):
+            return {"ok": False, "reason": "RECOVERY_REPORT_INVALID"}
         return {"ok": True, "claimed": values[0], "succeeded": values[1],
-                "dead": values[2], "lease_conflicts": values[3]}
+                "dead": values[2], "lease_conflicts": values[3],
+                "recovered_requeued": recovered["requeued"],
+                "recovered_dead": recovered["dead"]}
     except (subprocess.TimeoutExpired, OSError, ValueError, TypeError, json.JSONDecodeError):
         # Never include stderr, payloads or exception strings in the public report.
         return {"ok": False, "reason": "CHILD_UNVERIFIED"}
@@ -71,6 +79,8 @@ def run_parallel(database_path: str, *, processes: int = 4, per_process: int = 4
     succeeded = sum(worker.get("succeeded", 0) for worker in workers)
     dead = sum(worker.get("dead", 0) for worker in workers)
     conflicts = sum(worker.get("lease_conflicts", 0) for worker in workers)
+    recovered_requeued = sum(worker.get("recovered_requeued", 0) for worker in workers)
+    recovered_dead = sum(worker.get("recovered_dead", 0) for worker in workers)
     states = queue.summary()  # independent persisted readback, not a child claim
     if failures or conflicts:
         verdict = "UNVERIFIED"
@@ -84,6 +94,8 @@ def run_parallel(database_path: str, *, processes: int = 4, per_process: int = 4
             "processes_started": processes, "processes_reported": processes - failures,
             "claimed": claimed, "succeeded": succeeded, "dead": dead,
             "lease_conflicts": conflicts, "child_failures": failures,
+            "recovered_requeued": recovered_requeued,
+            "recovered_dead": recovered_dead,
             "queue_state": states, "verdict": verdict,
             "neon_connected": False, "hosted_worker_deployed": False,
             "unattended_24h_verified": False}
