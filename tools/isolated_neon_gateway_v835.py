@@ -5,6 +5,7 @@ external AI calls, secrets in URLs, or production task execution.
 This is not an always-on service on Render Free.
 """
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import threading
 import json
 import os
 import re
@@ -35,6 +36,8 @@ class App(ThreadingHTTPServer):
             and len(api_key) >= 32
         )
         self.last_db_ok = False
+        # Global backend admission control shared across every HTTP handler.
+        self.db_slots = threading.BoundedSemaphore(value=2)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -77,6 +80,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send(404, {"error": "NOT_FOUND"})
         if not self.authorized():
             return self.send(401, {"error": "UNAUTHORIZED"})
+        if not self.server.db_slots.acquire(blocking=False):
+            return self.send(429, {"error": "BUSY_RETRY"})
         try:
             counts = worker.summary(self.server.database_url)
             self.server.last_db_ok = True
@@ -84,6 +89,8 @@ class Handler(BaseHTTPRequestHandler):
             # A previously successful query must never leave stale UP/verified status.
             self.server.last_db_ok = False
             return self.send(503, {"error": "BACKEND_UNAVAILABLE"})
+        finally:
+            self.server.db_slots.release()
         return self.send(200, {"version": VERSION, "state_counts": counts,
                                "production_connected": False})
 
@@ -111,6 +118,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(400, {"error": "UNSAFE_JOB"})
             if not isinstance(data["task_id"], str) or not SAFE_ID.fullmatch(data["task_id"]):
                 return self.send(400, {"error": "UNSAFE_JOB"})
+        if not self.server.db_slots.acquire(blocking=False):
+            return self.send(429, {"error": "BUSY_RETRY"})
         try:
             new = worker.enqueue(self.server.database_url, data["task_id"]) if (
                 self.path == "/private/submit") else None
@@ -121,6 +130,8 @@ class Handler(BaseHTTPRequestHandler):
             # A previously successful query must never leave stale UP/verified status.
             self.server.last_db_ok = False
             return self.send(503, {"error": "BACKEND_UNAVAILABLE"})
+        finally:
+            self.server.db_slots.release()
         return self.send(200, {"accepted": True, "new": new,
                                "batch": outcome, "production_connected": False})
 
