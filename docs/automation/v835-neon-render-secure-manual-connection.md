@@ -7,6 +7,8 @@
 1. Neon Console https://console.neon.tech 에서 프로젝트 `ai-bot-v834-isolated-durable-queue` (`autumn-frog-53985417`), 기본 브랜치 `main`, DB `aibot_isolated` 선택.
 2. `Postgres database → Roles` 에서 SQL로 생성된 전용 역할 `aibot_v835_render_runtime` 인증 상태를 확인. **기존 DB 소유자/관리자 역할의 접속 문자열을 Render에 넣지 않는다.**
 3. 전용 역할에만 강력하고 유일한 비밀번호를 설정. 권장: 본인 컴퓨터의 `psql`에서 `\\password aibot_v835_render_runtime` 명령을 사용하여 명령 기록에 비밀번호가 남지 않도록 한다. Neon Console의 Roles에서 reset 지원 시 그 화면을 이용할 수도 있다. Neon API가 "cannot update password for role without password"를 반환했다면 UI 재설정도 지원되지 않을 수 있다. 그 경우 사용자가 직접 Neon SQL Editor에서 `ALTER ROLE aibot_v835_render_runtime WITH LOGIN PASSWORD '<private unique password>';` 설정할 수 있으나 SQL 입력/조회 이력에 비밀번호가 남을 수 있으므로 위험을 인지하고 권한 및 히스토리 관리에 주의한다. **여기 채팅에 비밀번호 입력 금지.**
+**2026-11-01 읽기 전용 권한 확인:** DB 접속 역할 `aibot_isolated_owner`는 `CREATEROLE=true`이고, `pg_auth_members` 기준 대상 `aibot_v835_render_runtime`에 직접 `admin_option=true`를 가지고 있어. SQL 역할 자체는 `rolcanlogin=true`지만 Neon 관리 API에는 `authentication_method=no_login`으로 보이며, **실제 비밀번호 설정과 원격 로그인 성공은 아직 확인되지 않았어.** 이 권한 검사만으로 접속 성공으로 처리하지 마. 안전한 수동 비밀번호 설정은 사용자 소유 `psql` 세션에서만 수행하고, 어떤 비밀도 ChatGPT/CI/메모리/커밋에 남기지 않아야 해.
+
 4. Render Dashboard [v8.3.5 격리 서비스](https://dashboard.render.com/web/srv-dbhsc1nlk1mc739rstng) → **Environment** → **Add Environment Variable**에 다음 두 변수 설정:
    - `NEON_QUEUE_DATABASE_URL`: 위의 최소권한 역할을 사용하는 Neon TLS 연결 문자열. 사용자·비밀번호·호스트·`aibot_isolated` DB를 정확히 설정하고 `sslmode=require` 유지. Neon Console의 Connect 정보에서 **소유자 비밀번호를 복사하지 않는다**.
    - `ISOLATED_JOB_KEY`: DB 비밀번호와 다른 독립적인 32+ 문자 랜덤 키. 절대 소스, GitHub, Activepieces 로그, ChatGPT에 저장하지 않는다.
