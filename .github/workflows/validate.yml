@@ -74,7 +74,8 @@ jobs:
         continue-on-error: true
         timeout-minutes: 3
         run: |
-          if [ "$(git log -1 --pretty=%s)" != 'test(v842): one-shot public HTTPS and anonymous auth readback' ]; then
+          git fetch --quiet --no-tags --depth=1 origin refs/heads/ai/v842-live-readonly-20261031
+          if [ "$(git log -1 --pretty=%s FETCH_HEAD)" != 'test(v842): one-shot public HTTPS and anonymous auth readback' ]; then
             echo 'V842_ONE_SHOT_PROBE=SKIPPED_NOT_TARGET_COMMIT'
             exit 0
           fi
