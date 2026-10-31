@@ -39,6 +39,9 @@ test('server health public; snapshot requires valid session; no token leaks',asy
     assert.equal((await r.json()).scope,'isolated-no-secrets');
     assert.equal((await fetch(base+'/api/snapshot')).status,401);
     assert.equal((await fetch(base+'/login',{method:'POST',body:new URLSearchParams({key:'BAD'})})).status,401);
+    const unicodeBad='é'+secret.slice(1);
+    assert.equal(unicodeBad.length,secret.length);
+    assert.equal((await fetch(base+'/login',{method:'POST',body:new URLSearchParams({key:unicodeBad})})).status,401);
     const login=await fetch(base+'/login',{method:'POST',body:new URLSearchParams({key:secret}),redirect:'manual'});
     assert.equal(login.status,303);
     const cookie=login.headers.get('set-cookie').split(';')[0];
