@@ -12,7 +12,7 @@ import re
 from typing import Callable, Mapping, Any
 
 TABLE = "public.isolated_project_memory_v85"
-VERSION = "8.5.1-isolated-candidate"
+VERSION = "8.5.2-isolated-candidate"
 # Hardcoded, disposable test deployment only. These are not user-selected at runtime.
 TEST_PROJECT_ID = "autumn-frog-53985417"
 TEST_BRANCH_ID = "br-billowing-union-azaxxi5p"
@@ -122,6 +122,17 @@ def _require_test_executor(execute: Callable, test_branch_id: str, *, restore: b
         or getattr(execute, "bound_database_name", None) != TEST_DB_NAME):
         raise ValueError("EXECUTOR_SCOPE_MISMATCH")
 
+def _verify_test_scope(execute: Callable) -> None:
+    """Require a fresh read-only DB scope proof, not merely bound name fields.
+
+    The trusted executor separately re-probes on the same connection as each
+    permitted SQL operation. This is a test-only safety defense, not Neon
+    authentication or a guarantee of the branch identity.
+    """
+    probe = getattr(execute, "verify_test_scope", None)
+    if not callable(probe) or probe() is not True:
+        raise ValueError("BRANCH_PROOF_UNVERIFIED")
+
 def save_selected_event(
     execute: Callable[[str, tuple], list[Mapping[str, Any]]],
     event: Mapping[str, Any],
@@ -137,6 +148,7 @@ def save_selected_event(
     selected = select_event(event)
     if selected is None:
         return {"status": "SKIPPED", "reason": "NOT_SELECTED"}
+    _verify_test_scope(execute)
     inserted = execute(INSERT_SQL, (
         selected.record_id, selected.project_key, selected.kind,
         selected.title, selected.body, selected.digest,
@@ -167,6 +179,7 @@ def restore_project_records(
     project_key = _clean(project_key, limit=120)
     if not PROJECT.fullmatch(project_key) or type(limit) is not int or not 1 <= limit <= 25:
         raise ValueError("INVALID_RESTORE_REQUEST")
+    _verify_test_scope(execute)
     rows = execute(RESTORE_SQL, (project_key, limit))
     restored: list[dict[str, Any]] = []
     for row in rows:
