@@ -85,13 +85,15 @@ test('valid absence of previous auth failures yields PASS and no errors',()=>{
 });
 
 
+const entryFlowId='H2P6JrVt2l0nb3J4boOOZ';
+const productionRun=r=>({environment:'PRODUCTION',flowId:entryFlowId,...r});
 const historicalRuns=[
  {id:'8D2vsJDFijVKiLU562CmT',status:'FAILED',created:'2026-10-28T17:38:52.396Z',error_code:'CALLFLOW_RUNTIME_TARGET_NOT_FOUND'},
  {id:'EMr6A2wktzuYL8PAim8Rv',status:'FAILED',created:'2026-10-28T16:41:03.025Z',error_code:'WEBHOOK_HEADER_AUTH_REJECTED'},
  {id:'WqtHmewLopkKouj7vAoZ2',status:'FAILED',created:'2026-10-28T14:57:48.253Z',error_code:'WEBHOOK_HEADER_AUTH_REJECTED'}
-];
+].map(productionRun);
 test('observed October 28 failures are historical by November 1, not a current outage',()=>{
- const o=classifyWebhookHistory({runs:historicalRuns,asOfIso:'2026-10-31T18:24:00Z',headerAuthConfigured:true});
+ const o=classifyWebhookHistory({expectedFlowId:entryFlowId,runs:historicalRuns,asOfIso:'2026-10-31T18:24:00Z',headerAuthConfigured:true});
  assert.equal(o.state,'HISTORICAL_RUNS_ONLY');
  assert.equal(o.verdict,'UNVERIFIED');
  assert.equal(o.historical_auth_rejections,2);
@@ -103,14 +105,14 @@ test('observed October 28 failures are historical by November 1, not a current o
  assert.equal(o.provider_calls,0);
 });
 test('new failed Activepieces entry run is failure only for Activepieces and not native',()=>{
- const o=classifyWebhookHistory({runs:[{status:'FAILED',created:'2026-10-31T17:50:00Z',error_code:'WEBHOOK_HEADER_AUTH_REJECTED'},...historicalRuns],
+ const o=classifyWebhookHistory({expectedFlowId:entryFlowId,runs:[productionRun({status:'FAILED',created:'2026-10-31T17:50:00Z',error_code:'WEBHOOK_HEADER_AUTH_REJECTED'}),...historicalRuns],
  asOfIso:'2026-10-31T18:24:00Z',headerAuthConfigured:true});
  assert.equal(o.state,'RECENT_ACTIVEPIECES_ENTRY_FAILED');
  assert.equal(o.verdict,'FAIL_AP_ENTRY');
  assert.equal(o.native_chat_trigger_verified,false);
 });
 test('a fresh successful entry run is bounded evidence, not global ChatGPT composer interception',()=>{
- const o=classifyWebhookHistory({runs:[{status:'SUCCEEDED',created:'2026-10-31T18:00:00Z'},...historicalRuns],
+ const o=classifyWebhookHistory({expectedFlowId:entryFlowId,runs:[productionRun({status:'SUCCEEDED',created:'2026-10-31T18:00:00Z'}),...historicalRuns],
  asOfIso:'2026-10-31T18:24:00Z'});
  assert.equal(o.state,'RECENT_ACTIVEPIECES_ENTRY_SUCCEEDED');
  assert.equal(o.verdict,'PASS_AP_ENTRY_ONLY');
@@ -119,9 +121,41 @@ test('a fresh successful entry run is bounded evidence, not global ChatGPT compo
 });
 test('missing or malformed run metadata fails closed and leaks no error message',()=>{
  for(const runs of [null,[],[{status:'BAD',created:'2026-10-31T18:00:00Z'}],[{status:'FAILED',created:'2026-11-02T00:00:00Z',error_code:'password_secret'}]]){
-  const o=classifyWebhookHistory({runs,asOfIso:'2026-10-31T18:24:00Z'});
+  const o=classifyWebhookHistory({expectedFlowId:entryFlowId,runs,asOfIso:'2026-10-31T18:24:00Z'});
   assert.equal(o.verdict,'UNVERIFIED');
   assert.equal(o.native_chat_trigger_verified,false);
   assert.ok(!JSON.stringify(o).includes('password_secret'));
  }
+});
+
+test('fresh TESTING success cannot be presented as production webhook success',()=>{
+ const testRun={...productionRun({status:'SUCCEEDED',created:'2026-10-31T18:00:00Z'}),environment:'TESTING'};
+ const o=classifyWebhookHistory({expectedFlowId:entryFlowId,runs:[testRun],asOfIso:'2026-10-31T18:24:00Z'});
+ assert.equal(o.state,'INVALID_RUN_PROVENANCE');
+ assert.equal(o.verdict,'UNVERIFIED');
+ assert.equal(o.native_chat_trigger_verified,false);
+});
+test('other callable engine success cannot prove the webhook entry',()=>{
+ const alien=productionRun({status:'SUCCEEDED',created:'2026-10-31T18:00:00Z'});
+ alien.flowId='8qJV66lPObcBTqamLowTB';
+ const o=classifyWebhookHistory({expectedFlowId:entryFlowId,runs:[alien],asOfIso:'2026-10-31T18:24:00Z'});
+ assert.equal(o.state,'INVALID_RUN_PROVENANCE');
+ assert.equal(o.verdict,'UNVERIFIED');
+});
+test('missing run provenance or expected entry identity fails closed',()=>{
+ const run=productionRun({status:'SUCCEEDED',created:'2026-10-31T18:00:00Z'});
+ for(const bad of [{...run,environment:undefined},{...run,flowId:undefined}]){
+  const o=classifyWebhookHistory({expectedFlowId:entryFlowId,runs:[bad],asOfIso:'2026-10-31T18:24:00Z'});
+  assert.equal(o.verdict,'UNVERIFIED');
+ }
+ const noTarget=classifyWebhookHistory({runs:[run],asOfIso:'2026-10-31T18:24:00Z'});
+ assert.equal(noTarget.state,'EXPECTED_ENTRY_FLOW_MISSING');
+ assert.equal(noTarget.verdict,'UNVERIFIED');
+});
+test('real PRODUCTION entry success remains bounded evidence',()=>{
+ const run=productionRun({status:'SUCCEEDED',created:'2026-10-31T18:00:00Z'});
+ const o=classifyWebhookHistory({expectedFlowId:entryFlowId,runs:[run],asOfIso:'2026-10-31T18:24:00Z'});
+ assert.equal(o.verdict,'PASS_AP_ENTRY_ONLY');
+ assert.equal(o.production_entry_provenance_verified,true);
+ assert.equal(o.native_chat_trigger_verified,false);
 });
