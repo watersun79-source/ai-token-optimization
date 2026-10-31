@@ -159,3 +159,36 @@ test('real PRODUCTION entry success remains bounded evidence',()=>{
  assert.equal(o.production_entry_provenance_verified,true);
  assert.equal(o.native_chat_trigger_verified,false);
 });
+
+test('caller flow absence from project must not PASS with valid dropdown',()=>{
+ const s=actual();
+ s.flows=s.flows.filter(f=>f.id!==s.caller.flowId);
+ const result=validateRoute(s);
+ assert.equal(result.verdict,'FAIL');
+ assert.ok(result.diagnostics.some(d=>d.code==='CALLER_NOT_IN_PROJECT'));
+});
+test('missing caller flow inventory is UNVERIFIED rather than PASS',()=>{
+ const s=actual();
+ delete s.flows;
+ const result=validateRoute(s);
+ assert.equal(result.verdict,'UNVERIFIED');
+ assert.ok(result.diagnostics.some(d=>d.code==='CALLER_FLOW_LIST_UNAVAILABLE'));
+});
+test('disabled or unpublished entry flow must fail closed',()=>{
+ for(const modify of [f=>{f.status='DISABLED';},f=>{f.published=false;}]){
+  const s=actual();
+  modify(s.flows[0]);
+  const result=validateRoute(s);
+  assert.equal(result.verdict,'FAIL');
+  assert.ok(result.diagnostics.some(d=>['CALLER_FLOW_DISABLED','CALLER_FLOW_UNPUBLISHED'].includes(d.code)));
+ }
+});
+test('incomplete caller flow status and publishing evidence is UNVERIFIED',()=>{
+ const s=actual();
+ delete s.flows[0].status;
+ delete s.flows[0].published;
+ const result=validateRoute(s);
+ assert.equal(result.verdict,'UNVERIFIED');
+ assert.ok(result.diagnostics.some(d=>d.code==='CALLER_STATUS_UNVERIFIED'));
+ assert.ok(result.diagnostics.some(d=>d.code==='CALLER_PUBLISH_UNVERIFIED'));
+});
