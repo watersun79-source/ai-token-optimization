@@ -16,7 +16,7 @@ from tools.isolated_selective_memory_v85 import (
     TEST_PROJECT_ID, TEST_BRANCH_ID, TEST_DB_NAME, select_event,
 )
 
-VERSION = "8.5.3-isolated-connector-plan"
+VERSION = "8.5.4-isolated-connector-hash-guard"
 TABLE = "public.isolated_project_memory_v85"
 
 
