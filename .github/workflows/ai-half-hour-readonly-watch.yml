@@ -1,0 +1,34 @@
+name: AI BOT half-hourly independent read-only watch
+
+# This is NOT a ChatGPT automation invocation. It never wakes Render Free.
+on:
+  schedule:
+    - cron: '0,30 * * * *'
+      timezone: Asia/Seoul
+  workflow_dispatch:
+  push:
+    branches: [ai/half-hour-readonly-watch-20261101]
+    paths:
+      - .github/workflows/ai-half-hour-readonly-watch.yml
+      - tools/ai_half_hour_readonly_watch.py
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-half-hourly-independent-watch
+  cancel-in-progress: false
+
+jobs:
+  check-three-independent-evidence-signals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout source without persisted credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Run three public-only read-only checks
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python3 tools/ai_half_hour_readonly_watch.py
