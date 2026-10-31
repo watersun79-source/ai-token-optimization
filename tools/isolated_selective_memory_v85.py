@@ -15,12 +15,12 @@ TABLE = "public.isolated_project_memory_v85"
 VERSION = "8.5.0-isolated-candidate"
 KINDS = frozenset(("goal", "task_result"))
 ID = re.compile(r"^[a-z0-9][a-z0-9._-]{4,95}$")
-PROJECT = re.compile(r"^project\\.ai-bot-[a-z0-9._-]{2,99}$")
+PROJECT = re.compile(r"^project\.ai-bot-[a-z0-9._-]{2,99}$")
 # Fail closed on common credential markers in *any* user supplied field.
 SECRET = re.compile(
-    r"(?i)(?:password|passwd|api[_ -]?key|secret|bearer\\s+|"
-    r"authorization\\s*:|sk-[a-z0-9_-]{8}|postgres(?:ql)?://|"
-    r"private[_ -]?key|token\\s*[:=])"
+    r"(?i)(?:password|passwd|api[_ -]?key|secret|bearer\s+|"
+    r"authorization\s*:|sk-[a-z0-9_-]{8}|postgres(?:ql)?://|"
+    r"private[_ -]?key|token\s*[:=])"
 )
 
 CREATE_TABLE_TEST_BRANCH_ONLY = """
