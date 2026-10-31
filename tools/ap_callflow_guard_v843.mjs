@@ -158,7 +158,7 @@ export function classifyGapRecoveryRun({run,expectedFlowId}={}){
  }
  if(!['SUCCEEDED','FAILED'].includes(run.status)||!Array.isArray(run.steps)||
     !run.steps.length||run.steps.some(s=>!s||typeof s.name!=='string'||
-    !/^trigger$|^step_[1-9]\\d*$/.test(s.name)||!['SUCCEEDED','FAILED','SKIPPED'].includes(s.status))){
+    !/^trigger$|^step_[1-9]\d*$/.test(s.name)||!['SUCCEEDED','FAILED','SKIPPED'].includes(s.status))){
    return neutral('INVALID_RUN_OR_STEPS');
  }
  const stepNames=run.steps.map(s=>s.name);
