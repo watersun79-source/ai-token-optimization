@@ -141,6 +141,45 @@ jobs:
           print('V842_SSE_BOUNDARY_VERDICT='+('PASS' if login_ok and events_ok else 'UNVERIFIED'))
           raise SystemExit(0 if login_ok and events_ok else 1)
           PY
+      # Fresh live deployment: bounded public-only HTTPS checks. No cookies or keys.
+      # Run precisely on this PR HEAD commit; not a periodic wake-up.
+      - name: Verify current v8.4.2 Render public auth boundary (one shot)
+        if: github.event_name == 'pull_request' && github.head_ref == 'ai/v842-live-readonly-20261031'
+        timeout-minutes: 4
+        run: |
+          git fetch --quiet --no-tags --depth=1 origin refs/heads/ai/v842-live-readonly-20261031
+          if [ "$(git log -1 --pretty=%s FETCH_HEAD)" != 'test(v842): fresh-live public auth boundary one-shot 20261031' ]; then
+            echo 'V842_FRESH_LIVE_PROBE=SKIPPED_NOT_TARGET_COMMIT'
+            exit 0
+          fi
+          python - <<'PY'
+          import json, urllib.request, urllib.error
+          root = 'https://ai-bot-v842-live-readonly-20261031-1vz0.onrender.com'
+          def probe(path):
+              req=urllib.request.Request(root+path,headers={'User-Agent':'V842-PR-Public-ReadOnly','Cache-Control':'no-store'})
+              try:
+                  with urllib.request.urlopen(req,timeout=45) as r:
+                      return r.status,r.read(2048)
+              except urllib.error.HTTPError as e:
+                  return e.code,e.read(2048)
+          checks = {}
+          health_code,health_body = probe('/healthz')
+          try:
+              checks['HEALTH_200'] = health_code == 200 and json.loads(health_body).get('status') == 'ok'
+          except (ValueError, UnicodeDecodeError, AttributeError):
+              checks['HEALTH_200'] = False
+          snap_code,snap_body = probe('/api/snapshot')
+          checks['ANON_SNAPSHOT_401'] = snap_code == 401 and b'AUTH_REQUIRED' in snap_body
+          login_code,login_body = probe('/')
+          checks['LOGIN_200'] = login_code == 200 and b'<form action="/login"' in login_body
+          events_code,events_body = probe('/events')
+          checks['ANON_SSE_401'] = events_code == 401 and b'AUTH_REQUIRED' in events_body
+          for name,passed in checks.items():
+              print('V842_FRESH_LIVE_'+name+'='+('PASS' if passed else 'FAIL'))
+          print('V842_FRESH_LIVE_STATUS_CODES='+str([health_code,snap_code,login_code,events_code]))
+          print('V842_FRESH_LIVE_VERDICT='+('PASS' if all(checks.values()) else 'FAIL'))
+          raise SystemExit(0 if all(checks.values()) else 1)
+          PY
       # One bounded public HTTPS read on this isolated draft PR ONLY.
       - name: Verify v8.3.2 Render public HTTPS health contract (one shot)
         if: github.event_name == 'pull_request' && github.head_ref == 'ai/v831-durable-recovery-20261030'
