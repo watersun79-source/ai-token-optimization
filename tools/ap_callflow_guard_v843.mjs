@@ -60,6 +60,57 @@ export function validateRoute(snapshot){
    provider_write_calls:0
  };
 }
+
+/**
+ * Classify run observations without interpreting past auth rejections as a
+ * current outage or inferring ChatGPT-native composer/webhook integration.
+ * Caller supplies redacted run summaries and a fixed observation timestamp.
+ */
+export function classifyWebhookHistory({runs,asOfIso,windowHours=24,headerAuthConfigured}={}){
+  const asOf=Date.parse(asOfIso??'');
+  if(!Number.isFinite(asOf)||!Number.isFinite(windowHours)||windowHours<=0||windowHours>168){
+    return {state:'INVALID_WINDOW_OR_OBSERVATION',verdict:'UNVERIFIED',native_chat_trigger_verified:false};
+  }
+  if(!Array.isArray(runs)){
+    return {state:'NO_RUN_EVIDENCE',verdict:'UNVERIFIED',native_chat_trigger_verified:false};
+  }
+  const safe=runs.map(r=>{
+    const time=Date.parse(r?.created??'');
+    if(!Number.isFinite(time)||time>asOf+60000||time<0||!['FAILED','SUCCEEDED'].includes(r?.status)){
+      return null;
+    }
+    return {time,status:r.status,
+      error_code:['WEBHOOK_HEADER_AUTH_REJECTED','CALLFLOW_RUNTIME_TARGET_NOT_FOUND'].includes(r?.error_code)?r.error_code:null};
+  });
+  if(safe.some(x=>x===null)){
+    return {state:'INVALID_RUN_METADATA',verdict:'UNVERIFIED',native_chat_trigger_verified:false};
+  }
+  if(safe.length===0){
+    return {state:'NO_RUN_EVIDENCE',verdict:'UNVERIFIED',native_chat_trigger_verified:false};
+  }
+  const sorted=[...safe].sort((a,b)=>b.time-a.time);
+  const latest=sorted[0];
+  const ageMs=asOf-latest.time;
+  const fresh=ageMs>=0 && ageMs<=windowHours*3600000;
+  const historicalAuthRejections=safe.filter(x=>x.error_code==='WEBHOOK_HEADER_AUTH_REJECTED').length;
+  const historicalSubflowFailures=safe.filter(x=>x.error_code==='CALLFLOW_RUNTIME_TARGET_NOT_FOUND').length;
+  return {
+    state:!fresh?'HISTORICAL_RUNS_ONLY'
+       :latest.status==='SUCCEEDED'?'RECENT_ACTIVEPIECES_ENTRY_SUCCEEDED':'RECENT_ACTIVEPIECES_ENTRY_FAILED',
+    verdict:!fresh?'UNVERIFIED':latest.status==='SUCCEEDED'?'PASS_AP_ENTRY_ONLY':'FAIL_AP_ENTRY',
+    newest_run_iso:new Date(latest.time).toISOString(),
+    age_hours:Math.floor(Math.max(0,ageMs)/3600000),
+    historical_auth_rejections:historicalAuthRejections,
+    historical_subflow_failures:historicalSubflowFailures,
+    header_auth_configured:headerAuthConfigured===true,
+    auth_rejection_is_definitive_misconfiguration:false,
+    runtime_recovery_verified:false,
+    native_chat_trigger_verified:false,
+    credential_values_inspected:false,
+    provider_calls:0
+  };
+}
+
 if(process.argv[1] && import.meta.url===new URL('file://'+process.argv[1]).href){
  if(process.argv.length!==3){console.error('USAGE: node ap_callflow_guard_v843.mjs redacted-snapshot.json');process.exitCode=2;}
  else {
