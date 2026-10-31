@@ -193,3 +193,49 @@ test('new Render boot_id produces a change event even while otherwise healthy',a
   assert.equal(rebooted.render.status,'UP');
   assert.notEqual(first.change_id,rebooted.change_id);
 });
+
+
+test('iPhone dashboard treats HTTP 502 as target failure while SSE remains connected',async()=>{
+  const server=createApp({secret,fetcher:yes});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  try {
+    const base='http://127.0.0.1:'+server.address().port;
+    const js=await (await fetch(base+'/app.js')).text();
+    const html=await (await fetch(base+'/',{headers:{cookie:'watch_session='+sign(Date.now(),secret)}})).text();
+    const css=await (await fetch(base+'/style.css')).text();
+    assert.match(html,/id="render-guide"/);
+    assert.match(html,/감시 대상 Render v8\.3\.5/);
+    assert.match(css,/#render\[data-state="DOWN"\]\{color:#c43242\}/);
+    const elements=new Map();
+    const doc={
+      getElementById(id){if(!elements.has(id))elements.set(id,{textContent:'',dataset:{},prepend(){}});return elements.get(id);},
+      createElement(){return {textContent:''};}
+    };
+    let callback;
+    class TestEventSource{
+      static OPEN=1;
+      static CLOSED=2;
+      constructor(){this.readyState=TestEventSource.OPEN;}
+      addEventListener(type,cb){if(type==='snapshot')callback=cb;}
+      close(){this.readyState=TestEventSource.CLOSED;}
+    }
+    runInNewContext(js,{
+      document:doc,EventSource:TestEventSource,
+      setInterval(){return 1;},
+      fetch(){throw Error('no client HTTP requests expected while SSE connected');}
+    });
+    assert.equal(typeof callback,'function');
+    callback({data:JSON.stringify({
+      render:{status:'DOWN',http_status:502,database_ready:null,intake_ready:null,boot_id:null},
+      change_id:'target-502-1',observed_at:'2026-10-31T11:11:50Z'
+    })});
+    assert.equal(doc.getElementById('render').dataset.state,'DOWN');
+    assert.match(doc.getElementById('render').textContent,/HTTP 오류/);
+    assert.match(doc.getElementById('render-guide').textContent,/절전 해제 또는 일시적 장애/);
+    assert.match(doc.getElementById('connection').textContent,/관제 연결됨 · 대상 상태 별도/);
+    assert.doesNotMatch(doc.getElementById('render').textContent,/정상/);
+  }finally{
+    server.closeAllConnections();
+    await new Promise(resolve=>server.close(resolve));
+  }
+});
