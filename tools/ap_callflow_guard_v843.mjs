@@ -66,7 +66,7 @@ export function validateRoute(snapshot){
  * current outage or inferring ChatGPT-native composer/webhook integration.
  * Caller supplies redacted run summaries and a fixed observation timestamp.
  */
-export function classifyWebhookHistory({runs,asOfIso,windowHours=24,headerAuthConfigured}={}){
+export function classifyWebhookHistory({runs,asOfIso,windowHours=24,headerAuthConfigured,expectedFlowId}={}){
   const asOf=Date.parse(asOfIso??'');
   if(!Number.isFinite(asOf)||!Number.isFinite(windowHours)||windowHours<=0||windowHours>168){
     return {state:'INVALID_WINDOW_OR_OBSERVATION',verdict:'UNVERIFIED',native_chat_trigger_verified:false};
@@ -74,16 +74,22 @@ export function classifyWebhookHistory({runs,asOfIso,windowHours=24,headerAuthCo
   if(!Array.isArray(runs)){
     return {state:'NO_RUN_EVIDENCE',verdict:'UNVERIFIED',native_chat_trigger_verified:false};
   }
+  if(!validId(expectedFlowId)){
+    return {state:'EXPECTED_ENTRY_FLOW_MISSING',verdict:'UNVERIFIED',native_chat_trigger_verified:false};
+  }
+  // Only official production runs from the intended webhook entry are admissible.
+  // A successful TESTING run or another engine must never prove this entry live.
   const safe=runs.map(r=>{
     const time=Date.parse(r?.created??'');
-    if(!Number.isFinite(time)||time>asOf+60000||time<0||!['FAILED','SUCCEEDED'].includes(r?.status)){
+    if(r?.environment!=='PRODUCTION'||r?.flowId!==expectedFlowId||
+       !Number.isFinite(time)||time>asOf+60000||time<0||!['FAILED','SUCCEEDED'].includes(r?.status)){
       return null;
     }
     return {time,status:r.status,
       error_code:['WEBHOOK_HEADER_AUTH_REJECTED','CALLFLOW_RUNTIME_TARGET_NOT_FOUND'].includes(r?.error_code)?r.error_code:null};
   });
   if(safe.some(x=>x===null)){
-    return {state:'INVALID_RUN_METADATA',verdict:'UNVERIFIED',native_chat_trigger_verified:false};
+    return {state:'INVALID_RUN_PROVENANCE',verdict:'UNVERIFIED',native_chat_trigger_verified:false};
   }
   if(safe.length===0){
     return {state:'NO_RUN_EVIDENCE',verdict:'UNVERIFIED',native_chat_trigger_verified:false};
@@ -105,6 +111,7 @@ export function classifyWebhookHistory({runs,asOfIso,windowHours=24,headerAuthCo
     header_auth_configured:headerAuthConfigured===true,
     auth_rejection_is_definitive_misconfiguration:false,
     runtime_recovery_verified:false,
+    production_entry_provenance_verified:true,
     native_chat_trigger_verified:false,
     credential_values_inspected:false,
     provider_calls:0
