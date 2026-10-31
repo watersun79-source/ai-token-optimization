@@ -201,6 +201,50 @@ export function classifyGapRecoveryRun({run,expectedFlowId,asOfIso,maxAgeHours=3
  return neutral('MIXED_OR_INCOMPLETE_ROUTE');
 }
 
+
+/**
+ * Reconcile a read-only Activepieces watchdog's status with independently
+ * observed connector metadata. The original step_5 is a READ-ONLY observer:
+ * its literal NO_ACTIVEPIECES_GITHUB_CONNECTION is not an auth probe.
+ * Does not mutate provider flows, dispatch CI, read credentials or use AI.
+ */
+export function classifyWatchdogConnectionClaim({watchdog,connections}={}){
+ const safe=(state)=>({
+   state,verdict:'UNVERIFIED',watchdog_warning_preserved:watchdog?.status==='WARN',
+   github_active_connection_observed:false,github_dispatch_permission_verified:false,
+   github_dispatch_executed:false,actual_github_schedule_restored:false,
+   native_chatgpt_run_verified:false,provider_write_calls:0,external_model_calls:0
+ });
+ if(!watchdog || watchdog.kind!=='AI_BOT_V81_INDEPENDENT_READONLY_WATCH_V1' ||
+    !['PASS','WARN','UNVERIFIED'].includes(watchdog.status) ||
+    watchdog.github_dispatch_executed!==false || watchdog.remote_writes!==0){
+   return safe('UNTRUSTED_OR_NOT_READONLY_WATCHDOG');
+ }
+ if(!Array.isArray(connections)){
+   return safe('NO_PROVIDER_CONNECTION_METADATA');
+ }
+ const github=connections.filter(c=>c && c.pieceName==='@activepieces/piece-github');
+ const active=github.some(c=>c.status==='ACTIVE');
+ if(watchdog.github_dispatch_blocker==='NO_ACTIVEPIECES_GITHUB_CONNECTION' && active){
+   return {
+     ...safe('HARDCODED_NO_CONNECTION_CLAIM_CONTRADICTED'),
+     verdict:'MISLEADING_STATUS_FIX_REQUIRED',
+     github_active_connection_observed:true,
+     actual_watchdog_role:'READ_ONLY_NOT_DISPATCHER',
+     correct_dispatch_blocker:'READ_ONLY_WATCHDOG_NO_DISPATCH_CONFIGURED',
+     original_watchdog_status:watchdog.status,
+     original_watchdog_reason:typeof watchdog.reason==='string'?
+       watchdog.reason.slice(0,96):'UNVERIFIED'
+   };
+ }
+ return {
+   ...safe(active?'ACTIVE_CONNECTION_WITHOUT_DISPATCH_ATTESTATION':'NO_ACTIVE_GITHUB_CONNECTION_OBSERVED'),
+   github_active_connection_observed:active,
+   actual_watchdog_role:'READ_ONLY_NOT_DISPATCHER',
+   original_watchdog_status:watchdog.status
+ };
+}
+
 if(process.argv[1] && import.meta.url===new URL('file://'+process.argv[1]).href){
  if(process.argv.length!==3){console.error('USAGE: node ap_callflow_guard_v843.mjs redacted-snapshot.json');process.exitCode=2;}
  else {
