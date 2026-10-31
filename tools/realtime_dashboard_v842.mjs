@@ -94,7 +94,13 @@ export function createApp({secret=TOKEN,fetcher=fetch}={}){
         res.writeHead(200,{...headers,'Content-Type':'text/event-stream','X-Accel-Buffering':'no',Connection:'keep-alive'});
         let closed=false,previous='';
         const timer=setInterval(()=>tick().catch(()=>{}),30000);timer.unref();
-        req.on('close',()=>{if(!closed){closed=true;activeStreams--;clearInterval(timer);}});
+        // A successful handshake must not keep streaming after its 12h signed session expires.
+        const sessionCookie=(req.headers.cookie||'').split(';').map(v=>v.trim()).find(v=>v.startsWith('watch_session='))?.slice(14)||'';
+        const issuedAt=Number(sessionCookie.slice(0,13)); // Already authenticated above.
+        const remainingMs=Math.max(1,issuedAt+MAX_AGE-Date.now()+1);
+        const expiryTimer=setTimeout(()=>{if(!closed)res.end();},remainingMs);
+        const cleanup=()=>{if(!closed){closed=true;activeStreams--;clearInterval(timer);clearTimeout(expiryTimer);}};
+        req.on('close',cleanup);res.on('close',cleanup);
         async function tick(){if(closed)return;const data=await snapshot(fetcher);if(closed)return;if(data.change_id!==previous){previous=data.change_id;res.write('event: snapshot\n'+'data: '+JSON.stringify(data)+'\n\n');}else{res.write(': heartbeat\n\n');}}
         await tick();return;
       }
