@@ -37,3 +37,8 @@ jobs:
         run: node tools/json_output_validator.js
       - name: Validate provider-free review metadata guard
         run: node --test tools/free-web-guard/guard.test.mjs
+      - name: Verify Activepieces chat webhook callFlow reference fails closed (isolated)
+        if: github.event_name == 'pull_request' && github.head_ref == 'ai/v843-activepieces-subflow-guard-20261031'
+        run: |
+          node --test tools/ap_callflow_guard_v843.test.mjs
+          node --check tools/ap_callflow_guard_v843.mjs
