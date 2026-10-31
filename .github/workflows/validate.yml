@@ -65,6 +65,7 @@ jobs:
         if: github.event_name == 'pull_request' && github.head_ref == 'ai/v842-live-readonly-20261031'
         run: |
           node --test tools/realtime_dashboard_v842.test.mjs
+          node --test tools/render_blueprint_v842.test.mjs
           node --check tools/realtime_dashboard_v842.mjs
       # One bounded public HTTPS read on this isolated draft PR ONLY.
       - name: Verify v8.3.2 Render public HTTPS health contract (one shot)
