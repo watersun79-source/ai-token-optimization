@@ -32,6 +32,9 @@ class FakePostgres:
         self.bound_branch_id = TEST_BRANCH
         self.bound_database_name = "aibot_isolated"
 
+    def verify_test_scope(self):
+        return True
+
     def __call__(self, sql, params):
         self.calls.append((sql, params))
         if sql == INSERT_SQL:
@@ -151,6 +154,34 @@ class TestSelectiveProjectMemory(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "EXECUTOR_SCOPE_MISMATCH"):
                     save_selected_event(db, event(), test_branch_id=TEST_BRANCH)
                 self.assertEqual(db.calls, [])
+
+    def test_spoofed_metadata_without_proof_denied(self):
+        db = FakePostgres()
+        db.verify_test_scope = None
+        with self.assertRaisesRegex(ValueError, "BRANCH_PROOF_UNVERIFIED"):
+            save_selected_event(db, event(), test_branch_id=TEST_BRANCH)
+        self.assertEqual(db.calls, [])
+
+    def test_negative_probe_is_not_accepted(self):
+        db = FakePostgres()
+        db.verify_test_scope = lambda: False
+        with self.assertRaisesRegex(ValueError, "BRANCH_PROOF_UNVERIFIED"):
+            save_selected_event(db, event(), test_branch_id=TEST_BRANCH)
+        self.assertEqual(db.calls, [])
+
+    def test_restore_must_verify_proof(self):
+        db = FakePostgres()
+        db.verify_test_scope = None
+        with self.assertRaisesRegex(ValueError, "BRANCH_PROOF_UNVERIFIED"):
+            restore_project_records(db, "project.ai-bot-v81", test_branch_id=TEST_BRANCH)
+        self.assertEqual(db.calls, [])
+
+    def test_unselected_does_not_probe_or_touch_db(self):
+        db = FakePostgres()
+        db.verify_test_scope = lambda: self.fail("unexpected network probe")
+        out = save_selected_event(db, event(selected=False), test_branch_id=TEST_BRANCH)
+        self.assertEqual(out["status"], "SKIPPED")
+        self.assertEqual(db.calls, [])
 
     def test_missing_branch_rejected(self):
         with self.assertRaisesRegex(ValueError, "EXPLICIT_TEST_BRANCH_REQUIRED"):
