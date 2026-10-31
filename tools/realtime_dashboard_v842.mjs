@@ -79,7 +79,7 @@ export function createApp({secret=TOKEN,fetcher=fetch}={}){
       if (req.method==='POST'&&url.pathname==='/login'){
         let data='';for await(const chunk of req){data+=chunk;if(data.length>4096)break;}
         const key=new URLSearchParams(data).get('key')||'';
-        if(data.length>4096||secret.length<24||secret.length!==key.length||!timingSafeEqual(Buffer.from(secret),Buffer.from(key))){reply(res,401,'application/json',JSON.stringify({error:'UNAUTHORIZED'}));return;}
+        if(data.length>4096||secret.length<24||Buffer.byteLength(secret)!==Buffer.byteLength(key)||!timingSafeEqual(Buffer.from(secret),Buffer.from(key))){reply(res,401,'application/json',JSON.stringify({error:'UNAUTHORIZED'}));return;}
         res.writeHead(303,{...headers,Location:'/', 'Set-Cookie':'watch_session='+sign(Date.now(),secret)+'; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=43200'});res.end();return;
       }
       if(req.method==='POST'&&url.pathname==='/logout'){
