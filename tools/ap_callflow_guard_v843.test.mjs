@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validateRoute} from './ap_callflow_guard_v843.mjs';
+import {validateRoute,classifyWebhookHistory} from './ap_callflow_guard_v843.mjs';
 
 // Redacted connected-source snapshot: list_flows internal IDs differ from
 // ap_resolve_property_options("flowId") external option IDs.
@@ -82,4 +82,46 @@ test('valid absence of previous auth failures yields PASS and no errors',()=>{
  const o=validateRoute(s);
  assert.equal(o.verdict,'PASS');
  assert.equal(o.diagnostics.length,0);
+});
+
+
+const historicalRuns=[
+ {id:'8D2vsJDFijVKiLU562CmT',status:'FAILED',created:'2026-10-28T17:38:52.396Z',error_code:'CALLFLOW_RUNTIME_TARGET_NOT_FOUND'},
+ {id:'EMr6A2wktzuYL8PAim8Rv',status:'FAILED',created:'2026-10-28T16:41:03.025Z',error_code:'WEBHOOK_HEADER_AUTH_REJECTED'},
+ {id:'WqtHmewLopkKouj7vAoZ2',status:'FAILED',created:'2026-10-28T14:57:48.253Z',error_code:'WEBHOOK_HEADER_AUTH_REJECTED'}
+];
+test('observed October 28 failures are historical by November 1, not a current outage',()=>{
+ const o=classifyWebhookHistory({runs:historicalRuns,asOfIso:'2026-10-31T18:24:00Z',headerAuthConfigured:true});
+ assert.equal(o.state,'HISTORICAL_RUNS_ONLY');
+ assert.equal(o.verdict,'UNVERIFIED');
+ assert.equal(o.historical_auth_rejections,2);
+ assert.equal(o.historical_subflow_failures,1);
+ assert.equal(o.auth_rejection_is_definitive_misconfiguration,false);
+ assert.equal(o.native_chat_trigger_verified,false);
+ assert.equal(o.runtime_recovery_verified,false);
+ assert.equal(o.header_auth_configured,true);
+ assert.equal(o.provider_calls,0);
+});
+test('new failed Activepieces entry run is failure only for Activepieces and not native',()=>{
+ const o=classifyWebhookHistory({runs:[{status:'FAILED',created:'2026-10-31T17:50:00Z',error_code:'WEBHOOK_HEADER_AUTH_REJECTED'},...historicalRuns],
+ asOfIso:'2026-10-31T18:24:00Z',headerAuthConfigured:true});
+ assert.equal(o.state,'RECENT_ACTIVEPIECES_ENTRY_FAILED');
+ assert.equal(o.verdict,'FAIL_AP_ENTRY');
+ assert.equal(o.native_chat_trigger_verified,false);
+});
+test('a fresh successful entry run is bounded evidence, not global ChatGPT composer interception',()=>{
+ const o=classifyWebhookHistory({runs:[{status:'SUCCEEDED',created:'2026-10-31T18:00:00Z'},...historicalRuns],
+ asOfIso:'2026-10-31T18:24:00Z'});
+ assert.equal(o.state,'RECENT_ACTIVEPIECES_ENTRY_SUCCEEDED');
+ assert.equal(o.verdict,'PASS_AP_ENTRY_ONLY');
+ assert.equal(o.native_chat_trigger_verified,false);
+ assert.equal(o.runtime_recovery_verified,false);
+});
+test('missing or malformed run metadata fails closed and leaks no error message',()=>{
+ for(const runs of [null,[],[{status:'BAD',created:'2026-10-31T18:00:00Z'}],[{status:'FAILED',created:'2026-11-02T00:00:00Z',error_code:'password_secret'}]]){
+  const o=classifyWebhookHistory({runs,asOfIso:'2026-10-31T18:24:00Z'});
+  assert.equal(o.verdict,'UNVERIFIED');
+  assert.equal(o.native_chat_trigger_verified,false);
+  assert.ok(!JSON.stringify(o).includes('password_secret'));
+ }
 });
