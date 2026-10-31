@@ -19,6 +19,24 @@ export function validateRoute(snapshot){
  if(!validId(caller.flowId)){
    diagnostics.push({code:'CALLER_ID_INVALID',severity:'ERROR'});
  }
+ // The dropdown proves only the selected *target*. Verify the caller
+ // is present and published in the independently supplied project inventory.
+ const flows=Array.isArray(snapshot?.flows)?snapshot.flows:null;
+ if(validId(caller.flowId)){
+   if(!flows){
+     diagnostics.push({code:'CALLER_FLOW_LIST_UNAVAILABLE',severity:'UNVERIFIED'});
+   }else{
+     const entry=flows.find(f=>f&&f.id===caller.flowId);
+     if(!entry){
+       diagnostics.push({code:'CALLER_NOT_IN_PROJECT',severity:'ERROR'});
+     }else{
+       if(entry.status==='DISABLED')diagnostics.push({code:'CALLER_FLOW_DISABLED',severity:'ERROR'});
+       else if(entry.status!=='ENABLED')diagnostics.push({code:'CALLER_STATUS_UNVERIFIED',severity:'UNVERIFIED'});
+       if(entry.published===false)diagnostics.push({code:'CALLER_FLOW_UNPUBLISHED',severity:'ERROR'});
+       else if(entry.published!==true)diagnostics.push({code:'CALLER_PUBLISH_UNVERIFIED',severity:'UNVERIFIED'});
+     }
+   }
+ }
  if(!validId(caller.targetFlowId)){
    diagnostics.push({code:'TARGET_VALUE_INVALID',severity:'ERROR'});
  }
