@@ -12,7 +12,12 @@ import re
 from typing import Callable, Mapping, Any
 
 TABLE = "public.isolated_project_memory_v85"
-VERSION = "8.5.0-isolated-candidate"
+VERSION = "8.5.1-isolated-candidate"
+# Hardcoded, disposable test deployment only. These are not user-selected at runtime.
+TEST_PROJECT_ID = "autumn-frog-53985417"
+TEST_BRANCH_ID = "br-billowing-union-azaxxi5p"
+TEST_DB_NAME = "aibot_isolated"
+PROTECTED_MAIN_BRANCH = "br-solitary-firefly-azge9w3x"
 KINDS = frozenset(("goal", "task_result"))
 ID = re.compile(r"^[a-z0-9][a-z0-9._-]{4,95}$")
 PROJECT = re.compile(r"^project\.ai-bot-[a-z0-9._-]{2,99}$")
@@ -100,6 +105,23 @@ def _match(row: Mapping[str, Any], selected: SelectedRecord) -> bool:
         )
     )
 
+def _require_test_executor(execute: Callable, test_branch_id: str, *, restore: bool = False) -> None:
+    """Fail closed when a caller's test-branch claim and executor scope diverge.
+
+    Executor scope metadata must be supplied by the trusted database adapter
+    after verifying its own connection configuration, never by user input.
+    This guard does not replace least-privilege SQL credentials or transport
+    verification. In particular, it must not be confused with real DB auth.
+    """
+    if test_branch_id == PROTECTED_MAIN_BRANCH:
+        raise ValueError("EXPLICIT_TEST_BRANCH_REQUIRED" if restore else "MAIN_BRANCH_BLOCKED")
+    if type(test_branch_id) is not str or test_branch_id != TEST_BRANCH_ID:
+        raise ValueError("EXPLICIT_TEST_BRANCH_REQUIRED")
+    if (getattr(execute, "bound_project_id", None) != TEST_PROJECT_ID
+        or getattr(execute, "bound_branch_id", None) != TEST_BRANCH_ID
+        or getattr(execute, "bound_database_name", None) != TEST_DB_NAME):
+        raise ValueError("EXECUTOR_SCOPE_MISMATCH")
+
 def save_selected_event(
     execute: Callable[[str, tuple], list[Mapping[str, Any]]],
     event: Mapping[str, Any],
@@ -111,10 +133,7 @@ def save_selected_event(
     'execute' must be a trusted parameterized PostgreSQL executor scoped to
     test_branch_id. Never pass an executor connected to production/main.
     """
-    if not isinstance(test_branch_id, str) or not test_branch_id.startswith("br-"):
-        raise ValueError("EXPLICIT_TEST_BRANCH_REQUIRED")
-    if test_branch_id == "br-solitary-firefly-azge9w3x":
-        raise ValueError("MAIN_BRANCH_BLOCKED")
+    _require_test_executor(execute, test_branch_id)
     selected = select_event(event)
     if selected is None:
         return {"status": "SKIPPED", "reason": "NOT_SELECTED"}
@@ -144,8 +163,7 @@ def restore_project_records(
     test_branch_id: str,
     limit: int = 10,
 ) -> list[dict[str, Any]]:
-    if not isinstance(test_branch_id, str) or not test_branch_id.startswith("br-") or test_branch_id == "br-solitary-firefly-azge9w3x":
-        raise ValueError("EXPLICIT_TEST_BRANCH_REQUIRED")
+    _require_test_executor(execute, test_branch_id, restore=True)
     project_key = _clean(project_key, limit=120)
     if not PROJECT.fullmatch(project_key) or type(limit) is not int or not 1 <= limit <= 25:
         raise ValueError("INVALID_RESTORE_REQUEST")
