@@ -6,8 +6,8 @@ import {validateRoute,classifyWebhookHistory} from './ap_callflow_guard_v843.mjs
 // ap_resolve_property_options("flowId") external option IDs.
 const actual=()=>({
  flows:[
-  {id:'H2P6JrVt2l0nb3J4boOOZ',displayName:'ChatGPT API 진입점',status:'ENABLED',published:true},
-  {id:'8qJV66lPObcBTqamLowTB',displayName:'ChatGPT 답변 엔진',status:'ENABLED',published:true}
+  {id:'H2P6JrVt2l0nb3J4boOOZ',displayName:'ChatGPT API 진입점',status:'ENABLED',published:true,triggerType:'@activepieces/piece-webhook'},
+  {id:'8qJV66lPObcBTqamLowTB',displayName:'ChatGPT 답변 엔진',status:'ENABLED',published:true,triggerType:'@activepieces/piece-subflows'}
  ],
  callableOptions:[
   {label:'ChatGPT 답변 엔진',value:'NPOQmODuykYZdDjoEP0gr'},
@@ -191,4 +191,26 @@ test('incomplete caller flow status and publishing evidence is UNVERIFIED',()=>{
  assert.equal(result.verdict,'UNVERIFIED');
  assert.ok(result.diagnostics.some(d=>d.code==='CALLER_STATUS_UNVERIFIED'));
  assert.ok(result.diagnostics.some(d=>d.code==='CALLER_PUBLISH_UNVERIFIED'));
+});
+
+test('non-webhook entry cannot be treated as an active chat ingress',()=>{
+ const s=actual();s.flows[0].triggerType='@activepieces/piece-subflows';
+ const o=validateRoute(s);
+ assert.equal(o.verdict,'FAIL');
+ assert.ok(o.diagnostics.some(x=>x.code==='CALLER_NOT_WEBHOOK_TRIGGER'));
+ assert.equal(o.actual_chatgpt_message_trigger_proven,false);
+});
+test('missing trigger metadata remains UNVERIFIED, not a false PASS',()=>{
+ const s=actual();delete s.flows[0].triggerType;s.historicalWebhookAuthFailures=0;
+ const o=validateRoute(s);
+ assert.equal(o.verdict,'UNVERIFIED');
+ assert.deepEqual(o.diagnostics.map(x=>x.code),['CALLER_TRIGGER_UNVERIFIED']);
+});
+test('confirmed webhook entry with callable engine stays valid but not native proof',()=>{
+ const s=actual();s.historicalWebhookAuthFailures=0;
+ const o=validateRoute(s);
+ assert.equal(o.verdict,'PASS');
+ assert.deepEqual(o.diagnostics,[]);
+ assert.equal(o.published_runtime_execution_proven,false);
+ assert.equal(o.actual_chatgpt_message_trigger_proven,false);
 });
