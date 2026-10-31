@@ -20,7 +20,7 @@ COMPONENTS = frozenset({
 STATUSES = frozenset({"SESSION_READ_PASS", "TOOL_AVAILABLE", "UNVERIFIED", "PAUSED"})
 SOURCES = frozenset({"connector_read", "tool_inventory", "registry_read"})
 EVIDENCE = re.compile(r"^[a-zA-Z0-9._:-]{3,128}$")
-VERSIONS = re.compile(r"^v?[0-9]+(?:\\.[0-9]+){1,3}(?:-[A-Za-z0-9.-]+)?$")
+VERSIONS = re.compile(r"^v?[0-9]+(?:\.[0-9]+){1,3}(?:-[A-Za-z0-9.-]+)?$")
 
 
 def _utc(t: str) -> datetime:
