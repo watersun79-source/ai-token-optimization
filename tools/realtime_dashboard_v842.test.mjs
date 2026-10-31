@@ -239,3 +239,62 @@ test('iPhone dashboard treats HTTP 502 as target failure while SSE remains conne
     await new Promise(resolve=>server.close(resolve));
   }
 });
+
+
+test('v835 health HTTP 200 with configuration_present=false is UNCONFIGURED, not healthy',async()=>{
+  const unconfigured=async()=>({ok:true,status:200,json:async()=>({
+    status:'UP',version:'8.3.5',configuration_present:false,
+    intake_enabled:false,database_connection_verified:false,boot_id:'boot-initial'
+  })});
+  const res=await probe(unconfigured);
+  assert.equal(res.status,'UNCONFIGURED');
+  assert.equal(res.http_status,200);
+  assert.equal(res.configuration_present,false);
+  const snap=await snapshot(unconfigured);
+  assert.equal(snap.render.status,'UNCONFIGURED');
+  assert.equal(snap.neon.status,'UNVERIFIED');
+  assert.equal(snap.native.status,'UNVERIFIED');
+  assert.equal(snap.paid_model_calls,0);
+  const readyButNotDb=async()=>({ok:true,status:200,json:async()=>({
+    status:'UP',configuration_present:true,intake_enabled:false,database_connection_verified:false
+  })});
+  assert.equal((await probe(readyButNotDb)).status,'DEGRADED');
+  assert.notEqual(snap.change_id,(await snapshot(readyButNotDb)).change_id);
+});
+
+test('iPhone UI labels unconfigured queue key/DB URL but never implies a linked Neon service',async()=>{
+  const app=createApp({secret,fetcher:yes});
+  await new Promise(resolve=>app.listen(0,'127.0.0.1',resolve));
+  try{
+    const base='http://127.0.0.1:'+app.address().port;
+    const script=await (await fetch(base+'/app.js')).text();
+    const css=await (await fetch(base+'/style.css')).text();
+    assert.match(css,/#render\[data-state="UNCONFIGURED"\]\{color:#af6909\}/);
+    const el=new Map();
+    const doc={
+      getElementById(id){if(!el.has(id))el.set(id,{dataset:{},textContent:'',prepend(){}});return el.get(id)},
+      createElement(){return {textContent:''}}
+    };
+    let callback;
+    class FakeEventSource{
+      static OPEN=1;static CLOSED=2;
+      constructor(){this.readyState=FakeEventSource.OPEN;}
+      addEventListener(type,fn){if(type==='snapshot')callback=fn;}
+    }
+    runInNewContext(script,{
+      document:doc,EventSource:FakeEventSource,
+      setInterval(){return 1;},
+      fetch(){throw Error('should not poll while live SSE is connected')}
+    });
+    callback({data:JSON.stringify({change_id:'cfg-false',observed_at:'2026-10-31T11:22:00Z',
+      render:{status:'UNCONFIGURED',http_status:200,database_ready:false,configuration_present:false}
+    })});
+    assert.equal(doc.getElementById('render').dataset.state,'UNCONFIGURED');
+    assert.match(doc.getElementById('render').textContent,/필수 환경설정 부족/);
+    const guidance=doc.getElementById('render-guide').textContent;
+    assert.match(guidance,/NEON_QUEUE_DATABASE_URL/);
+    assert.match(guidance,/ISOLATED_JOB_KEY/);
+    assert.match(guidance,/자동으로 만들지 않아/);
+    assert.match(doc.getElementById('connection').textContent,/관제 연결됨 · 대상 상태 별도/);
+  }finally{app.closeAllConnections();await new Promise(resolve=>app.close(resolve));}
+});
