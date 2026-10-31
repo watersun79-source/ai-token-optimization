@@ -412,7 +412,7 @@ test('read-only candidate changed descriptive output only and has no provider ca
  const source=readFileSync(new URL('./ap_watchdog_step5_readonly_fix_v843.mjs',import.meta.url),'utf8');
  assert.ok(source.includes("github_dispatch_blocker:'READ_ONLY_WATCHDOG_NO_DISPATCH_CONFIGURED'"));
  assert.ok(!source.includes("github_dispatch_blocker:'NO_ACTIVEPIECES_GITHUB_CONNECTION'"));
- assert.ok(!/\\bfetch\\s*\\(|\\baxios\\b|workflow_dispatch\\s*\\(/i.test(source));
+ assert.ok(!/\bfetch\s*\(|\baxios\b|workflow_dispatch\s*\(/i.test(source));
  const o=await candidateWatchdogStep5(watchdogInputs(300));
  assert.equal(o.status,'WARN');
  assert.equal(o.remote_writes,0);
