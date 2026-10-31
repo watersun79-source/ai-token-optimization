@@ -1,5 +1,14 @@
 # AI BOT v8.5.0 isolated candidate — selected project memory
 
+**Latest isolated patch:** v8.5.1 candidate blocks executor scope mismatch before I/O.
+Trusted executor must supply fixed `bound_project_id`, `bound_branch_id`, and
+`bound_database_name` from authenticated connection configuration. This is
+an **advisory local fail-closed defense**, not cryptographic proof of the
+underlying connection. Actual credentials must still be least-privilege
+and restricted to the disposable test branch. Four regression tests cover
+wrong/missing scope and unapproved branch. Version is only test-verified if
+exact remote PR SHA and CI pass are independently read back.
+
 **Status:** isolated proof only. Do **not** merge/deploy to production. No ChatGPT-wide transcript interception, no native ChatGPT always-on listeners, no real external model calls.
 
 ## What the user explicitly authorized
