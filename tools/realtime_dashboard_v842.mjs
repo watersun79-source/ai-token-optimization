@@ -32,20 +32,38 @@ function reply(res,code,type,data,extras={}){
 const htmlLogin = '<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>AI 실시간 관제</title><link rel="stylesheet" href="/style.css"><main><section class="card"><h1>AI 실시간 관제</h1><p>비공개 읽기 전용 관제야. Render 환경변수 REALTIME_VIEW_SECRET 값으로 로그인해.</p><form action="/login" method="POST"><label>접근키<input type="password" name="key" required minlength="24" autocomplete="off"></label><button>접속하기</button></form></section></main></html>';
 const htmlApp = '<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>AI 실시간 관제</title><link rel="stylesheet" href="/style.css"><main><h1>AI 실시간 관제</h1><p>화면을 열어둔 동안 읽기 전용 확인 · Render Free 유휴 절전은 유지</p><div class="badge" id="connection">연결 중</div><section class="cards"><article><small>Render 상태</small><h2 id="render">조회 중</h2><p id="rt"></p></article><article><small>Neon</small><h2>미검증</h2><p>이 서버에 DB 자격증명을 설치하지 않았어. ChatGPT Neon 접속은 별도야.</p></article><article><small>ChatGPT 예약 / D1</small><h2>미검증</h2><p>공식 동일 회차 MCP 원장이 없어 성공으로 추정하지 않아.</p></article></section><section class="card"><h3>상태 변경</h3><div id="feed">아직 이벤트 없음</div></section><form action="/logout" method="POST"><button>로그아웃</button></form></main><script src="/app.js" defer></script></html>';
 const css='*{box-sizing:border-box}body{margin:0;background:#ecf2f7;color:#172535;font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif}main{max-width:760px;margin:auto;padding:28px 16px}h1{font-size:32px}p{font-size:13px;color:#63798a;line-height:1.5}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:18px 0}.card,article{background:white;border:1px solid #d8e1ec;border-radius:20px;padding:20px;box-shadow:0 5px 22px #4c61740b}small{color:#63798a}h2{font-size:23px;color:#1a8655}.badge{background:#dce9f5;border-radius:12px;padding:8px;display:inline-block;font-size:13px}input{display:block;padding:12px;width:100%;border:1px solid #bbcbd9;border-radius:12px;margin:8px 0 12px}button{background:#1967c4;color:white;border:0;border-radius:12px;padding:12px 20px;margin-top:16px}#feed{font-size:12px;color:#4c657a}';
-const script='let last="";const el=(id)=>document.getElementById(id);function update(s){const r=s.render;el("render").textContent=r.status==="UP"?"정상":r.status==="DOWN"?"응답 오류":"미확인";el("rt").textContent="HTTP "+(r.http_status??"-")+" · "+new Date(s.observed_at).toLocaleTimeString("ko-KR");if(s.change_id!==last){last=s.change_id;const div=document.createElement("div");div.textContent=new Date().toLocaleTimeString("ko-KR")+"  "+el("render").textContent;el("feed").prepend(div)}}const sse=new EventSource("/events");sse.addEventListener("snapshot",e=>{update(JSON.parse(e.data));el("connection").textContent="실시간 연결"});sse.onerror=()=>el("connection").textContent="재연결 중";setInterval(()=>fetch("/api/snapshot",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(s=>s&&update(s)).catch(()=>{}),45000);';
+const script='let last="";const el=(id)=>document.getElementById(id);function update(s){const r=s.render;el("render").textContent=r.status==="UP"?"백엔드 준비 보고":r.status==="DEGRADED"?"DB 연결 미준비":r.status==="DOWN"?"HTTP 오류":"미확인";el("rt").textContent="HTTP "+(r.http_status??"-")+" · DB "+(r.database_ready===true?"준비 보고":r.database_ready===false?"미준비":"미검증")+" · "+new Date(s.observed_at).toLocaleTimeString("ko-KR");if(s.change_id!==last){last=s.change_id;const div=document.createElement("div");div.textContent=new Date().toLocaleTimeString("ko-KR")+"  "+el("render").textContent+(r.boot_id?" · 부팅 "+r.boot_id.slice(0,8):"");el("feed").prepend(div)}}const sse=new EventSource("/events");sse.addEventListener("snapshot",e=>{update(JSON.parse(e.data));el("connection").textContent="실시간 연결"});sse.onerror=()=>el("connection").textContent="재연결 중";setInterval(()=>fetch("/api/snapshot",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(s=>s&&update(s)).catch(()=>{}),45000);';
 
 export async function probe(fetcher=fetch) {
   const t=Date.now();
   try {
     const r=await fetcher(TARGET,{method:'GET',redirect:'error',signal:AbortSignal.timeout(7500),headers:{'User-Agent':'IsolatedRealtime842'}});
-    return {status:r.ok?'UP':'DOWN',http_status:r.status,latency_ms:Date.now()-t};
-  } catch {return {status:'UNVERIFIED',http_status:null,latency_ms:null};}
+    if (!r.ok) {
+      return {status:'DOWN',http_status:r.status,database_ready:null,intake_ready:null,boot_id:null,latency_ms:Date.now()-t};
+    }
+    let health;
+    try { health=await r.json(); }
+    catch {
+      return {status:'UNVERIFIED',reason:'HEALTH_BODY_UNREADABLE',http_status:r.status,database_ready:null,intake_ready:null,boot_id:null,latency_ms:Date.now()-t};
+    }
+    // HTTP 200 is NOT proof of a functioning Neon backend. Trust only the
+    // isolated service's explicit public health contract; it is a claim,
+    // not an independent authenticated Neon database read.
+    const dbReady=health?.database_connection_verified===true;
+    const intakeReady=health?.intake_enabled===true;
+    const explicitlyUnready=health?.database_connection_verified===false || health?.intake_enabled===false;
+    const status=dbReady && intakeReady && health?.status==='UP' ? 'UP'
+      : explicitlyUnready ? 'DEGRADED' : 'UNVERIFIED';
+    const bootId=typeof health?.boot_id==='string' && /^[A-Za-z0-9_-]{1,64}$/.test(health.boot_id)
+      ? health.boot_id : null;
+    return {status,http_status:r.status,database_ready:dbReady,intake_ready:intakeReady,boot_id:bootId,latency_ms:Date.now()-t};
+  } catch {return {status:'UNVERIFIED',reason:'NETWORK_OR_TIMEOUT',http_status:null,database_ready:null,intake_ready:null,boot_id:null,latency_ms:null};}
 }
 export async function snapshot(fetcher=fetch){
   const render=await probe(fetcher);
   return {
     version:'8.4.2',observed_at:new Date().toISOString(),
-    change_id:createHash('sha256').update(render.status+':'+render.http_status).digest('hex').slice(0,16),
+    change_id:createHash('sha256').update(JSON.stringify([render.status,render.http_status,render.database_ready,render.intake_ready,render.boot_id])).digest('hex').slice(0,16),
     render,neon:{status:'UNVERIFIED',reason:'NO_DATABASE_CREDENTIALS'},
     native:{status:'UNVERIFIED',reason:'NO_NATIVE_PROVENANCE'},
     source:'ISOLATED_LIVE_READ_ONLY',paid_model_calls:0
