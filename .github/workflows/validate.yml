@@ -109,6 +109,38 @@ jobs:
           print('V842_COMBINED_VERDICT=' + ('PASS' if health_ok and auth_ok else 'UNVERIFIED'))
           raise SystemExit(0 if health_ok and auth_ok else 1)
           PY
+      # One bounded remote GET for login page and anonymous SSE denial. No credentials.
+      # Only this PR head's one-shot commit runs the network probe; no future hourly polling.
+      - name: Probe v8.4.2 anonymous SSE boundary (one shot)
+        if: github.event_name == 'pull_request' && github.head_ref == 'ai/v842-live-readonly-20261031'
+        timeout-minutes: 3
+        run: |
+          git fetch --quiet --no-tags --depth=1 origin refs/heads/ai/v842-live-readonly-20261031
+          if [ "$(git log -1 --pretty=%s FETCH_HEAD)" != 'test(v842): one-shot deployed SSE anonymous boundary' ]; then
+            echo 'V842_SSE_BOUNDARY=SKIPPED_NOT_TARGET_COMMIT'
+            exit 0
+          fi
+          python - <<'PY'
+          import urllib.error, urllib.request
+          root = 'https://ai-bot-v842-live-readonly-20261031-1vz0.onrender.com'
+          def get(path):
+              req=urllib.request.Request(root+path,headers={'User-Agent':'V842-CI-Anon-Boundary','Cache-Control':'no-store'})
+              try:
+                  with urllib.request.urlopen(req, timeout=40) as resp:
+                      return resp.status,resp.read(4096)
+              except urllib.error.HTTPError as exc:
+                  return exc.code,exc.read(4096)
+          login_status, html = get('/')
+          events_status, events_body = get('/events')
+          login_ok = login_status==200 and b'<form action="/login"' in html and b'name="key"' in html
+          events_ok = events_status==401 and b'AUTH_REQUIRED' in events_body
+          print('V842_LOGIN_PAGE_HTTP='+str(login_status))
+          print('V842_LOGIN_PAGE_VERDICT='+('PASS' if login_ok else 'UNVERIFIED'))
+          print('V842_ANON_EVENTS_HTTP='+str(events_status))
+          print('V842_ANON_EVENTS_VERDICT='+('PASS' if events_ok else 'UNVERIFIED'))
+          print('V842_SSE_BOUNDARY_VERDICT='+('PASS' if login_ok and events_ok else 'UNVERIFIED'))
+          raise SystemExit(0 if login_ok and events_ok else 1)
+          PY
       # One bounded public HTTPS read on this isolated draft PR ONLY.
       - name: Verify v8.3.2 Render public HTTPS health contract (one shot)
         if: github.event_name == 'pull_request' && github.head_ref == 'ai/v831-durable-recovery-20261030'
