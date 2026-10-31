@@ -140,6 +140,49 @@ export function classifyWebhookHistory({runs,asOfIso,windowHours=24,headerAuthCo
   };
 }
 
+
+/**
+ * Interpret the :30 gap-recovery flow without treating SUCCEEDED/SKIP as dispatch.
+ * Only trustworthy metadata (run identity, environment, step names/statuses) is used.
+ * Even a successful dispatch step does not independently prove a GitHub run or Slack post.
+ */
+export function classifyGapRecoveryRun({run,expectedFlowId}={}){
+ const neutral=(state)=>({
+  state,verdict:'UNVERIFIED',github_dispatch_step_succeeded:false,
+  slack_post_step_succeeded:false,github_run_verified:false,
+  slack_message_verified:false,native_chatgpt_run_verified:false,model_calls:0
+ });
+ if(!validId(expectedFlowId)||!run||run.flowId!==expectedFlowId||
+    run.environment!=='PRODUCTION'||!validId(run.id)){
+   return neutral('UNTRUSTED_RUN_PROVENANCE');
+ }
+ if(!['SUCCEEDED','FAILED'].includes(run.status)||!Array.isArray(run.steps)||
+    !run.steps.length||run.steps.some(s=>!s||typeof s.name!=='string'||
+    !/^trigger$|^step_[1-9]\\d*$/.test(s.name)||!['SUCCEEDED','FAILED','SKIPPED'].includes(s.status))){
+   return neutral('INVALID_RUN_OR_STEPS');
+ }
+ const stepNames=run.steps.map(s=>s.name);
+ if(new Set(stepNames).size!==stepNames.length)return neutral('AMBIGUOUS_DUPLICATE_STEPS');
+ if(run.status==='FAILED')return neutral('ACTIVEPIECES_FLOW_FAILED');
+ const paths=new Map(run.steps.map(s=>[s.name,s.status]));
+ const core=['trigger','step_1','step_2','step_3'].every(n=>paths.get(n)==='SUCCEEDED');
+ if(!core)return neutral('CORE_STEPS_NOT_VERIFIED');
+ const skip=paths.get('step_8')==='SUCCEEDED';
+ const dispatched=['step_4','step_5','step_6','step_7'].every(n=>paths.get(n)==='SUCCEEDED');
+ if(skip&& !['step_4','step_5','step_6','step_7'].some(n=>paths.has(n)) &&
+    run.steps.length===5){
+   return {...neutral('SKIPPED_DUPLICATE_DISPATCH'),verdict:'SKIP_AP_NO_DISPATCH'};
+ }
+ if(dispatched&&!paths.has('step_8')&&run.steps.length===8){
+   return {
+    ...neutral('RECOVERY_AND_SLACK_STEPS_SUCCEEDED'),
+    verdict:'PASS_AP_STEPS_ONLY',github_dispatch_step_succeeded:true,
+    slack_post_step_succeeded:true
+   };
+ }
+ return neutral('MIXED_OR_INCOMPLETE_ROUTE');
+}
+
 if(process.argv[1] && import.meta.url===new URL('file://'+process.argv[1]).href){
  if(process.argv.length!==3){console.error('USAGE: node ap_callflow_guard_v843.mjs redacted-snapshot.json');process.exitCode=2;}
  else {
