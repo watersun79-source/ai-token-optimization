@@ -146,7 +146,7 @@ export function classifyWebhookHistory({runs,asOfIso,windowHours=24,headerAuthCo
  * Only trustworthy metadata (run identity, environment, step names/statuses) is used.
  * Even a successful dispatch step does not independently prove a GitHub run or Slack post.
  */
-export function classifyGapRecoveryRun({run,expectedFlowId}={}){
+export function classifyGapRecoveryRun({run,expectedFlowId,asOfIso,maxAgeHours=3}={}){
  const neutral=(state)=>({
   state,verdict:'UNVERIFIED',github_dispatch_step_succeeded:false,
   slack_post_step_succeeded:false,github_run_verified:false,
@@ -155,6 +155,21 @@ export function classifyGapRecoveryRun({run,expectedFlowId}={}){
  if(!validId(expectedFlowId)||!run||run.flowId!==expectedFlowId||
     run.environment!=='PRODUCTION'||!validId(run.id)){
    return neutral('UNTRUSTED_RUN_PROVENANCE');
+ }
+ // An old run is not evidence of current recovery, even with all green steps.
+ // All timestamps come from a caller-supplied fixed observation window.
+ const observedAt=Date.parse(asOfIso??'');
+ if(!Number.isFinite(observedAt)||!Number.isFinite(maxAgeHours)||
+    maxAgeHours<=0||maxAgeHours>168){
+   return neutral('INVALID_OBSERVATION_WINDOW');
+ }
+ const createdAt=Date.parse(run.created??'');
+ if(!Number.isFinite(createdAt)||createdAt<0||createdAt>observedAt+60000){
+   return neutral('INVALID_RUN_TIMESTAMP');
+ }
+ const age=observedAt-createdAt;
+ if(age<0||age>maxAgeHours*3600000){
+   return neutral('STALE_OR_FUTURE_RUN');
  }
  if(!['SUCCEEDED','FAILED'].includes(run.status)||!Array.isArray(run.steps)||
     !run.steps.length||run.steps.some(s=>!s||typeof s.name!=='string'||
@@ -171,13 +186,16 @@ export function classifyGapRecoveryRun({run,expectedFlowId}={}){
  const dispatched=['step_4','step_5','step_6','step_7'].every(n=>paths.get(n)==='SUCCEEDED');
  if(skip&& !['step_4','step_5','step_6','step_7'].some(n=>paths.has(n)) &&
     run.steps.length===5){
-   return {...neutral('SKIPPED_DUPLICATE_DISPATCH'),verdict:'SKIP_AP_NO_DISPATCH'};
+   return {...neutral('SKIPPED_DUPLICATE_DISPATCH'),verdict:'SKIP_AP_NO_DISPATCH',
+     recent_production_run_observed:true,observed_run_age_minutes:Math.floor(age/60000)};
  }
  if(dispatched&&!paths.has('step_8')&&run.steps.length===8){
    return {
     ...neutral('RECOVERY_AND_SLACK_STEPS_SUCCEEDED'),
     verdict:'PASS_AP_STEPS_ONLY',github_dispatch_step_succeeded:true,
-    slack_post_step_succeeded:true
+    slack_post_step_succeeded:true,
+    recent_production_run_observed:true,
+    observed_run_age_minutes:Math.floor(age/60000)
    };
  }
  return neutral('MIXED_OR_INCOMPLETE_ROUTE');
