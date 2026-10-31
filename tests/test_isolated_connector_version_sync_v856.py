@@ -54,6 +54,31 @@ class ConnectorInventoryTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "INVALID_EVIDENCE"):
                     reconcile_connector_versions([item(evidence=bad)], now=NOW)
 
+    def test_secret_shaped_evidence_is_rejected_without_echo(self):
+        examples = (
+            "sk-" + "a" * 24,
+            "ghp_" + "b" * 30,
+            "github_pat_" + "c" * 30,
+            "xoxb-" + "d" * 28,
+            "mcp.password:masked",
+            "mcp.api_key:masked",
+            "mcp.token:masked",
+        )
+        for synthetic in examples:
+            with self.subTest(label=synthetic[:4]):
+                with self.assertRaisesRegex(ValueError, "^INVALID_EVIDENCE$"):
+                    reconcile_connector_versions(
+                        [item(evidence=synthetic)], now=NOW
+                    )
+
+    def test_valid_receipt_like_evidence_still_accepted(self):
+        out = reconcile_connector_versions(
+            [item(evidence="mcp.ab12-ff3e.901")], now=NOW
+        )
+        self.assertEqual(
+            out["components"]["github"]["evidence"], "mcp.ab12-ff3e.901"
+        )
+
     def test_stale_and_future_rejected(self):
         for at in ("2026-10-28T00:00:00Z", "2026-11-01T01:00:00Z"):
             with self.subTest(at=at):
