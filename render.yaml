@@ -1,0 +1,18 @@
+# v8.4.2: only a NEW isolated free service; never attach existing Render/Neon resources.
+# Deployed ONLY after the account owner explicitly approves it in the Render Dashboard.
+services:
+  - type: web
+    name: ai-bot-v842-live-readonly-20261031
+    runtime: node
+    repo: https://github.com/watersun79-source/ai-token-optimization
+    branch: ai/v842-live-readonly-20261031
+    region: singapore
+    plan: free
+    buildCommand: 'true'
+    startCommand: node tools/realtime_dashboard_v842.mjs
+    healthCheckPath: /healthz
+    autoDeployTrigger: off
+    envVars:
+      # User enters a new random value in Render Dashboard; never store secret in Git/D1/chat.
+      - key: REALTIME_VIEW_SECRET
+        sync: false
