@@ -60,6 +60,12 @@ jobs:
           node --test tools/neon_gateway_preflight_v841.test.mjs
           node tools/neon_gateway_preflight_v841.mjs --self-test
           node --check examples/neon_gateway_manual_one_call_v841.mjs
+      # v8.4.2 isolated: local HTTP/SSE only; no provider keys, bills or external API calls.
+      - name: Verify realtime SSE dashboard and protected read-only status (isolated only)
+        if: github.event_name == 'pull_request' && github.head_ref == 'ai/v842-live-readonly-20261031'
+        run: |
+          node --test tools/realtime_dashboard_v842.test.mjs
+          node --check tools/realtime_dashboard_v842.mjs
       # One bounded public HTTPS read on this isolated draft PR ONLY.
       - name: Verify v8.3.2 Render public HTTPS health contract (one shot)
         if: github.event_name == 'pull_request' && github.head_ref == 'ai/v831-durable-recovery-20261030'
