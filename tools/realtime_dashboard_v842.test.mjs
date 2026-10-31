@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {sign,verify,createApp,probe,snapshot} from './realtime_dashboard_v842.mjs';
 
 const secret='TEST_ONLY_FAKE_NO_REAL_SECRETS_012345678901';
-const yes=async()=>({ok:true,status:200});
+const yes=async()=>({ok:true,status:200,json:async()=>({status:'UP',database_connection_verified:true,intake_enabled:true,boot_id:'boot-1'})});
 const no=async()=>({ok:false,status:503});
 
 test('session HMAC valid only with right secret and fresh timestamp',()=>{
@@ -65,4 +65,27 @@ test('SSE emits valid authenticated snapshot event',async()=>{
     assert.match(data,/event: snapshot\n/);
     assert.match(data,/"render":\{"status":"UP"/);
   }finally{controller.abort();s.closeAllConnections();s.close();}
+});
+
+test('HTTP 200 is degraded when underlying Neon DB is unavailable',async()=>{
+  const falseDb=async()=>({ok:true,status:200,json:async()=>({status:'UP',intake_enabled:false,database_connection_verified:false,boot_id:'boot-2'})});
+  const result=await probe(falseDb);
+  assert.equal(result.status,'DEGRADED');
+  assert.equal(result.http_status,200);
+  assert.equal(result.database_ready,false);
+  assert.equal((await snapshot(falseDb)).render.status,'DEGRADED');
+});
+test('HTTP 200 with missing/broken health evidence must remain unverified',async()=>{
+  const unknown=async()=>({ok:true,status:200,json:async()=>({status:'UP'})});
+  const badJson=async()=>({ok:true,status:200,json:async()=>{throw new Error('bad json')}});
+  assert.equal((await probe(unknown)).status,'UNVERIFIED');
+  assert.equal((await probe(badJson)).status,'UNVERIFIED');
+});
+test('new Render boot_id produces a change event even while otherwise healthy',async()=>{
+  const fake=(boot_id)=>async()=>({ok:true,status:200,json:async()=>({status:'UP',database_connection_verified:true,intake_enabled:true,boot_id})});
+  const first=await snapshot(fake('boot-1'));
+  const rebooted=await snapshot(fake('boot-2'));
+  assert.equal(first.render.status,'UP');
+  assert.equal(rebooted.render.status,'UP');
+  assert.notEqual(first.change_id,rebooted.change_id);
 });
