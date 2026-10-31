@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 import re
 from collections.abc import Mapping, Sequence
 
-VERSION = "8.5.6-isolated-connector-inventory"
+VERSION = "8.5.7-isolated-connector-evidence-safety"
 COMPONENTS = frozenset({
     "github", "slack", "context7", "replit", "exa", "neon", "render",
     "activepieces", "d1_memory", "grok_bot_control",
@@ -20,6 +20,15 @@ COMPONENTS = frozenset({
 STATUSES = frozenset({"SESSION_READ_PASS", "TOOL_AVAILABLE", "UNVERIFIED", "PAUSED"})
 SOURCES = frozenset({"connector_read", "tool_inventory", "registry_read"})
 EVIDENCE = re.compile(r"^[a-zA-Z0-9._:-]{3,128}$")
+# A syntactically valid receipt identifier must never double as a secret.
+# Check only shapes, never log the rejected value.
+SENSITIVE_EVIDENCE = re.compile(
+    r"(?i)(?:^|[._:-])(?:sk-[a-z0-9_-]{12,}|"
+    r"gh[pousr]_[a-z0-9]{20,}|github_pat_[a-z0-9_]{20,}|"
+    r"xox[baprs]-[a-z0-9-]{12,}|"
+    r"(?:api[_-]?key|access[_-]?token|token|password|passwd|"
+    r"private[_-]?key|secret)(?:[._:-]|$))"
+)
 VERSIONS = re.compile(r"^v?[0-9]+(?:\.[0-9]+){1,3}(?:-[A-Za-z0-9.-]+)?$")
 
 
@@ -66,7 +75,8 @@ def reconcile_connector_versions(
         if observed > anchor or anchor - observed > timedelta(hours=max_age_hours):
             raise ValueError("STALE_OR_FUTURE_EVIDENCE")
         evidence = entry["evidence"]
-        if not isinstance(evidence, str) or not EVIDENCE.fullmatch(evidence):
+        if (not isinstance(evidence, str) or not EVIDENCE.fullmatch(evidence)
+            or SENSITIVE_EVIDENCE.search(evidence)):
             raise ValueError("INVALID_EVIDENCE")
         version = entry["version"]
         if version is not None and (
