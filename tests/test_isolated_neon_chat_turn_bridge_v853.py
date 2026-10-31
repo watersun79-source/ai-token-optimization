@@ -76,6 +76,27 @@ class TestChatTurnConnectorBridge(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "INSERT_ACK_MISMATCH"):
             validate_neon_connector_results(p, ack, rows)
 
+    def test_tampered_expected_body_hash_rejected(self):
+        p = prepare_selected_neon_commands(event())
+        p["expected"]["body"] = "Altered after plan creation."
+        ack, rows = responses(p)
+        with self.assertRaisesRegex(RuntimeError, "READBACK_HASH_MISMATCH"):
+            validate_neon_connector_results(p, ack, rows)
+
+    def test_tampered_expected_digest_rejected(self):
+        p = prepare_selected_neon_commands(event())
+        p["expected"]["content_sha256"] = "0" * 64
+        ack, rows = responses(p)
+        with self.assertRaisesRegex(RuntimeError, "READBACK_HASH_MISMATCH"):
+            validate_neon_connector_results(p, ack, rows)
+
+    def test_missing_expected_body_rejected(self):
+        p = prepare_selected_neon_commands(event())
+        del p["expected"]["body"]
+        ack, rows = responses(p)
+        with self.assertRaisesRegex(ValueError, "INVALID_EXPECTED_RECORD"):
+            validate_neon_connector_results(p, ack, rows)
+
     def test_multiple_readback_rows_rejected(self):
         p = prepare_selected_neon_commands(event())
         ack, rows = responses(p)
