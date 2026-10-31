@@ -1,6 +1,26 @@
 # AI BOT v8.5.0 isolated candidate — selected project memory
 
-**Latest isolated patch:** v8.5.1 candidate blocks executor scope mismatch before I/O.
+**Latest isolated patch:** v8.5.2 candidate adds a test-only guarded SQL
+executor and a *fresh, read-only* target preflight. It checks PostgreSQL
+`current_database()`, `current_user`, and the exact SHA-256 of an
+existing **synthetic** marker record previously written only to the
+disposable Neon test branch. Each approved query rechecks those facts on
+the **same database connection and transaction** before INSERT or SELECT.
+The caller passes a trusted, restricted, TLS-enabled `connect()`
+factory; no DSN/password is stored in GitHub. If proof is absent,
+mismatched, or the test-only role is not active, operations fail closed.
+
+The expected role name is `aibot_v85_memory_test_rw`. **Do not
+programmatically create this role or transfer credentials** without an
+explicitly authorized isolated-branch setup and verified free quota.
+This code is currently verified with offline mock PostgreSQL connections
+only. Its connection to the hosted Neon branch remains **UNVERIFIED**.
+The synthetic marker is public, **not a secret or authentication
+credential**; cloned branches could contain it, so strict DB role
+permissions, TLS, Neon API branch verification and restricted grants
+remain required for a true end-to-end connection.
+
+**Previous isolated patch:** v8.5.1 candidate blocks executor scope mismatch before I/O.
 Trusted executor must supply fixed `bound_project_id`, `bound_branch_id`, and
 `bound_database_name` from authenticated connection configuration. This is
 an **advisory local fail-closed defense**, not cryptographic proof of the
