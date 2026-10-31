@@ -1,5 +1,27 @@
 # AI BOT v8.5.0 isolated candidate — selected project memory
 
+**Connector bridge v8.5.3 isolated candidate (without external DB credentials):**
+`tools/isolated_neon_chat_turn_bridge_v853.py` creates an opt-in
+**plan** for the already connected ChatGPT Neon SQL tool. Its target is
+hard pinned to the existing disposable TEST branch and database. Dynamic
+goal/result strings are expressed as hexadecimal UTF-8 decoding, never
+raw SQL text interpolation. It creates a single idempotent INSERT and a
+separate project-scoped SELECT; the host must call the tool twice using
+the supplied exact `project_id`, `branch_id`, and `database_name`
+arguments, then pass the raw responses through
+`validate_neon_connector_results`. Any mismatch is a failure.
+No password, API key or PostgreSQL login role is required for **connected
+Neon tool calls** in the currently authorized ChatGPT session.
+
+This is **NOT** automatic ChatGPT-wide message capture or proof that the
+Python module runs as a background service. The application only works
+when an authorized ChatGPT project turn actually selects a record,
+sends the tool calls and verifies the returned rows. Offline GitHub CI
+proves code safety; real Neon connector SQL calls must be observed
+separately. The hosted Python PostgreSQL adapter still awaits the
+restricted TEST role `aibot_v85_memory_test_rw` and does not fall
+back to owner credentials.
+
 **Latest isolated patch:** v8.5.2 candidate adds a test-only guarded SQL
 executor and a *fresh, read-only* target preflight. It checks PostgreSQL
 `current_database()`, `current_user`, and the exact SHA-256 of an
