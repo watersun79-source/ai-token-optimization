@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validateRoute,classifyWebhookHistory} from './ap_callflow_guard_v843.mjs';
+import {validateRoute,classifyWebhookHistory,classifyGapRecoveryRun} from './ap_callflow_guard_v843.mjs';
 
 // Redacted connected-source snapshot: list_flows internal IDs differ from
 // ap_resolve_property_options("flowId") external option IDs.
@@ -213,4 +213,64 @@ test('confirmed webhook entry with callable engine stays valid but not native pr
  assert.deepEqual(o.diagnostics,[]);
  assert.equal(o.published_runtime_execution_proven,false);
  assert.equal(o.actual_chatgpt_message_trigger_proven,false);
+});
+
+const recoveryFlowId='7rrQ5IcTt6svQMucKkGQR';
+const recovery=(names,status='SUCCEEDED')=>({
+ id:'ap9nAn2zsKtIDrxUafbLY',flowId:recoveryFlowId,
+ environment:'PRODUCTION',status,
+ steps:names.map(name=>({name,status:'SUCCEEDED'}))
+});
+test('actual :30 SKIP path is not a GitHub or Slack dispatch',()=>{
+ const run=recovery(['trigger','step_1','step_2','step_3','step_8']);
+ const r=classifyGapRecoveryRun({run,expectedFlowId:recoveryFlowId});
+ assert.equal(r.state,'SKIPPED_DUPLICATE_DISPATCH');
+ assert.equal(r.verdict,'SKIP_AP_NO_DISPATCH');
+ assert.equal(r.github_dispatch_step_succeeded,false);
+ assert.equal(r.slack_post_step_succeeded,false);
+ assert.equal(r.github_run_verified,false);
+});
+test('observed :30 recovery path proves only Activepieces step completion',()=>{
+ const run=recovery(['trigger','step_1','step_2','step_3','step_4','step_5','step_6','step_7']);
+ run.id='MqmXTC0BjgMzu1rLcgjQ2';
+ const r=classifyGapRecoveryRun({run,expectedFlowId:recoveryFlowId});
+ assert.equal(r.state,'RECOVERY_AND_SLACK_STEPS_SUCCEEDED');
+ assert.equal(r.verdict,'PASS_AP_STEPS_ONLY');
+ assert.equal(r.github_dispatch_step_succeeded,true);
+ assert.equal(r.slack_post_step_succeeded,true);
+ assert.equal(r.github_run_verified,false);
+ assert.equal(r.slack_message_verified,false);
+ assert.equal(r.native_chatgpt_run_verified,false);
+});
+test('testing success, wrong flow and missing provenance are never successes',()=>{
+ const base=recovery(['trigger','step_1','step_2','step_3','step_4','step_5','step_6','step_7']);
+ for (const bad of [
+  {...base,environment:'TESTING'},
+  {...base,flowId:'H2P6JrVt2l0nb3J4boOOZ'},
+  {...base,id:undefined},
+  {...base,steps:undefined}
+ ]){
+  const r=classifyGapRecoveryRun({run:bad,expectedFlowId:recoveryFlowId});
+  assert.equal(r.verdict,'UNVERIFIED');
+  assert.equal(r.github_run_verified,false);
+ }
+});
+test('ambiguous mixed skip and recover paths cannot be counted',()=>{
+ const run=recovery(['trigger','step_1','step_2','step_3','step_4','step_5','step_6','step_7','step_8']);
+ const mixed=classifyGapRecoveryRun({run,expectedFlowId:recoveryFlowId});
+ assert.equal(mixed.state,'MIXED_OR_INCOMPLETE_ROUTE');
+ assert.equal(mixed.verdict,'UNVERIFIED');
+ run.steps[5].status='FAILED';
+ const partial=classifyGapRecoveryRun({run,expectedFlowId:recoveryFlowId});
+ assert.equal(partial.verdict,'UNVERIFIED');
+});
+test('duplicate steps and failed recovery remain unverified and do not leak',()=>{
+ const names=['trigger','step_1','step_2','step_3','step_4','step_5','step_6','step_7'];
+ const duplicate=recovery([...names,'step_7']);
+ const d=classifyGapRecoveryRun({run:duplicate,expectedFlowId:recoveryFlowId});
+ assert.equal(d.state,'AMBIGUOUS_DUPLICATE_STEPS');
+ const failure=classifyGapRecoveryRun({run:recovery(names,'FAILED'),expectedFlowId:recoveryFlowId});
+ assert.equal(failure.state,'ACTIVEPIECES_FLOW_FAILED');
+ assert.equal(failure.github_dispatch_step_succeeded,false);
+ assert.equal(failure.native_chatgpt_run_verified,false);
 });
