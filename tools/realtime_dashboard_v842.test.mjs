@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {runInNewContext} from 'node:vm';
 import {sign,verify,createApp,probe,snapshot} from './realtime_dashboard_v842.mjs';
 
 const secret='TEST_ONLY_FAKE_NO_REAL_SECRETS_012345678901';
@@ -89,6 +90,85 @@ test('SSE session expires and closes an already-open stream',async()=>{
     ]);
     assert.deepEqual(terminated,{done:true},'SSE stream must end when the signed cookie expires');
   }finally{controller.abort();s.closeAllConnections();await new Promise(r=>s.close(r));}
+});
+
+
+test('browser SSE reconnect handles expired authentication without repeated requests',async()=>{
+  const server=createApp({secret,fetcher:yes});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  try{
+    const js=await (await fetch('http://127.0.0.1:'+server.address().port+'/app.js')).text();
+    const elements=new Map();
+    const fakeDocument={
+      getElementById(id){if(!elements.has(id))elements.set(id,{textContent:'',prepend(){}});return elements.get(id);},
+      createElement(){return {textContent:''};}
+    };
+    let sse,interval,requests=0;
+    class FakeEventSource{
+      static OPEN=1;
+      static CLOSED=2;
+      constructor(){this.readyState=FakeEventSource.OPEN;sse=this;}
+      addEventListener(){}
+      close(){this.readyState=FakeEventSource.CLOSED;this.closed=true;}
+    }
+    runInNewContext(js,{
+      document:fakeDocument,EventSource:FakeEventSource,
+      setInterval(fn){interval=fn;return 1;},
+      fetch:async()=>{requests++;return {status:401,ok:false};}
+    });
+    assert.equal(typeof interval,'function');
+    interval();
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(requests,0,'healthy SSE must not duplicate snapshot polling');
+    sse.readyState=0;
+    sse.onerror();
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(requests,1,'one unauthorized probe on a disconnect');
+    assert.equal(sse.closed,true,'expired auth must close automatic SSE reconnect');
+    assert.match(fakeDocument.getElementById('connection').textContent,/세션 만료/);
+    interval();sse.onerror();
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(requests,1,'expired session must not keep polling');
+  }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+});
+
+test('browser SSE fallback reuses a single in-flight request and recovers status',async()=>{
+  const server=createApp({secret,fetcher:yes});
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  try{
+    const js=await (await fetch('http://127.0.0.1:'+server.address().port+'/app.js')).text();
+    const elements=new Map();
+    const fakeDocument={
+      getElementById(id){if(!elements.has(id))elements.set(id,{textContent:'',prepend(){}});return elements.get(id);},
+      createElement(){return {textContent:''};}
+    };
+    let sse,interval,requests=0,resolveRequest;
+    class FakeEventSource{
+      static OPEN=1;
+      static CLOSED=2;
+      constructor(){this.readyState=FakeEventSource.OPEN;sse=this;}
+      addEventListener(){}
+      close(){this.readyState=FakeEventSource.CLOSED;}
+    }
+    runInNewContext(js,{
+      document:fakeDocument,EventSource:FakeEventSource,
+      setInterval(fn){interval=fn;return 1;},
+      fetch(){requests++;return new Promise(resolve=>{resolveRequest=resolve;});}
+    });
+    sse.readyState=0;sse.onerror();
+    interval();
+    assert.equal(requests,1,'reconnect and timer should share one in-flight snapshot');
+    resolveRequest({status:200,ok:true,json:async()=>({
+      render:{status:'UP',http_status:200,database_ready:true,boot_id:'boot-1'},
+      change_id:'reconnect-1',observed_at:'2026-10-31T10:00:00Z'
+    })});
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(fakeDocument.getElementById('render').textContent,'백엔드 준비 보고');
+    sse.readyState=FakeEventSource.OPEN;
+    interval();
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(requests,1,'connected SSE should suppress fallback requests');
+  }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
 });
 
 test('HTTP 200 is degraded when underlying Neon DB is unavailable',async()=>{
