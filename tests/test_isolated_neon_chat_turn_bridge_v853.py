@@ -97,6 +97,40 @@ class TestChatTurnConnectorBridge(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "INVALID_EXPECTED_RECORD"):
             validate_neon_connector_results(p, ack, rows)
 
+    def test_forged_valid_digest_and_response_rejected(self):
+        p = prepare_selected_neon_commands(event())
+        # Body and digest are consistent with one another but not with
+        # the original SQL generated when this plan was created.
+        forged_body = "Forged response body with a valid new hash."
+        p["expected"]["body"] = forged_body
+        p["expected"]["content_sha256"] = hashlib.sha256(
+            forged_body.encode("utf-8")
+        ).hexdigest()
+        ack, rows = responses(p)
+        with self.assertRaisesRegex(RuntimeError, "PLAN_INTEGRITY_MISMATCH"):
+            validate_neon_connector_results(p, ack, rows)
+
+    def test_changed_insert_sql_rejected(self):
+        p = prepare_selected_neon_commands(event())
+        p["insert_sql"] += " "
+        ack, rows = responses(p)
+        with self.assertRaisesRegex(RuntimeError, "PLAN_INTEGRITY_MISMATCH"):
+            validate_neon_connector_results(p, ack, rows)
+
+    def test_changed_read_sql_rejected(self):
+        p = prepare_selected_neon_commands(event())
+        p["read_sql"] += " "
+        ack, rows = responses(p)
+        with self.assertRaisesRegex(RuntimeError, "PLAN_INTEGRITY_MISMATCH"):
+            validate_neon_connector_results(p, ack, rows)
+
+    def test_changed_plan_flags_rejected(self):
+        p = prepare_selected_neon_commands(event())
+        p["automatic_global_chat_capture"] = True
+        ack, rows = responses(p)
+        with self.assertRaisesRegex(RuntimeError, "PLAN_INTEGRITY_MISMATCH"):
+            validate_neon_connector_results(p, ack, rows)
+
     def test_multiple_readback_rows_rejected(self):
         p = prepare_selected_neon_commands(event())
         ack, rows = responses(p)
