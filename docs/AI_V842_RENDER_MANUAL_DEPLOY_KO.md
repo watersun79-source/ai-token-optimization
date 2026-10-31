@@ -2,6 +2,20 @@
 
 > **상태:** 원본 도구의 신규 Render 서비스 생성 요청은 안전 검사를 통과하지 못했다. 실제 배포 성공을 주장하지 않는다. 새 서비스 생성은 별도 사용자 승인/Render Dashboard 경로에서만 수행한다. 이 문서는 절차이며 배포 자동 실행 파일이 아니다.
 
+## 가장 간단한 Render Blueprint 배포 방법
+
+**실행 전:** Render Workspace의 월간 무료 사용량을 확인한다. 사용량 여유가 없거나 비용 선택 화면이 나오면 배포를 중단한다.
+
+1. [Render에 격리 서비스 배포](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fwatersun79-source%2Fai-token-optimization%2Ftree%2Fai%2Fv842-live-readonly-20261031) 를 열어 Render 계정으로 로그인한다.
+2. 선택한 저장소가 `watersun79-source/ai-token-optimization`, 브랜치가 반드시 `ai/v842-live-readonly-20261031`인지 확인한다. `main`이면 취소한다.
+3. Blueprint가 **기존 3개 서비스가 아니라 새 Free Web Service 1개만** 만들며, 자동 배포가 Off인 것을 확인한다. 다른 서비스가 나타나면 취소한다.
+4. `REALTIME_VIEW_SECRET` 입력창에 **사용자 기기에서 새로 생성한 24자 이상 난수**를 입력한다. 이 입력은 Render 대시보드 안에서만 수행한다. 비밀번호를 다른 곳에 붙여 넣지 않는다.
+5. 금액이 표시되지 않는 Free 요금제 및 총 무료 사용량을 확인한 뒤, 본인이 `Deploy Blueprint`를 누른다.
+6. Render의 Deploys 페이지에서 최신 배포가 `live`가 된 뒤 서비스 URL을 확인한다. 건강검사 `/healthz` HTTP 200과 로그인 전 `/api/snapshot` HTTP 401을 확인한다.
+7. 화면에서 기존 Render의 응답 상태만 관측하며, **Neon 및 native 예약은 UNVERIFIED**임을 유지한다.
+
+Blueprint 파일: [render.yaml](https://github.com/watersun79-source/ai-token-optimization/blob/ai/v842-live-readonly-20261031/render.yaml). 이 설정 파일은 비밀키를 저장하지 않고, Render 초기 배포 때 입력을 요구하는 `sync: false`를 사용한다. **이 문서만 클릭하거나 GitHub에 푸시해서는 Render 서비스가 만들어지지 않는다.**
+
 ## 기존 상태 및 범위
 
 - 리포지토리: `watersun79-source/ai-token-optimization`
