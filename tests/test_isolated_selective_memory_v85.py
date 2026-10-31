@@ -27,6 +27,10 @@ class FakePostgres:
     def __init__(self):
         self.rows = {}
         self.calls = []
+        # A trusted adapter must declare the target verified by its connection setup.
+        self.bound_project_id = "autumn-frog-53985417"
+        self.bound_branch_id = TEST_BRANCH
+        self.bound_database_name = "aibot_isolated"
 
     def __call__(self, sql, params):
         self.calls.append((sql, params))
@@ -115,6 +119,38 @@ class TestSelectiveProjectMemory(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "EXPLICIT_TEST_BRANCH_REQUIRED"):
             restore_project_records(db, "project.ai-bot-v81", test_branch_id=MAIN)
         self.assertEqual(db.calls, [])
+
+    def test_executor_bound_to_main_rejected_before_io(self):
+        db = FakePostgres()
+        db.bound_branch_id = MAIN
+        with self.assertRaisesRegex(ValueError, "EXECUTOR_SCOPE_MISMATCH"):
+            save_selected_event(db, event(), test_branch_id=TEST_BRANCH)
+        with self.assertRaisesRegex(ValueError, "EXECUTOR_SCOPE_MISMATCH"):
+            restore_project_records(db, "project.ai-bot-v81", test_branch_id=TEST_BRANCH)
+        self.assertEqual(db.calls, [])
+
+    def test_missing_executor_scope_rejected_before_io(self):
+        db = FakePostgres()
+        del db.bound_branch_id
+        with self.assertRaisesRegex(ValueError, "EXECUTOR_SCOPE_MISMATCH"):
+            save_selected_event(db, event(), test_branch_id=TEST_BRANCH)
+        self.assertEqual(db.calls, [])
+
+    def test_unapproved_branch_id_rejected_before_io(self):
+        db = FakePostgres()
+        with self.assertRaisesRegex(ValueError, "EXPLICIT_TEST_BRANCH_REQUIRED"):
+            save_selected_event(db, event(), test_branch_id="br-another-test")
+        self.assertEqual(db.calls, [])
+
+    def test_wrong_project_and_database_binding_rejected(self):
+        for attribute, wrong in (("bound_project_id", "another-project"),
+                                 ("bound_database_name", "neondb")):
+            with self.subTest(attribute=attribute):
+                db = FakePostgres()
+                setattr(db, attribute, wrong)
+                with self.assertRaisesRegex(ValueError, "EXECUTOR_SCOPE_MISMATCH"):
+                    save_selected_event(db, event(), test_branch_id=TEST_BRANCH)
+                self.assertEqual(db.calls, [])
 
     def test_missing_branch_rejected(self):
         with self.assertRaisesRegex(ValueError, "EXPLICIT_TEST_BRANCH_REQUIRED"):
