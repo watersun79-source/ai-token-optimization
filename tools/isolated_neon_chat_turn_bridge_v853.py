@@ -7,6 +7,8 @@ The connected host must send BOTH statements only to the pinned test branch.
 """
 from __future__ import annotations
 
+import hashlib
+
 from collections.abc import Mapping
 from typing import Any
 
@@ -92,7 +94,15 @@ def validate_neon_connector_results(
         raise ValueError("INVALID_CONNECTOR_RESPONSE")
     if len(inserted) > 1 or len(readback) != 1:
         raise RuntimeError("READBACK_MISMATCH")
-    expected = plan["expected"]
+    expected = plan.get("expected")
+    if not isinstance(expected, Mapping):
+        raise ValueError("INVALID_EXPECTED_RECORD")
+    body = expected.get("body")
+    claimed_sha = expected.get("content_sha256")
+    if not isinstance(body, str) or not isinstance(claimed_sha, str):
+        raise ValueError("INVALID_EXPECTED_RECORD")
+    if hashlib.sha256(body.encode("utf-8")).hexdigest() != claimed_sha:
+        raise RuntimeError("READBACK_HASH_MISMATCH")
     row = readback[0]
     if not isinstance(row, dict) or any(row.get(k) != v for k, v in expected.items()):
         raise RuntimeError("READBACK_MISMATCH")
