@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {validateRoute,classifyWebhookHistory,classifyGapRecoveryRun,classifyWatchdogConnectionClaim} from './ap_callflow_guard_v843.mjs';
+import {code as candidateWatchdogStep5} from './ap_watchdog_step5_readonly_fix_v843.mjs';
+import {readFileSync} from 'node:fs';
 
 // Redacted connected-source snapshot: list_flows internal IDs differ from
 // ap_resolve_property_options("flowId") external option IDs.
@@ -366,4 +368,53 @@ test('inactive connector observation does not claim live integration or platform
  assert.equal(o.github_active_connection_observed,false);
  assert.equal(o.native_chatgpt_run_verified,false);
  assert.equal(o.external_model_calls,0);
+});
+
+
+const auditSha='923c281f82023cc6b49f3844bad17f508f1ab203';
+const watchdogInputs=(ageMinutes,overrides={})=>({
+ mainHead:auditSha,isolatedHead:'fbe7e77fe9116b12303fa31ae12ccc63e24353b1',
+ mainHttp:200,isolatedHttp:200,workflowHttp:200,scheduleHttp:200,
+ workflowState:'active',
+ scheduleBody:{workflow_runs:[{
+   id:41216130609,event:'schedule',head_sha:auditSha,
+   status:'completed',conclusion:'success',
+   created_at:new Date(Date.now()-ageMinutes*60000).toISOString()
+ }]},...overrides
+});
+test('deployable read-only candidate preserves delayed GitHub schedule WARN',async()=>{
+ const o=await candidateWatchdogStep5(watchdogInputs(183));
+ assert.equal(o.kind,'AI_BOT_V81_INDEPENDENT_READONLY_WATCH_V1');
+ assert.equal(o.status,'WARN');
+ assert.equal(o.reason,'GITHUB_SCHEDULE_GAP_OVER_85_MIN');
+ assert.equal(o.github_dispatch_blocker,'READ_ONLY_WATCHDOG_NO_DISPATCH_CONFIGURED');
+ assert.equal(o.github_dispatch_executed,false);
+ assert.equal(o.remote_writes,0);
+ assert.equal(o.external_llm_calls,0);
+});
+test('recent schedule PASS still does not imply GitHub dispatch permission',async()=>{
+ const o=await candidateWatchdogStep5(watchdogInputs(20));
+ assert.equal(o.status,'PASS');
+ assert.equal(o.reason,'RECENT_GITHUB_SCHEDULE_RUN_OBSERVED');
+ assert.equal(o.github_dispatch_executed,false);
+ assert.equal(o.native_chatgpt_run_proven,false);
+ assert.equal(o.same_native_run_github_slack_proven,false);
+ assert.ok(!o.next.includes('Connect authorized GitHub Actions account'));
+});
+test('invalid or missing GitHub evidence must stay unverified after message fix',async()=>{
+ const o=await candidateWatchdogStep5(watchdogInputs(20,{scheduleHttp:403}));
+ assert.equal(o.status,'UNVERIFIED');
+ assert.equal(o.api_http_200,false);
+ assert.equal(o.github_dispatch_executed,false);
+ assert.equal(o.github_dispatch_blocker,'READ_ONLY_WATCHDOG_NO_DISPATCH_CONFIGURED');
+});
+test('read-only candidate changed descriptive output only and has no provider calls',async()=>{
+ const source=readFileSync(new URL('./ap_watchdog_step5_readonly_fix_v843.mjs',import.meta.url),'utf8');
+ assert.ok(source.includes("github_dispatch_blocker:'READ_ONLY_WATCHDOG_NO_DISPATCH_CONFIGURED'"));
+ assert.ok(!source.includes("github_dispatch_blocker:'NO_ACTIVEPIECES_GITHUB_CONNECTION'"));
+ assert.ok(!/\\bfetch\\s*\\(|\\baxios\\b|workflow_dispatch\\s*\\(/i.test(source));
+ const o=await candidateWatchdogStep5(watchdogInputs(300));
+ assert.equal(o.status,'WARN');
+ assert.equal(o.remote_writes,0);
+ assert.equal(o.github_dispatch_executed,false);
 });
