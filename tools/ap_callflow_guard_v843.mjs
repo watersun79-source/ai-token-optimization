@@ -25,7 +25,7 @@ export function validateRoute(snapshot) {
       diagnostics.push({code:'TARGET_NOT_PUBLISHED_OR_ENABLED',severity:'ERROR',target_flow_id:caller.targetFlowId});
     }
   }
-  if(caller?.expectedEngineId&&caller.expectedEngineId!==caller.targetFlowId) {
+  if(idPattern.test(caller?.targetFlowId??'') && idPattern.test(caller?.expectedEngineId??'') && caller.expectedEngineId!==caller.targetFlowId) {
     diagnostics.push({code:'TARGET_DIFFERS_FROM_DESIGNATED_ENGINE',severity:'ERROR',expected_engine_id:caller.expectedEngineId,actual_target_id:caller.targetFlowId});
   }
   if((snapshot?.historicalWebhookAuthFailures??0)>0) {
