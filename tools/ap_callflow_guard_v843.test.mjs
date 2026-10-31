@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validateRoute,classifyWebhookHistory,classifyGapRecoveryRun} from './ap_callflow_guard_v843.mjs';
+import {validateRoute,classifyWebhookHistory,classifyGapRecoveryRun,classifyWatchdogConnectionClaim} from './ap_callflow_guard_v843.mjs';
 
 // Redacted connected-source snapshot: list_flows internal IDs differ from
 // ap_resolve_property_options("flowId") external option IDs.
@@ -309,4 +309,61 @@ test('fresh production recovery result includes bounded observation age',()=>{
  assert.equal(r.recent_production_run_observed,true);
  assert.equal(r.observed_run_age_minutes,84);
  assert.equal(r.github_run_verified,false);
+});
+
+const liveReadOnlyWatchdog=()=>({
+ kind:'AI_BOT_V81_INDEPENDENT_READONLY_WATCH_V1',status:'WARN',
+ reason:'GITHUB_SCHEDULE_GAP_OVER_85_MIN',github_dispatch_executed:false,
+ github_dispatch_blocker:'NO_ACTIVEPIECES_GITHUB_CONNECTION',remote_writes:0
+});
+const liveGithubConnections=()=>[{pieceName:'@activepieces/piece-github',status:'ACTIVE'}];
+test('connected ACTIVE GitHub contradicts the hardcoded watchdog no-connection message',()=>{
+ const o=classifyWatchdogConnectionClaim({
+  watchdog:liveReadOnlyWatchdog(),connections:liveGithubConnections()
+ });
+ assert.equal(o.state,'HARDCODED_NO_CONNECTION_CLAIM_CONTRADICTED');
+ assert.equal(o.verdict,'MISLEADING_STATUS_FIX_REQUIRED');
+ assert.equal(o.github_active_connection_observed,true);
+ assert.equal(o.watchdog_warning_preserved,true);
+ assert.equal(o.original_watchdog_reason,'GITHUB_SCHEDULE_GAP_OVER_85_MIN');
+ assert.equal(o.correct_dispatch_blocker,'READ_ONLY_WATCHDOG_NO_DISPATCH_CONFIGURED');
+ assert.equal(o.github_dispatch_permission_verified,false);
+ assert.equal(o.actual_github_schedule_restored,false);
+});
+test('Activepieces connection health never implies GitHub workflow_dispatch permission',()=>{
+ const run=liveReadOnlyWatchdog();run.status='PASS';
+ const o=classifyWatchdogConnectionClaim({
+  watchdog:run,connections:liveGithubConnections()
+ });
+ assert.equal(o.github_active_connection_observed,true);
+ assert.equal(o.github_dispatch_permission_verified,false);
+ assert.equal(o.github_dispatch_executed,false);
+ assert.equal(o.native_chatgpt_run_verified,false);
+ assert.equal(o.provider_write_calls,0);
+});
+test('missing connection list is UNVERIFIED, not proof of no connection',()=>{
+ const o=classifyWatchdogConnectionClaim({watchdog:liveReadOnlyWatchdog()});
+ assert.equal(o.state,'NO_PROVIDER_CONNECTION_METADATA');
+ assert.equal(o.verdict,'UNVERIFIED');
+ assert.equal(o.github_active_connection_observed,false);
+});
+test('untrusted or writing watchdog cannot qualify as safe read-only evidence',()=>{
+ const w=liveReadOnlyWatchdog();
+ for(const change of [
+  {kind:'UNEXPECTED'},{github_dispatch_executed:true},
+  {remote_writes:1},{status:'SUCCESS'}
+ ]){
+  const o=classifyWatchdogConnectionClaim({watchdog:{...w,...change},connections:liveGithubConnections()});
+  assert.equal(o.state,'UNTRUSTED_OR_NOT_READONLY_WATCHDOG');
+  assert.equal(o.verdict,'UNVERIFIED');
+  assert.equal(o.github_dispatch_permission_verified,false);
+ }
+});
+test('inactive connector observation does not claim live integration or platform interception',()=>{
+ const o=classifyWatchdogConnectionClaim({watchdog:liveReadOnlyWatchdog(),
+  connections:[{pieceName:'@activepieces/piece-github',status:'ERROR'}]});
+ assert.equal(o.state,'NO_ACTIVE_GITHUB_CONNECTION_OBSERVED');
+ assert.equal(o.github_active_connection_observed,false);
+ assert.equal(o.native_chatgpt_run_verified,false);
+ assert.equal(o.external_model_calls,0);
 });
