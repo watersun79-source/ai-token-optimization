@@ -70,6 +70,27 @@ test('SSE emits valid authenticated snapshot event',async()=>{
   }finally{controller.abort();s.closeAllConnections();s.close();}
 });
 
+test('SSE session expires and closes an already-open stream',async()=>{
+  const s=createApp({secret,fetcher:yes});
+  await new Promise(r=>s.listen(0,'127.0.0.1',r));
+  const base='http://127.0.0.1:'+s.address().port;
+  const controller=new AbortController();
+  try{
+    const issuedAt=Date.now()-12*3600*1000+1500;
+    const r=await fetch(base+'/events',{headers:{cookie:'watch_session='+sign(issuedAt,secret)},signal:controller.signal});
+    assert.equal(r.status,200);
+    const reader=r.body.getReader();
+    const first=await reader.read();
+    assert.equal(first.done,false);
+    assert.match(new TextDecoder().decode(first.value),/event: snapshot\n/);
+    const terminated=await Promise.race([
+      reader.read().then(v=>({done:v.done})),
+      new Promise(resolve=>setTimeout(()=>resolve({timedOut:true}),3000))
+    ]);
+    assert.deepEqual(terminated,{done:true},'SSE stream must end when the signed cookie expires');
+  }finally{controller.abort();s.closeAllConnections();await new Promise(r=>s.close(r));}
+});
+
 test('HTTP 200 is degraded when underlying Neon DB is unavailable',async()=>{
   const falseDb=async()=>({ok:true,status:200,json:async()=>({status:'UP',intake_enabled:false,database_connection_verified:false,boot_id:'boot-2'})});
   const result=await probe(falseDb);
