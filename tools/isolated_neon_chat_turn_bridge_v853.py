@@ -16,7 +16,7 @@ from tools.isolated_selective_memory_v85 import (
     TEST_PROJECT_ID, TEST_BRANCH_ID, TEST_DB_NAME, select_event,
 )
 
-VERSION = "8.5.4-isolated-connector-hash-guard"
+VERSION = "8.5.5-isolated-connector-plan-integrity"
 TABLE = "public.isolated_project_memory_v85"
 
 
@@ -103,6 +103,26 @@ def validate_neon_connector_results(
         raise ValueError("INVALID_EXPECTED_RECORD")
     if hashlib.sha256(body.encode("utf-8")).hexdigest() != claimed_sha:
         raise RuntimeError("READBACK_HASH_MISMATCH")
+    # The expected result and both SQL statements must come from one
+    # canonical, opt-in event. Otherwise mutually forged response fields
+    # could be accepted despite targeting a different original payload.
+    canonical_event = {
+        "selected": True,
+        "record_id": expected.get("record_id"),
+        "project_key": expected.get("project_key"),
+        "kind": expected.get("kind"),
+        "title": expected.get("title"),
+        "body": expected.get("body"),
+    }
+    try:
+        canonical_plan = prepare_selected_neon_commands(canonical_event)
+    except (ValueError, TypeError):
+        raise RuntimeError("PLAN_INTEGRITY_MISMATCH") from None
+    if (
+        set(plan) != set(canonical_plan)
+        or any(plan.get(k) != v for k, v in canonical_plan.items())
+    ):
+        raise RuntimeError("PLAN_INTEGRITY_MISMATCH")
     row = readback[0]
     if not isinstance(row, dict) or any(row.get(k) != v for k, v in expected.items()):
         raise RuntimeError("READBACK_MISMATCH")
