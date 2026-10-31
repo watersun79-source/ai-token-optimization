@@ -34,6 +34,10 @@ export function validateRoute(snapshot){
        else if(entry.status!=='ENABLED')diagnostics.push({code:'CALLER_STATUS_UNVERIFIED',severity:'UNVERIFIED'});
        if(entry.published===false)diagnostics.push({code:'CALLER_FLOW_UNPUBLISHED',severity:'ERROR'});
        else if(entry.published!==true)diagnostics.push({code:'CALLER_PUBLISH_UNVERIFIED',severity:'UNVERIFIED'});
+       // A callable or scheduled flow cannot stand in for the protected webhook entry.
+       // Missing trigger metadata is inconclusive, not proof of webhook readiness.
+       if(entry.triggerType==null)diagnostics.push({code:'CALLER_TRIGGER_UNVERIFIED',severity:'UNVERIFIED'});
+       else if(entry.triggerType!=='@activepieces/piece-webhook')diagnostics.push({code:'CALLER_NOT_WEBHOOK_TRIGGER',severity:'ERROR'});
      }
    }
  }
