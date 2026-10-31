@@ -37,3 +37,7 @@ jobs:
         run: node tools/json_output_validator.js
       - name: Validate provider-free review metadata guard
         run: node --test tools/free-web-guard/guard.test.mjs
+      # Isolated v8.4.4: local loopback-only TCP I/O overlap, no external provider calls.
+      - name: Verify 256 localhost TCP async requests and responses (isolated only)
+        if: github.event_name == 'pull_request' && github.head_ref == 'ai/v844-localhost-io-20261101'
+        run: python -m tools.loopback_io_v844 --clients 256
