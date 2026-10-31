@@ -218,12 +218,12 @@ test('confirmed webhook entry with callable engine stays valid but not native pr
 const recoveryFlowId='7rrQ5IcTt6svQMucKkGQR';
 const recovery=(names,status='SUCCEEDED')=>({
  id:'ap9nAn2zsKtIDrxUafbLY',flowId:recoveryFlowId,
- environment:'PRODUCTION',status,
+ environment:'PRODUCTION',status,created:'2026-10-31T18:30:02.357Z',
  steps:names.map(name=>({name,status:'SUCCEEDED'}))
 });
 test('actual :30 SKIP path is not a GitHub or Slack dispatch',()=>{
  const run=recovery(['trigger','step_1','step_2','step_3','step_8']);
- const r=classifyGapRecoveryRun({run,expectedFlowId:recoveryFlowId});
+ const r=classifyGapRecoveryRun({run,expectedFlowId:recoveryFlowId,asOfIso:'2026-10-31T18:55:00Z'});
  assert.equal(r.state,'SKIPPED_DUPLICATE_DISPATCH');
  assert.equal(r.verdict,'SKIP_AP_NO_DISPATCH');
  assert.equal(r.github_dispatch_step_succeeded,false);
@@ -233,7 +233,7 @@ test('actual :30 SKIP path is not a GitHub or Slack dispatch',()=>{
 test('observed :30 recovery path proves only Activepieces step completion',()=>{
  const run=recovery(['trigger','step_1','step_2','step_3','step_4','step_5','step_6','step_7']);
  run.id='MqmXTC0BjgMzu1rLcgjQ2';
- const r=classifyGapRecoveryRun({run,expectedFlowId:recoveryFlowId});
+ const r=classifyGapRecoveryRun({run,expectedFlowId:recoveryFlowId,asOfIso:'2026-10-31T18:55:00Z'});
  assert.equal(r.state,'RECOVERY_AND_SLACK_STEPS_SUCCEEDED');
  assert.equal(r.verdict,'PASS_AP_STEPS_ONLY');
  assert.equal(r.github_dispatch_step_succeeded,true);
@@ -250,27 +250,63 @@ test('testing success, wrong flow and missing provenance are never successes',()
   {...base,id:undefined},
   {...base,steps:undefined}
  ]){
-  const r=classifyGapRecoveryRun({run:bad,expectedFlowId:recoveryFlowId});
+  const r=classifyGapRecoveryRun({run:bad,expectedFlowId:recoveryFlowId,asOfIso:'2026-10-31T18:55:00Z'});
   assert.equal(r.verdict,'UNVERIFIED');
   assert.equal(r.github_run_verified,false);
  }
 });
 test('ambiguous mixed skip and recover paths cannot be counted',()=>{
  const run=recovery(['trigger','step_1','step_2','step_3','step_4','step_5','step_6','step_7','step_8']);
- const mixed=classifyGapRecoveryRun({run,expectedFlowId:recoveryFlowId});
+ const mixed=classifyGapRecoveryRun({run,expectedFlowId:recoveryFlowId,asOfIso:'2026-10-31T18:55:00Z'});
  assert.equal(mixed.state,'MIXED_OR_INCOMPLETE_ROUTE');
  assert.equal(mixed.verdict,'UNVERIFIED');
  run.steps[5].status='FAILED';
- const partial=classifyGapRecoveryRun({run,expectedFlowId:recoveryFlowId});
+ const partial=classifyGapRecoveryRun({run,expectedFlowId:recoveryFlowId,asOfIso:'2026-10-31T18:55:00Z'});
  assert.equal(partial.verdict,'UNVERIFIED');
 });
 test('duplicate steps and failed recovery remain unverified and do not leak',()=>{
  const names=['trigger','step_1','step_2','step_3','step_4','step_5','step_6','step_7'];
  const duplicate=recovery([...names,'step_7']);
- const d=classifyGapRecoveryRun({run:duplicate,expectedFlowId:recoveryFlowId});
+ const d=classifyGapRecoveryRun({run:duplicate,expectedFlowId:recoveryFlowId,asOfIso:'2026-10-31T18:55:00Z'});
  assert.equal(d.state,'AMBIGUOUS_DUPLICATE_STEPS');
- const failure=classifyGapRecoveryRun({run:recovery(names,'FAILED'),expectedFlowId:recoveryFlowId});
+ const failure=classifyGapRecoveryRun({run:recovery(names,'FAILED'),expectedFlowId:recoveryFlowId,asOfIso:'2026-10-31T18:55:00Z'});
  assert.equal(failure.state,'ACTIVEPIECES_FLOW_FAILED');
  assert.equal(failure.github_dispatch_step_succeeded,false);
  assert.equal(failure.native_chatgpt_run_verified,false);
+});
+
+test('historical green SKIP or dispatch may not be reported as current recovery',()=>{
+ const names=['trigger','step_1','step_2','step_3','step_4','step_5','step_6','step_7'];
+ for(const path of [names,['trigger','step_1','step_2','step_3','step_8']]){
+  const run=recovery(path);run.created='2026-10-28T17:30:01.930Z';
+  const r=classifyGapRecoveryRun({run,expectedFlowId:recoveryFlowId,asOfIso:'2026-10-31T18:55:00Z'});
+  assert.equal(r.state,'STALE_OR_FUTURE_RUN');
+  assert.equal(r.verdict,'UNVERIFIED');
+  assert.equal(r.github_dispatch_step_succeeded,false);
+ }
+});
+test('future or missing recovery timestamps fail closed',()=>{
+ const base=recovery(['trigger','step_1','step_2','step_3','step_4','step_5','step_6','step_7']);
+ for(const created of [undefined,'invalid','2026-10-31T19:05:00Z','2026-10-31T18:55:30Z']){
+  const r=classifyGapRecoveryRun({run:{...base,created},expectedFlowId:recoveryFlowId,asOfIso:'2026-10-31T18:55:00Z'});
+  assert.equal(r.verdict,'UNVERIFIED');
+  assert.equal(r.native_chatgpt_run_verified,false);
+ }
+});
+test('untrusted observation clock or invalid age window fails closed',()=>{
+ const base=recovery(['trigger','step_1','step_2','step_3','step_4','step_5','step_6','step_7']);
+ for(const arg of [{},{asOfIso:'broken'},{asOfIso:'2026-10-31T18:55:00Z',maxAgeHours:-1},{asOfIso:'2026-10-31T18:55:00Z',maxAgeHours:169}]){
+  const r=classifyGapRecoveryRun({run:base,expectedFlowId:recoveryFlowId,...arg});
+  assert.equal(r.state,'INVALID_OBSERVATION_WINDOW');
+  assert.equal(r.verdict,'UNVERIFIED');
+ }
+});
+test('fresh production recovery result includes bounded observation age',()=>{
+ const run=recovery(['trigger','step_1','step_2','step_3','step_4','step_5','step_6','step_7']);
+ run.created='2026-10-31T17:30:01.930Z';
+ const r=classifyGapRecoveryRun({run,expectedFlowId:recoveryFlowId,asOfIso:'2026-10-31T18:55:00Z',maxAgeHours:3});
+ assert.equal(r.verdict,'PASS_AP_STEPS_ONLY');
+ assert.equal(r.recent_production_run_observed,true);
+ assert.equal(r.observed_run_age_minutes,84);
+ assert.equal(r.github_run_verified,false);
 });
