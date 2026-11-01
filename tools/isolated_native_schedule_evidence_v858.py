@@ -8,7 +8,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from collections.abc import Mapping
 
-VERSION = "8.5.9-isolated-native-schedule-evidence"
+VERSION = "8.5.13-isolated-native-result-creation-integrity"
 _STATUSES = frozenset({"completed", "no_update", "in_progress", "failed"})
 
 
@@ -68,7 +68,7 @@ def reconcile_native_snapshot(task: Mapping[str, object]) -> dict[str, object]:
     if result is not None:
         if not isinstance(result, Mapping):
             raise ValueError("INVALID_RESULT")
-        required = ("run_id", "scheduled_for", "completed_at", "requires_user_action", "is_failure_message")
+        required = ("run_id", "scheduled_for", "completed_at", "created_at", "requires_user_action", "is_failure_message")
         if not all(k in result for k in required):
             raise ValueError("INVALID_RESULT")
         # Official result metadata includes scheduled_for; always verify its match.
@@ -76,11 +76,15 @@ def reconcile_native_snapshot(task: Mapping[str, object]) -> dict[str, object]:
         if not isinstance(result.get("requires_user_action"), bool) or not isinstance(result.get("is_failure_message"), bool):
             raise ValueError("INVALID_RESULT_FLAGS")
         result_scheduled = _instant(result["scheduled_for"])
+        result_created = _instant(result["created_at"])
         result_end = _instant(result["completed_at"]) if result["completed_at"] is not None else None
         if (
             result.get("run_id") != run["id"]
             or result_scheduled != scheduled
             or result_end != ended
+            # A result created before the native run started is not proof for
+            # that run, even when its ID, schedule and completion appear equal.
+            or result_created < started
         ):
             linked = "DIFFERENT_RUN_RESULT"
         elif result.get("is_failure_message") is True:
