@@ -8,7 +8,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from collections.abc import Mapping
 
-VERSION = "8.5.13-isolated-native-result-creation-integrity"
+VERSION = "8.5.14-isolated-native-result-chronology-bound"
 _STATUSES = frozenset({"completed", "no_update", "in_progress", "failed"})
 
 
@@ -82,9 +82,11 @@ def reconcile_native_snapshot(task: Mapping[str, object]) -> dict[str, object]:
             result.get("run_id") != run["id"]
             or result_scheduled != scheduled
             or result_end != ended
-            # A result created before the native run started is not proof for
-            # that run, even when its ID, schedule and completion appear equal.
+            # Only link result metadata created during the official run.
+            # Earlier or later timestamps are not same-run proof, even when
+            # the run ID and scheduled/completed values happen to match.
             or result_created < started
+            or (ended is not None and result_created > ended)
         ):
             linked = "DIFFERENT_RUN_RESULT"
         elif result.get("is_failure_message") is True:
