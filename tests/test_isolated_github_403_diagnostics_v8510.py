@@ -98,5 +98,42 @@ class GitHub403DiagnosticsTests(unittest.TestCase):
         self.assertTrue(result["requires_review"])
 
 
+    def test_excessive_retry_after_does_not_shorten_cooldown(self):
+        # An upstream 30-day Retry-After must never be shortened to 7 days.
+        result = classify(headers={"retry-after": "2592000"})
+        self.assertEqual(result["classification"],
+                         "RETRY_AFTER_REQUIRES_MANUAL_REVIEW")
+        self.assertTrue(result["requires_review"])
+        self.assertIsNone(result["retry_not_before_utc"])
+
+    def test_primary_limit_long_retry_after_requires_review(self):
+        # A legitimate shorter reset must not override a longer Retry-After.
+        result = classify(headers={
+            "x-ratelimit-remaining": "0",
+            "x-ratelimit-reset": "1793493000",
+            "retry-after": "2592000",
+        })
+        self.assertEqual(result["classification"],
+                         "RETRY_AFTER_REQUIRES_MANUAL_REVIEW")
+        self.assertTrue(result["requires_review"])
+        self.assertIsNone(result["retry_not_before_utc"])
+
+    def test_secondary_limit_long_retry_after_requires_review(self):
+        result = classify(429, {"x-ratelimit-remaining": "25",
+                                "retry-after": "2592000"},
+                          secondary_limit_signaled=True)
+        self.assertEqual(result["classification"],
+                         "RETRY_AFTER_REQUIRES_MANUAL_REVIEW")
+        self.assertTrue(result["requires_review"])
+        self.assertIsNone(result["retry_not_before_utc"])
+
+    def test_retry_after_safe_window_boundary_is_honored(self):
+        result = classify(headers={"retry-after": "604800"})
+        self.assertEqual(result["classification"], "RATE_LIMIT_RETRY_AFTER")
+        self.assertEqual(result["retry_not_before_utc"],
+                         "2026-11-08T00:19:00Z")
+        self.assertFalse(result["requires_review"])
+
+
 if __name__ == "__main__":
     unittest.main()
