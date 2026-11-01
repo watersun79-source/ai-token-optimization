@@ -1,9 +1,8 @@
-"""Regression tests using the documented official native automation peek shape.
+"""Official native automation metadata regression tests (isolated and offline).
 
-Isolated, network-free: no scheduler, provider, transcript or secrets.
+No provider calls, no transcript persistence, no scheduler modifications.
 """
 import unittest
-
 from tools.isolated_native_schedule_evidence_v858 import (
     VERSION, reconcile_native_snapshot,
 )
@@ -24,6 +23,7 @@ def task(status="completed", with_result=True):
     result = {
         "run_id": "official-run-001",
         "created_at": COMPLETED,
+        "scheduled_for": SCHEDULED,
         "completed_at": COMPLETED,
         "content_text": "synthetic: never persist result content",
         "requires_user_action": False,
@@ -40,26 +40,24 @@ def task(status="completed", with_result=True):
 
 
 class NativeScheduleEvidenceTests(unittest.TestCase):
-    def test_official_result_schema_has_no_scheduled_for(self):
+    def test_official_result_shape_has_matching_scheduled_for(self):
         item = task()
-        self.assertNotIn("scheduled_for", item["run_details"]["latest_result"])
+        self.assertIn("scheduled_for", item["run_details"]["latest_result"])
         out = reconcile_native_snapshot(item)
         self.assertEqual(out["schema"], VERSION)
         self.assertEqual(out["verdict"], "RECORDED_COMPLETED_SAME_RUN_RESULT")
         self.assertEqual(out["result_link"], "SAME_RUN_RESULT_METADATA")
         self.assertEqual(out["timing"], "STARTED_BEFORE_SCHEDULED_FOR")
-        self.assertNotIn("content_text", out)
         self.assertEqual(out["native_call_ledger"], "UNVERIFIED")
+        self.assertNotIn("content_text", out)
 
-    def test_optional_matching_schedule_remains_accepted(self):
+    def test_missing_scheduled_for_rejected(self):
         item = task()
-        item["run_details"]["latest_result"]["scheduled_for"] = SCHEDULED
-        self.assertEqual(
-            reconcile_native_snapshot(item)["result_link"],
-            "SAME_RUN_RESULT_METADATA",
-        )
+        del item["run_details"]["latest_result"]["scheduled_for"]
+        with self.assertRaisesRegex(ValueError, "INVALID_RESULT"):
+            reconcile_native_snapshot(item)
 
-    def test_mismatched_optional_schedule_must_not_link(self):
+    def test_mismatched_scheduled_for_does_not_link(self):
         item = task()
         item["run_details"]["latest_result"]["scheduled_for"] = "2026-11-01T01:00:00Z"
         self.assertEqual(
@@ -82,16 +80,49 @@ class NativeScheduleEvidenceTests(unittest.TestCase):
             "DIFFERENT_RUN_RESULT",
         )
 
-    def test_required_result_metadata_still_enforced(self):
+    def test_missing_completion_rejected(self):
         item = task()
         del item["run_details"]["latest_result"]["completed_at"]
         with self.assertRaisesRegex(ValueError, "INVALID_RESULT"):
             reconcile_native_snapshot(item)
 
-    def test_no_update_cannot_be_claimed_as_work_success(self):
-        item = task(status="no_update", with_result=False)
+    def test_outcome_flags_require_real_booleans(self):
+        for flag in ("requires_user_action", "is_failure_message"):
+            for invalid in (None, "false", 0, "true"):
+                with self.subTest(flag=flag, invalid=invalid):
+                    item = task()
+                    item["run_details"]["latest_result"][flag] = invalid
+                    with self.assertRaisesRegex(ValueError, "INVALID_RESULT_FLAGS"):
+                        reconcile_native_snapshot(item)
+
+    def test_missing_outcome_flags_rejected(self):
+        for flag in ("requires_user_action", "is_failure_message"):
+            with self.subTest(flag=flag):
+                item = task()
+                del item["run_details"]["latest_result"][flag]
+                with self.assertRaisesRegex(ValueError, "INVALID_RESULT"):
+                    reconcile_native_snapshot(item)
+
+    def test_failure_message_cannot_claim_work_success(self):
+        item = task()
+        item["run_details"]["latest_result"]["is_failure_message"] = True
         out = reconcile_native_snapshot(item)
-        self.assertEqual(out["verdict"], "RECORDED_NO_UPDATE_NOT_WORK_SUCCESS")
+        self.assertEqual(out["result_link"], "SAME_RUN_FAILURE_MESSAGE")
+        self.assertEqual(out["verdict"], "RECORDED_COMPLETED_RESULT_UNVERIFIED")
+
+    def test_user_action_required_cannot_claim_work_success(self):
+        item = task()
+        item["run_details"]["latest_result"]["requires_user_action"] = True
+        out = reconcile_native_snapshot(item)
+        self.assertEqual(out["result_link"], "SAME_RUN_ACTION_REQUIRED")
+        self.assertEqual(out["verdict"], "RECORDED_COMPLETED_RESULT_UNVERIFIED")
+
+    def test_no_update_cannot_claim_work_success(self):
+        item = task(status="no_update", with_result=False)
+        self.assertEqual(
+            reconcile_native_snapshot(item)["verdict"],
+            "RECORDED_NO_UPDATE_NOT_WORK_SUCCESS",
+        )
 
     def test_in_progress_not_reported_as_completed(self):
         item = task(status="in_progress", with_result=False)
@@ -100,7 +131,7 @@ class NativeScheduleEvidenceTests(unittest.TestCase):
             "RECORDED_IN_PROGRESS",
         )
 
-    def test_bad_chronology_still_rejected(self):
+    def test_bad_chronology_rejected(self):
         item = task()
         item["run_details"]["last_run"]["completed_at"] = "2026-10-31T23:55:00Z"
         with self.assertRaisesRegex(ValueError, "INVALID_CHRONOLOGY"):
