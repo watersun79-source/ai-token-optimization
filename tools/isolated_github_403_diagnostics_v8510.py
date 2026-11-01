@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from datetime import datetime, timedelta, timezone
 
-VERSION = "8.5.11-isolated-github-403-diagnostics"
+VERSION = "8.5.12-isolated-github-403-reset-boundary"
 
 
 def _utc(value: str) -> datetime:
@@ -101,16 +101,20 @@ def diagnose_github_http(
             # GitHub documents the UTC epoch reset and Retry-After as
             # minimum retry deadlines. Never prefer the earlier one.
             candidates = [observed + timedelta(seconds=60)]
+            invalid_reset_timestamp = False
             if reset_seconds is not None:
                 try:
                     candidates.append(datetime.fromtimestamp(reset_seconds, timezone.utc))
                 except (OverflowError, ValueError, OSError):
                     required_review = True
+                    invalid_reset_timestamp = True
             else:
                 required_review = True
             if retry_seconds is not None:
                 candidates.append(observed + timedelta(seconds=retry_seconds))
-            retry_at = max(candidates)
+            # A syntactically numeric but out-of-range reset can hide an
+            # upstream deadline. Never give an automated retry timestamp.
+            retry_at = None if invalid_reset_timestamp else max(candidates)
         elif secondary_limit_signaled:
             classification = "SECONDARY_RATE_LIMIT"
             seconds = min(60 * 2 ** repeated_secondary_failures, 3600)
