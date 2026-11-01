@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from datetime import datetime, timedelta, timezone
 
-VERSION = "8.5.10-isolated-github-403-diagnostics"
+VERSION = "8.5.11-isolated-github-403-diagnostics"
 
 
 def _utc(value: str) -> datetime:
@@ -90,6 +90,12 @@ def diagnose_github_http(
         if has_bad_retry or has_bad_reset or has_bad_remaining:
             classification = "INCOMPLETE_OR_INVALID_LIMIT_EVIDENCE"
             required_review = True
+        elif retry_seconds is not None and retry_seconds > 604800:
+            # Never truncate an upstream Retry-After: doing so could allow
+            # a retry earlier than the server permits. Require manual review
+            # rather than emitting an unsafe automatic deadline.
+            classification = "RETRY_AFTER_REQUIRES_MANUAL_REVIEW"
+            required_review = True
         elif remaining == 0:
             classification = "PRIMARY_RATE_LIMIT"
             # GitHub documents the UTC epoch reset and Retry-After as
@@ -103,17 +109,17 @@ def diagnose_github_http(
             else:
                 required_review = True
             if retry_seconds is not None:
-                candidates.append(observed + timedelta(seconds=min(retry_seconds, 604800)))
+                candidates.append(observed + timedelta(seconds=retry_seconds))
             retry_at = max(candidates)
         elif secondary_limit_signaled:
             classification = "SECONDARY_RATE_LIMIT"
             seconds = min(60 * 2 ** repeated_secondary_failures, 3600)
             if retry_seconds is not None:
-                seconds = max(seconds, min(retry_seconds, 604800))
+                seconds = max(seconds, retry_seconds)
             retry_at = observed + timedelta(seconds=seconds)
         elif retry_seconds is not None:
             classification = "RATE_LIMIT_RETRY_AFTER"
-            retry_at = observed + timedelta(seconds=max(60, min(retry_seconds, 604800)))
+            retry_at = observed + timedelta(seconds=max(60, retry_seconds))
         else:
             classification = "PERMISSION_OR_UNKNOWN_LIMIT"
             required_review = True
