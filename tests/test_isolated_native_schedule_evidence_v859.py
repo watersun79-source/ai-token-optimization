@@ -60,6 +60,21 @@ class NativeScheduleEvidenceTests(unittest.TestCase):
         self.assertEqual(out["verdict"], "RECORDED_COMPLETED_RESULT_UNVERIFIED")
         self.assertEqual(out["native_call_ledger"], "UNVERIFIED")
 
+    def test_result_created_after_run_completed_is_not_same_run(self):
+        item = task()
+        item["run_details"]["latest_result"]["created_at"] = "2026-10-31T23:57:32Z"
+        out = reconcile_native_snapshot(item)
+        self.assertEqual(out["result_link"], "DIFFERENT_RUN_RESULT")
+        self.assertEqual(out["verdict"], "RECORDED_COMPLETED_RESULT_UNVERIFIED")
+        self.assertEqual(out["native_call_ledger"], "UNVERIFIED")
+
+    def test_created_at_exactly_at_start_is_valid_boundary(self):
+        item = task()
+        item["run_details"]["latest_result"]["created_at"] = STARTED
+        out = reconcile_native_snapshot(item)
+        self.assertEqual(out["result_link"], "SAME_RUN_RESULT_METADATA")
+        self.assertEqual(out["verdict"], "RECORDED_COMPLETED_SAME_RUN_RESULT")
+
     def test_missing_result_created_at_rejected(self):
         item = task()
         del item["run_details"]["latest_result"]["created_at"]
