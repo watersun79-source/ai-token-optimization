@@ -8,7 +8,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from collections.abc import Mapping
 
-VERSION = "8.5.8-isolated-native-schedule-evidence"
+VERSION = "8.5.9-isolated-native-schedule-evidence"
 _STATUSES = frozenset({"completed", "no_update", "in_progress", "failed"})
 
 
@@ -68,10 +68,13 @@ def reconcile_native_snapshot(task: Mapping[str, object]) -> dict[str, object]:
     if result is not None:
         if not isinstance(result, Mapping):
             raise ValueError("INVALID_RESULT")
-        required = ("run_id", "scheduled_for", "completed_at")
+        required = ("run_id", "completed_at")
         if not all(k in result for k in required):
             raise ValueError("INVALID_RESULT")
-        result_scheduled = _instant(result["scheduled_for"])
+        # Official latest_result omits scheduled_for. If an adapter supplies it,
+        # verify the optional timestamp too; never infer cross-run success.
+        result_scheduled = (_instant(result["scheduled_for"])
+                            if "scheduled_for" in result else scheduled)
         result_end = _instant(result["completed_at"]) if result["completed_at"] is not None else None
         if (
             result.get("run_id") != run["id"]
