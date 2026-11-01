@@ -51,6 +51,27 @@ class NativeScheduleEvidenceTests(unittest.TestCase):
         self.assertEqual(out["native_call_ledger"], "UNVERIFIED")
         self.assertNotIn("content_text", out)
 
+    def test_same_run_id_with_older_result_creation_is_not_linked(self):
+        item = task()
+        # Earlier than STARTED, despite matching run ID, schedule, completion.
+        item["run_details"]["latest_result"]["created_at"] = "2026-10-31T23:56:41Z"
+        out = reconcile_native_snapshot(item)
+        self.assertEqual(out["result_link"], "DIFFERENT_RUN_RESULT")
+        self.assertEqual(out["verdict"], "RECORDED_COMPLETED_RESULT_UNVERIFIED")
+        self.assertEqual(out["native_call_ledger"], "UNVERIFIED")
+
+    def test_missing_result_created_at_rejected(self):
+        item = task()
+        del item["run_details"]["latest_result"]["created_at"]
+        with self.assertRaisesRegex(ValueError, "INVALID_RESULT"):
+            reconcile_native_snapshot(item)
+
+    def test_result_created_at_without_timezone_rejected(self):
+        item = task()
+        item["run_details"]["latest_result"]["created_at"] = "2026-10-31T23:57:31"
+        with self.assertRaisesRegex(ValueError, "NAIVE_TIMESTAMP"):
+            reconcile_native_snapshot(item)
+
     def test_missing_scheduled_for_rejected(self):
         item = task()
         del item["run_details"]["latest_result"]["scheduled_for"]
