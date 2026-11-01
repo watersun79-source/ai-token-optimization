@@ -98,6 +98,28 @@ class GitHub403DiagnosticsTests(unittest.TestCase):
         self.assertTrue(result["requires_review"])
 
 
+    def test_out_of_range_reset_with_primary_limit_blocks_automatic_retry(self):
+        # A numeric Unix epoch outside datetime range must not yield a guessed
+        # 60-second deadline even when the remaining budget is zero.
+        result = classify(headers={
+            "x-ratelimit-remaining": "0",
+            "x-ratelimit-reset": "999999999999",
+        })
+        self.assertEqual(result["classification"], "PRIMARY_RATE_LIMIT")
+        self.assertTrue(result["requires_review"])
+        self.assertIsNone(result["retry_not_before_utc"])
+        self.assertFalse(result["automatic_request_performed"])
+
+    def test_out_of_range_reset_wins_over_short_retry_after(self):
+        # An unusable primary reset cannot be overridden by a shorter hint.
+        result = classify(headers={
+            "x-ratelimit-remaining": "0",
+            "x-ratelimit-reset": "999999999999",
+            "retry-after": "10",
+        })
+        self.assertTrue(result["requires_review"])
+        self.assertIsNone(result["retry_not_before_utc"])
+
     def test_excessive_retry_after_does_not_shorten_cooldown(self):
         # An upstream 30-day Retry-After must never be shortened to 7 days.
         result = classify(headers={"retry-after": "2592000"})
