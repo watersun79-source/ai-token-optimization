@@ -68,13 +68,14 @@ def reconcile_native_snapshot(task: Mapping[str, object]) -> dict[str, object]:
     if result is not None:
         if not isinstance(result, Mapping):
             raise ValueError("INVALID_RESULT")
-        required = ("run_id", "completed_at")
+        required = ("run_id", "scheduled_for", "completed_at", "requires_user_action", "is_failure_message")
         if not all(k in result for k in required):
             raise ValueError("INVALID_RESULT")
-        # Official latest_result omits scheduled_for. If an adapter supplies it,
-        # verify the optional timestamp too; never infer cross-run success.
-        result_scheduled = (_instant(result["scheduled_for"])
-                            if "scheduled_for" in result else scheduled)
+        # Official result metadata includes scheduled_for; always verify its match.
+        # Missing/invalid action flags must not be interpreted as success.
+        if not isinstance(result.get("requires_user_action"), bool) or not isinstance(result.get("is_failure_message"), bool):
+            raise ValueError("INVALID_RESULT_FLAGS")
+        result_scheduled = _instant(result["scheduled_for"])
         result_end = _instant(result["completed_at"]) if result["completed_at"] is not None else None
         if (
             result.get("run_id") != run["id"]
