@@ -66,12 +66,52 @@ class GuardTests(unittest.TestCase):
         self.assertEqual(evaluate(BASE)["release_promotion"], "BLOCK_NO_PRODUCTION_PROOF")
         self.assertEqual(evaluate(BASE)["candidate_software_version"], "v8.5.14")
 
+    def timed_native(self, **changed):
+        native = {"run_id": "run-A", "status": "completed",
+                  "scheduled_for": "2026-11-02T09:00:00Z",
+                  "started_at": "2026-11-02T09:00:02Z",
+                  "completed_at": "2026-11-02T09:00:05Z",
+                  "result_created_at": "2026-11-02T09:00:07Z",
+                  "external_ledger_native_run_id": "run-A",
+                  "external_ledger_verified": True}
+        native.update(changed)
+        return self.data(native_run=native)
+
     def test_native_run_requires_same_id_and_verified_ledger(self):
-        x = self.data(native_run={"run_id": "run-A", "status": "completed",
-                                       "external_ledger_native_run_id": "run-B", "external_ledger_verified": True})
+        x = self.timed_native(external_ledger_native_run_id="run-B")
         self.assertEqual(evaluate(x)["chatgpt_native_same_run"], "UNVERIFIED")
         x["native_run"]["external_ledger_native_run_id"] = "run-A"
         self.assertEqual(evaluate(x)["chatgpt_native_same_run"], "PASS_SAME_NATIVE_RUN")
+        self.assertEqual(evaluate(x)["chatgpt_native_schedule_timing"], "PASS_TEMPORAL_ORDER_ONLY")
+
+    def test_real_early_condition_watch_run_not_exact_schedule(self):
+        x = self.timed_native(started_at="2026-11-02T08:56:34Z",
+                              completed_at="2026-11-02T08:57:15Z",
+                              result_created_at="2026-11-02T08:57:16Z")
+        result = evaluate(x)
+        self.assertEqual(result["chatgpt_native_schedule_timing"],
+                         "WARN_STARTED_BEFORE_SCHEDULED_FOR")
+        self.assertEqual(result["chatgpt_native_same_run"], "UNVERIFIED")
+
+    def test_completed_before_started_is_not_valid_native(self):
+        x = self.timed_native(completed_at="2026-11-02T09:00:01Z")
+        self.assertEqual(evaluate(x)["chatgpt_native_schedule_timing"], "UNVERIFIED_OUT_OF_ORDER")
+        self.assertEqual(evaluate(x)["chatgpt_native_same_run"], "UNVERIFIED")
+
+    def test_result_created_before_completed_is_not_valid_native(self):
+        x = self.timed_native(result_created_at="2026-11-02T09:00:03Z")
+        self.assertEqual(evaluate(x)["chatgpt_native_schedule_timing"], "UNVERIFIED_OUT_OF_ORDER")
+        self.assertEqual(evaluate(x)["chatgpt_native_same_run"], "UNVERIFIED")
+
+    def test_missing_native_timeline_cannot_attest_same_run(self):
+        x = self.timed_native(result_created_at=None)
+        self.assertEqual(evaluate(x)["chatgpt_native_schedule_timing"], "UNVERIFIED_TIMESTAMPS")
+        self.assertEqual(evaluate(x)["chatgpt_native_same_run"], "UNVERIFIED")
+
+    def test_future_timeline_is_not_native_proof(self):
+        x = self.timed_native(result_created_at="2026-11-02T10:00:00Z")
+        self.assertEqual(evaluate(x)["chatgpt_native_schedule_timing"], "UNVERIFIED_FUTURE_TIMESTAMP")
+        self.assertEqual(evaluate(x)["chatgpt_native_same_run"], "UNVERIFIED")
 
     def test_no_timestamp_is_not_assumed_utc(self):
         x = self.data(last_schedule_run={"event": "schedule", "status": "completed",
