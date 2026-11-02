@@ -25,9 +25,9 @@ fn is_true(v: &Value, path: &[&str]) -> bool {
     x.as_bool() == Some(true)
 }
 fn sha40(v: &Value, key: &str) -> bool {
-    v.get(key).and_then(Value::as_str).is_some_and(|s| {
-        s.len() == 40 && s.bytes().all(|b| b.is_ascii_hexdigit())
-    })
+    v.get(key)
+        .and_then(Value::as_str)
+        .is_some_and(|s| s.len() == 40 && s.bytes().all(|b| b.is_ascii_hexdigit()))
 }
 fn evaluate(v: &Value) -> Value {
     let mut missing = Vec::new();
@@ -126,53 +126,66 @@ mod tests {
     fn missing(x: &Value, expected: &str) {
         let v = evaluate(x);
         assert_eq!(v["decision"], "BLOCKED_MISSING_EVIDENCE");
-        assert!(v["missing"].as_array().unwrap().iter().any(|g| g == expected));
+        assert!(v["missing"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|g| g == expected));
         assert_eq!(v["automatic_promotion_allowed"], false);
     }
     #[test]
-    fn missing_evidence_blocks() { missing(&json!({}), "PROVIDER_AUTHENTICATION_RECEIPT"); }
+    fn missing_evidence_blocks() {
+        missing(&json!({}), "PROVIDER_AUTHENTICATION_RECEIPT");
+    }
     #[test]
     fn no_identity_blocks() {
-        let mut v=complete();v["auth"]["provider_identity_receipt"]=json!(null);
-        missing(&v,"PROVIDER_AUTHENTICATION_RECEIPT");
+        let mut v = complete();
+        v["auth"]["provider_identity_receipt"] = json!(null);
+        missing(&v, "PROVIDER_AUTHENTICATION_RECEIPT");
     }
     #[test]
     fn no_authorization_blocks() {
-        let mut v=complete();v["auth"]["role_policy_receipt"]=json!(null);
-        missing(&v,"ROLE_AUTHORIZATION_RECEIPT");
+        let mut v = complete();
+        v["auth"]["role_policy_receipt"] = json!(null);
+        missing(&v, "ROLE_AUTHORIZATION_RECEIPT");
     }
     #[test]
     fn no_transport_receipt_blocks() {
-        let mut v=complete();v["transport"]["tls_gateway_receipt"]=json!(null);
-        missing(&v,"PRODUCTION_TRANSPORT_PROTECTION");
+        let mut v = complete();
+        v["transport"]["tls_gateway_receipt"] = json!(null);
+        missing(&v, "PRODUCTION_TRANSPORT_PROTECTION");
     }
     #[test]
     fn no_rollback_rehearsal_blocks() {
-        let mut v=complete();v["rollback"]["rehearsal_receipt"]=json!(null);
-        missing(&v,"ROLLBACK_ARTIFACT_AND_REHEARSAL");
+        let mut v = complete();
+        v["rollback"]["rehearsal_receipt"] = json!(null);
+        missing(&v, "ROLLBACK_ARTIFACT_AND_REHEARSAL");
     }
     #[test]
     fn no_actual_health_readback_blocks() {
-        let mut v=complete();v["health"]["live_provider_readback_receipt"]=json!(null);
-        missing(&v,"LIVE_HEALTH_AND_READBACK");
+        let mut v = complete();
+        v["health"]["live_provider_readback_receipt"] = json!(null);
+        missing(&v, "LIVE_HEALTH_AND_READBACK");
     }
     #[test]
     fn mismatched_sha_blocks() {
-        let mut v=complete();v["ci_head_sha"]=json!("b".repeat(40));
-        missing(&v,"MATCHING_OFFICIAL_CI_SHA");
+        let mut v = complete();
+        v["ci_head_sha"] = json!("b".repeat(40));
+        missing(&v, "MATCHING_OFFICIAL_CI_SHA");
     }
     #[test]
     fn existing_tasks_change_blocks() {
-        let mut v=complete();v["protected"]["existing_automations_unchanged"]=json!(false);
-        missing(&v,"PROTECTED_ASSETS_AND_COST_CONTROLS");
+        let mut v = complete();
+        v["protected"]["existing_automations_unchanged"] = json!(false);
+        missing(&v, "PROTECTED_ASSETS_AND_COST_CONTROLS");
     }
     #[test]
     fn all_synthetic_fields_still_never_authorize_promotion() {
-        let x=evaluate(&complete());
-        assert_eq!(x["decision"],"INDEPENDENT_PROVIDER_REVIEW_REQUIRED");
-        assert_eq!(x["automatic_promotion_allowed"],false);
-        assert_eq!(x["provider_evidence_authenticated"],false);
-        assert_eq!(x["actual_deployment_performed"],false);
-        assert_eq!(x["remote_writes"],0);
+        let x = evaluate(&complete());
+        assert_eq!(x["decision"], "INDEPENDENT_PROVIDER_REVIEW_REQUIRED");
+        assert_eq!(x["automatic_promotion_allowed"], false);
+        assert_eq!(x["provider_evidence_authenticated"], false);
+        assert_eq!(x["actual_deployment_performed"], false);
+        assert_eq!(x["remote_writes"], 0);
     }
 }
