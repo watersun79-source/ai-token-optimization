@@ -1,0 +1,20 @@
+name: Isolated Version Progress Tests
+
+on:
+  pull_request:
+    paths:
+      - "experiments/version-progress/**"
+      - ".github/workflows/version-progress-isolated.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  progress-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Offline progress reconciliation tests (no network/provider calls)
+        run: python3 -m unittest discover -s experiments/version-progress -p "test_*.py" -v
