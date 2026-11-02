@@ -42,6 +42,31 @@ class GuardTests(unittest.TestCase):
                                             "github_dispatch_blocker": "NOT_APPLICABLE_READ_ONLY_WATCH"})
         self.assertFalse(evaluate(fixed)["false_disconnected_warning_detected"])
 
+    def test_readonly_warning_cannot_be_justified_by_missing_connection_inventory(self):
+        # Connection metadata is a separate fact from a read-only watch.
+        for status in (None, "REVOKED", "ACTIVE"):
+            with self.subTest(status=status):
+                data = self.data(
+                    activepieces_github_connection={} if status is None else {"status": status}
+                )
+                verdict = evaluate(data)
+                self.assertTrue(verdict["false_disconnected_warning_detected"])
+                self.assertEqual(verdict["github_dispatch_permission"], "UNVERIFIED_READ_ONLY_WATCH")
+                if status is None:
+                    self.assertEqual(verdict["activepieces_github_connection"], "UNVERIFIED")
+                if status == "REVOKED":
+                    self.assertEqual(verdict["activepieces_github_connection"], "FAIL_CONFIG_NOT_ACTIVE")
+
+    def test_false_warning_detection_stays_limited_to_readonly_watch(self):
+        data = self.data(
+            read_only_watcher={
+                "is_read_only": False,
+                "github_api_http_status": 200,
+                "github_dispatch_blocker": "NO_ACTIVEPIECES_GITHUB_CONNECTION",
+            }
+        )
+        self.assertFalse(evaluate(data)["false_disconnected_warning_detected"])
+
     def test_stale_scheduled_run_even_if_hosted_api_succeeds(self):
         result = evaluate(BASE)
         self.assertEqual(result["github_schedule"], "WARN_LAST_SCHEDULE_STALE")
