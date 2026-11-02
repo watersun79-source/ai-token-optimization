@@ -350,10 +350,8 @@ mod tests {
     #[test]
     fn duplicate_component_rejected() {
         let mut b = board();
-        b["components"]
-            .as_array_mut()
-            .unwrap()
-            .push(b["components"][0].clone());
+        let duplicate = b["components"][0].clone();
+        b["components"].as_array_mut().unwrap().push(duplicate);
         assert_eq!(
             reconcile(&b, &obs(), 1, 1).unwrap_err(),
             "UNKNOWN_OR_DUPLICATE_COMPONENT"
