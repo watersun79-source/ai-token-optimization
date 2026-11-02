@@ -48,6 +48,22 @@ jobs:
             exit 1
           fi
           grep -F 'CAS_CONFLICT' "$tmp/rejected.err"
+      - name: Preproduction guard refuses unsigned, unreviewed rollout
+        shell: bash
+        run: |
+          set -euo pipefail
+          fixture="$(mktemp)"
+          trap 'rm -f "$fixture"' EXIT
+          printf '{}' > "$fixture"
+          set +e
+          output="$(cargo run --quiet --manifest-path experiments/rust-isolated-runtime/Cargo.toml --bin promotion_guard -- --check "$fixture" 2>&1)"
+          exit_code=$?
+          set -e
+          test "$exit_code" -eq 2
+          printf '%s\n' "$output" | grep -F 'BLOCKED_MISSING_EVIDENCE'
+          printf '%s\n' "$output" | grep -F 'PROVIDER_AUTHENTICATION_RECEIPT'
+          printf '%s\n' "$output" | grep -F 'ROLLBACK_ARTIFACT_AND_REHEARSAL'
+          printf '%s\n' "$output" | grep -F 'PROMOTION_NOT_AUTHORIZED_BY_OFFLINE_TOOL'
       - name: One local process run (not operating deployment)
         run: |
           cargo run --quiet --manifest-path experiments/rust-isolated-runtime/Cargo.toml -- --once | grep -F '"scope":"ISOLATED_LOCAL_ONLY"'
