@@ -103,12 +103,24 @@ def evaluate(snapshot: Mapping[str, Any]) -> dict[str, Any]:
     else:
         native_timing = "PASS_TEMPORAL_ORDER_ONLY"
 
-    # Native success needs the same ID, verified ledger AND valid time order.
+    # An old result is not proof of the newest scheduled run. The result record
+    # is a separate provider object and must identify the same native run.
     native_id = native.get("run_id")
+    latest_result_id = native.get("latest_result_run_id")
+    if not isinstance(native_id, str) or not native_id.strip():
+        native_result_id_status = "UNVERIFIED_MISSING_RUN_ID"
+    elif not isinstance(latest_result_id, str) or not latest_result_id.strip():
+        native_result_id_status = "UNVERIFIED_MISSING_RESULT_RUN_ID"
+    elif latest_result_id != native_id:
+        native_result_id_status = "UNVERIFIED_STALE_RESULT_RUN_ID"
+    else:
+        native_result_id_status = "PASS_SAME_RESULT_RUN_ID"
+
+    # A valid result ID alone is also not an external action ledger.
     native_status = (
         "PASS_SAME_NATIVE_RUN"
         if native_timing == "PASS_TEMPORAL_ORDER_ONLY"
-        and isinstance(native_id, str) and bool(native_id.strip())
+        and native_result_id_status == "PASS_SAME_RESULT_RUN_ID"
         and native_id == native.get("external_ledger_native_run_id")
         and native.get("status") == "completed"
         and native.get("external_ledger_verified") is True
@@ -128,6 +140,7 @@ def evaluate(snapshot: Mapping[str, Any]) -> dict[str, Any]:
         "hosted_github_collector": collector_status,
         "github_schedule": scheduled_status,
         "chatgpt_native_schedule_timing": native_timing,
+        "chatgpt_native_result_id": native_result_id_status,
         "chatgpt_native_same_run": native_status,
         "release_promotion": "PASS_AUTHORIZED_PRODUCTION_GATES" if can_promote else "BLOCK_NO_PRODUCTION_PROOF",
         "candidate_software_version": release.get("version") if isinstance(release.get("version"), str) else None,
