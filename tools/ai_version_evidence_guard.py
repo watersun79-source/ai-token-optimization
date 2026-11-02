@@ -84,11 +84,31 @@ def evaluate(snapshot: Mapping[str, Any]) -> dict[str, Any]:
     else:
         scheduled_status = "PASS_RECENT_GITHUB_SCHEDULE_ONLY"
 
-    # Native evidence needs matching IDs *and* a same-run external call ledger.
+    # Native schedule timing is an independent gate. condition_watch tasks may
+    # be executed ahead of scheduled_for; that is not exact scheduled execution.
+    native_scheduled = _time(native.get("scheduled_for"))
+    native_started = _time(native.get("started_at"))
+    native_completed = _time(native.get("completed_at"))
+    native_result_created = _time(native.get("result_created_at"))
+    if not all((native_scheduled, native_started, native_completed, native_result_created)):
+        native_timing = "UNVERIFIED_TIMESTAMPS"
+    elif not observed or any(t > observed for t in (
+        native_scheduled, native_started, native_completed, native_result_created
+    )):
+        native_timing = "UNVERIFIED_FUTURE_TIMESTAMP"
+    elif native_started < native_scheduled:
+        native_timing = "WARN_STARTED_BEFORE_SCHEDULED_FOR"
+    elif native_completed < native_started or native_result_created < native_completed:
+        native_timing = "UNVERIFIED_OUT_OF_ORDER"
+    else:
+        native_timing = "PASS_TEMPORAL_ORDER_ONLY"
+
+    # Native success needs the same ID, verified ledger AND valid time order.
     native_id = native.get("run_id")
     native_status = (
         "PASS_SAME_NATIVE_RUN"
-        if isinstance(native_id, str) and bool(native_id.strip())
+        if native_timing == "PASS_TEMPORAL_ORDER_ONLY"
+        and isinstance(native_id, str) and bool(native_id.strip())
         and native_id == native.get("external_ledger_native_run_id")
         and native.get("status") == "completed"
         and native.get("external_ledger_verified") is True
@@ -107,6 +127,7 @@ def evaluate(snapshot: Mapping[str, Any]) -> dict[str, Any]:
         "false_disconnected_warning_detected": static_false_warning,
         "hosted_github_collector": collector_status,
         "github_schedule": scheduled_status,
+        "chatgpt_native_schedule_timing": native_timing,
         "chatgpt_native_same_run": native_status,
         "release_promotion": "PASS_AUTHORIZED_PRODUCTION_GATES" if can_promote else "BLOCK_NO_PRODUCTION_PROOF",
         "candidate_software_version": release.get("version") if isinstance(release.get("version"), str) else None,
