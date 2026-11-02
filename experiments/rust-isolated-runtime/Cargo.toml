@@ -1,0 +1,10 @@
+[package]
+name = "ai-bot-rust-isolated"
+version = "0.1.0"
+edition = "2021"
+publish = false
+default-run = "ai-bot-rust-isolated"
+
+[dependencies]
+chrono = { version = "0.4", default-features = false, features = ["std"] }
+serde_json = "1"

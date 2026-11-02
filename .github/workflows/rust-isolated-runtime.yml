@@ -1,0 +1,70 @@
+name: Rust isolated runtime verification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "experiments/rust-isolated-runtime/**"
+      - ".github/workflows/rust-isolated-runtime.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-isolated-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust-local-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout isolated PR source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Check installed Rust toolchain
+        run: rustc --version && cargo --version
+      - name: Rust formatting guard
+        run: cargo fmt --manifest-path experiments/rust-isolated-runtime/Cargo.toml -- --check
+      - name: Rust clippy guard
+        run: cargo clippy --manifest-path experiments/rust-isolated-runtime/Cargo.toml --all-targets -- -D warnings
+      - name: Rust isolated tests (no provider keys)
+        run: cargo test --manifest-path experiments/rust-isolated-runtime/Cargo.toml -- --nocapture
+      - name: Rust version guard CLI CAS smoke (synthetic evidence only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          printf '%s' '{"schema":"AI_BOT_VERSION_PROGRESS_BOARD_V1","components":[{"id":"github_isolated_dev","version":"v8.5.14","state":"CI_VERIFIED","gates":{"review":"UNVERIFIED"}}],"history":[]}' > "$tmp/board.json"
+          printf '%s' '{"id":"github_isolated_dev","authenticated_source":true,"evidence_id":"SYNTHETIC_CI_ONLY","observed_at":"2026-11-03T00:10:00Z","gates":{"review":"IN_PROGRESS"}}' > "$tmp/obs.json"
+          cargo run --quiet --manifest-path experiments/rust-isolated-runtime/Cargo.toml --bin version_guard -- --reconcile "$tmp/board.json" "$tmp/obs.json" 7 7 > "$tmp/out.json"
+          grep -F '"status":"UPDATE"' "$tmp/out.json"
+          grep -F '"remote_write_performed":false' "$tmp/out.json"
+          if cargo run --quiet --manifest-path experiments/rust-isolated-runtime/Cargo.toml --bin version_guard -- --reconcile "$tmp/board.json" "$tmp/obs.json" 7 8 > "$tmp/rejected.json" 2> "$tmp/rejected.err"; then
+            echo 'CAS conflict unexpectedly succeeded'
+            exit 1
+          fi
+          grep -F 'CAS_CONFLICT' "$tmp/rejected.err"
+      - name: Preproduction guard refuses unsigned, unreviewed rollout
+        shell: bash
+        run: |
+          set -euo pipefail
+          fixture="$(mktemp)"
+          trap 'rm -f "$fixture"' EXIT
+          printf '{}' > "$fixture"
+          set +e
+          output="$(cargo run --quiet --manifest-path experiments/rust-isolated-runtime/Cargo.toml --bin promotion_guard -- --check "$fixture" 2>&1)"
+          exit_code=$?
+          set -e
+          test "$exit_code" -eq 2
+          printf '%s\n' "$output" | grep -F 'BLOCKED_MISSING_EVIDENCE'
+          printf '%s\n' "$output" | grep -F 'PROVIDER_AUTHENTICATION_RECEIPT'
+          printf '%s\n' "$output" | grep -F 'ROLLBACK_ARTIFACT_AND_REHEARSAL'
+          printf '%s\n' "$output" | grep -F 'PROMOTION_NOT_AUTHORIZED_BY_OFFLINE_TOOL'
+      - name: One local process run (not operating deployment)
+        run: |
+          cargo run --quiet --manifest-path experiments/rust-isolated-runtime/Cargo.toml -- --once | grep -F '"scope":"ISOLATED_LOCAL_ONLY"'
+          cargo run --quiet --manifest-path experiments/rust-isolated-runtime/Cargo.toml -- --event workflow_dispatch | grep -F 'GITHUB_DISPATCH_NOT_SCHEDULE'
