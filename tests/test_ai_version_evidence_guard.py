@@ -103,6 +103,30 @@ class GuardTests(unittest.TestCase):
         self.assertEqual(result["chatgpt_native_result_id"], "PASS_SAME_RESULT_RUN_ID")
         self.assertEqual(result["chatgpt_native_same_run"], "UNVERIFIED")
 
+    def test_real_late_condition_watch_run_is_not_on_time(self):
+        x = self.timed_native(started_at="2026-11-02T09:04:12Z",
+                              completed_at="2026-11-02T09:04:33Z",
+                              result_created_at="2026-11-02T09:04:35Z")
+        result = evaluate(x)
+        self.assertEqual(result["chatgpt_native_schedule_timing"],
+                         "WARN_STARTED_LATE_OVER_60_SECONDS")
+        self.assertEqual(result["chatgpt_native_same_run"], "UNVERIFIED")
+
+    def test_one_minute_audit_boundary_is_not_late_warning(self):
+        x = self.timed_native(started_at="2026-11-02T09:01:00Z",
+                              completed_at="2026-11-02T09:01:05Z",
+                              result_created_at="2026-11-02T09:01:07Z")
+        result = evaluate(x)
+        self.assertEqual(result["chatgpt_native_schedule_timing"], "PASS_TEMPORAL_ORDER_ONLY")
+        self.assertEqual(result["chatgpt_native_same_run"], "PASS_SAME_NATIVE_RUN")
+
+    def test_more_than_one_minute_is_late(self):
+        x = self.timed_native(started_at="2026-11-02T09:01:01Z",
+                              completed_at="2026-11-02T09:01:05Z",
+                              result_created_at="2026-11-02T09:01:07Z")
+        self.assertEqual(evaluate(x)["chatgpt_native_schedule_timing"],
+                         "WARN_STARTED_LATE_OVER_60_SECONDS")
+
     def test_real_early_condition_watch_run_not_exact_schedule(self):
         x = self.timed_native(started_at="2026-11-02T08:56:34Z",
                               completed_at="2026-11-02T08:57:15Z",
