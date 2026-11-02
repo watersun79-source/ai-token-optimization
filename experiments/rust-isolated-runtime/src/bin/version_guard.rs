@@ -277,6 +277,7 @@ mod tests {
         let mut o = obs();
         o["id"] = json!("bot_operating");
         o["version"] = json!("v9.9");
+        o["gates"] = json!({});
         o["version_proof"] = json!({
             "authenticated_provider_readback":true,"source_sha":"a",
             "ci_run_id":"12","ci_success_receipt":"ok"
