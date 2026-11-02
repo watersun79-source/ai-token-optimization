@@ -72,6 +72,7 @@ class GuardTests(unittest.TestCase):
                   "started_at": "2026-11-02T09:00:02Z",
                   "completed_at": "2026-11-02T09:00:05Z",
                   "result_created_at": "2026-11-02T09:00:07Z",
+                  "latest_result_run_id": "run-A",
                   "external_ledger_native_run_id": "run-A",
                   "external_ledger_verified": True}
         native.update(changed)
@@ -83,6 +84,24 @@ class GuardTests(unittest.TestCase):
         x["native_run"]["external_ledger_native_run_id"] = "run-A"
         self.assertEqual(evaluate(x)["chatgpt_native_same_run"], "PASS_SAME_NATIVE_RUN")
         self.assertEqual(evaluate(x)["chatgpt_native_schedule_timing"], "PASS_TEMPORAL_ORDER_ONLY")
+
+    def test_native_result_from_previous_run_is_not_current_proof(self):
+        x = self.timed_native(latest_result_run_id="run-previous")
+        result = evaluate(x)
+        self.assertEqual(result["chatgpt_native_result_id"], "UNVERIFIED_STALE_RESULT_RUN_ID")
+        self.assertEqual(result["chatgpt_native_same_run"], "UNVERIFIED")
+
+    def test_native_missing_result_is_not_current_proof(self):
+        x = self.timed_native(latest_result_run_id=None)
+        result = evaluate(x)
+        self.assertEqual(result["chatgpt_native_result_id"], "UNVERIFIED_MISSING_RESULT_RUN_ID")
+        self.assertEqual(result["chatgpt_native_same_run"], "UNVERIFIED")
+
+    def test_native_matching_result_does_not_replace_external_ledger(self):
+        x = self.timed_native(external_ledger_verified=False)
+        result = evaluate(x)
+        self.assertEqual(result["chatgpt_native_result_id"], "PASS_SAME_RESULT_RUN_ID")
+        self.assertEqual(result["chatgpt_native_same_run"], "UNVERIFIED")
 
     def test_real_early_condition_watch_run_not_exact_schedule(self):
         x = self.timed_native(started_at="2026-11-02T08:56:34Z",
