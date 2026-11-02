@@ -100,6 +100,9 @@ def evaluate(snapshot: Mapping[str, Any]) -> dict[str, Any]:
         native_timing = "WARN_STARTED_BEFORE_SCHEDULED_FOR"
     elif native_completed < native_started or native_result_created < native_completed:
         native_timing = "UNVERIFIED_OUT_OF_ORDER"
+    elif native_started - native_scheduled > timedelta(seconds=60):
+        # This is an audit threshold, not a claim of exact-on-time capability.
+        native_timing = "WARN_STARTED_LATE_OVER_60_SECONDS"
     else:
         native_timing = "PASS_TEMPORAL_ORDER_ONLY"
 
