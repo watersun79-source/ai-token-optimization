@@ -49,9 +49,11 @@ def evaluate(snapshot: Mapping[str, Any]) -> dict[str, Any]:
     github_read = "PASS_READ_ONLY_HTTP" if watcher.get("github_api_http_status") == 200 else "UNVERIFIED"
     github_dispatch_permissions = "UNVERIFIED_READ_ONLY_WATCH"
     configured_blocker = str(watcher.get("github_dispatch_blocker", ""))
+    # A read-only watcher never attempts workflow_dispatch. Thus a dispatch
+    # blocker is not a valid connection verdict, regardless of whether the
+    # external connection inventory is ACTIVE, missing, or stale.
     static_false_warning = (
         watcher.get("is_read_only") is True
-        and github_connection == "PASS_CONNECTED_CONFIG_ONLY"
         and configured_blocker == "NO_ACTIVEPIECES_GITHUB_CONNECTION"
     )
 
