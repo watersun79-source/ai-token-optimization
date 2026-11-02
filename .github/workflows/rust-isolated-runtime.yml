@@ -32,6 +32,22 @@ jobs:
         run: cargo clippy --manifest-path experiments/rust-isolated-runtime/Cargo.toml --all-targets -- -D warnings
       - name: Rust isolated tests (no provider keys)
         run: cargo test --manifest-path experiments/rust-isolated-runtime/Cargo.toml -- --nocapture
+      - name: Rust version guard CLI CAS smoke (synthetic evidence only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          trap 'rm -rf "$tmp"' EXIT
+          printf '%s\\n' '{"schema":"AI_BOT_VERSION_PROGRESS_BOARD_V1","components":[{"id":"github_isolated_dev","version":"v8.5.14","state":"CI_VERIFIED","gates":{"review":"UNVERIFIED"}}],"history":[]}' > "$tmp/board.json"
+          printf '%s\\n' '{"id":"github_isolated_dev","authenticated_source":true,"evidence_id":"SYNTHETIC_CI_ONLY","observed_at":"2026-11-03T00:10:00Z","gates":{"review":"IN_PROGRESS"}}' > "$tmp/obs.json"
+          cargo run --quiet --manifest-path experiments/rust-isolated-runtime/Cargo.toml --bin version_guard -- --reconcile "$tmp/board.json" "$tmp/obs.json" 7 7 > "$tmp/out.json"
+          grep -F '"status":"UPDATE"' "$tmp/out.json"
+          grep -F '"remote_write_performed":false' "$tmp/out.json"
+          if cargo run --quiet --manifest-path experiments/rust-isolated-runtime/Cargo.toml --bin version_guard -- --reconcile "$tmp/board.json" "$tmp/obs.json" 7 8 > "$tmp/rejected.json" 2> "$tmp/rejected.err"; then
+            echo 'CAS conflict unexpectedly succeeded'
+            exit 1
+          fi
+          grep -F 'CAS_CONFLICT' "$tmp/rejected.err"
       - name: One local process run (not operating deployment)
         run: |
           cargo run --quiet --manifest-path experiments/rust-isolated-runtime/Cargo.toml -- --once | grep -F '"scope":"ISOLATED_LOCAL_ONLY"'
