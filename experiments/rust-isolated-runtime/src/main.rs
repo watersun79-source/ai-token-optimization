@@ -5,7 +5,8 @@ use std::net::{TcpListener, TcpStream};
 use std::time::Duration;
 
 const LOCAL_STATUS: &str = r#"{"engine":"rust","scope":"ISOLATED_LOCAL_ONLY","operating_bot":"v8.1_UNCHANGED","native_chatgpt":"UNVERIFIED","provider_sync":"UNVERIFIED","paid_model_calls":0}"#;
-const HEALTH: &str = r#"{"status":"ok","engine":"rust","scope":"LOCAL_PROCESS_ONLY","production_deployed":false}"#;
+const HEALTH: &str =
+    r#"{"status":"ok","engine":"rust","scope":"LOCAL_PROCESS_ONLY","production_deployed":false}"#;
 
 fn event_verdict(event: &str) -> &'static str {
     match event {
@@ -77,10 +78,17 @@ fn main() {
         }
         [_, mode, event] if mode == "--event" => println!("{}", event_verdict(event)),
         [_, mode, id, result, sched, start, end] if mode == "--native-check" => {
-            let parsed = (sched.parse::<i64>(), start.parse::<i64>(), end.parse::<i64>());
+            let parsed = (
+                sched.parse::<i64>(),
+                start.parse::<i64>(),
+                end.parse::<i64>(),
+            );
             match parsed {
                 (Ok(scheduled), Ok(started), Ok(completed)) => {
-                    println!("{}", native_verdict(id, Some(result), scheduled, started, Some(completed)));
+                    println!(
+                        "{}",
+                        native_verdict(id, Some(result), scheduled, started, Some(completed))
+                    );
                 }
                 _ => {
                     eprintln!("INVALID_INTEGER_TIMESTAMP");
@@ -104,11 +112,17 @@ mod tests {
 
     #[test]
     fn schedule_is_not_native() {
-        assert_eq!(event_verdict("schedule"), "GITHUB_SCHEDULE_NOT_NATIVE_CHATGPT");
+        assert_eq!(
+            event_verdict("schedule"),
+            "GITHUB_SCHEDULE_NOT_NATIVE_CHATGPT"
+        );
     }
     #[test]
     fn dispatch_is_not_schedule() {
-        assert_eq!(event_verdict("workflow_dispatch"), "GITHUB_DISPATCH_NOT_SCHEDULE");
+        assert_eq!(
+            event_verdict("workflow_dispatch"),
+            "GITHUB_DISPATCH_NOT_SCHEDULE"
+        );
     }
     #[test]
     fn unknown_event_is_unverified() {
@@ -116,27 +130,45 @@ mod tests {
     }
     #[test]
     fn result_id_mismatch_is_not_pass() {
-        assert_eq!(native_verdict("run-1", Some("run-2"), 100, 100, Some(101)), "UNVERIFIED_RESULT_ID");
+        assert_eq!(
+            native_verdict("run-1", Some("run-2"), 100, 100, Some(101)),
+            "UNVERIFIED_RESULT_ID"
+        );
     }
     #[test]
     fn missing_result_id_is_not_pass() {
-        assert_eq!(native_verdict("run-1", None, 100, 100, Some(101)), "UNVERIFIED_RESULT_ID");
+        assert_eq!(
+            native_verdict("run-1", None, 100, 100, Some(101)),
+            "UNVERIFIED_RESULT_ID"
+        );
     }
     #[test]
     fn early_start_is_not_pass() {
-        assert_eq!(native_verdict("run-1", Some("run-1"), 100, 99, Some(101)), "UNVERIFIED_STARTED_BEFORE_SCHEDULE");
+        assert_eq!(
+            native_verdict("run-1", Some("run-1"), 100, 99, Some(101)),
+            "UNVERIFIED_STARTED_BEFORE_SCHEDULE"
+        );
     }
     #[test]
     fn incomplete_is_not_pass() {
-        assert_eq!(native_verdict("run-1", Some("run-1"), 100, 101, None), "UNVERIFIED_COMPLETION");
+        assert_eq!(
+            native_verdict("run-1", Some("run-1"), 100, 101, None),
+            "UNVERIFIED_COMPLETION"
+        );
     }
     #[test]
     fn inverted_completion_is_not_pass() {
-        assert_eq!(native_verdict("run-1", Some("run-1"), 100, 102, Some(101)), "UNVERIFIED_COMPLETION");
+        assert_eq!(
+            native_verdict("run-1", Some("run-1"), 100, 102, Some(101)),
+            "UNVERIFIED_COMPLETION"
+        );
     }
     #[test]
     fn matching_records_do_not_attest_provider() {
-        assert_eq!(native_verdict("run-1", Some("run-1"), 100, 100, Some(101)), "IDS_AND_TIMES_CONSISTENT_EXTERNAL_LEDGER_UNVERIFIED");
+        assert_eq!(
+            native_verdict("run-1", Some("run-1"), 100, 100, Some(101)),
+            "IDS_AND_TIMES_CONSISTENT_EXTERNAL_LEDGER_UNVERIFIED"
+        );
     }
     #[test]
     fn local_health_endpoint_only() {
@@ -147,7 +179,9 @@ mod tests {
             handle_local(socket).expect("handle request");
         });
         let mut client = TcpStream::connect(addr).expect("connect loopback");
-        client.write_all(b"GET /healthz HTTP/1.1\r\nHost: localhost\r\n\r\n").expect("write request");
+        client
+            .write_all(b"GET /healthz HTTP/1.1\r\nHost: localhost\r\n\r\n")
+            .expect("write request");
         let mut response = String::new();
         client.read_to_string(&mut response).expect("read response");
         worker.join().expect("join worker");
