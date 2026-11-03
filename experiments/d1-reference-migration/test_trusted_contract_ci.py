@@ -41,7 +41,11 @@ class FixtureSignedBackend:
         return self.seal(self.db.history_at(key,revision),'history',nonce)
 
     def write_signed(self,key,value,*,expected_version,request_id,nonce):
+        original=self.db.read(key)
         evidence=self.db.write(key,value,expected_version=expected_version,request_id=request_id)
+        # Model the provider's immutable version history for independent signed reads.
+        if original is not None:
+            self.db.hist[(key,original.version)]=original
         if self.fail_after_commit:
             raise OSError('SYNTHETIC_LOST_ACK')
         return self.seal(evidence,'write',nonce,request_id,expected_version)
@@ -134,6 +138,40 @@ class TrustedContractCITests(unittest.TestCase):
         with ThreadPoolExecutor(max_workers=8) as pool:
             results=list(pool.map(worker,range(8)))
         self.assertEqual(results.count('APPLIED_OFFLINE'),1)
+        self.assertEqual(len(self.backend.db.writes),1)
+
+
+    def test_restore_rejects_valid_mac_with_nonhistorical_source_value(self):
+        from migration import Evidence
+        source=self.backend.db.read(REPORT_KEY)
+        ticket,path=prepare(self.client,self.journal)
+        apply(self.client,self.journal,path)
+        forged=Evidence(source.key,source.value+' forged-valid-mac',source.version,source.content_sha)
+        attacker_ticket=self.journal.seal(forged,ticket.candidate_value)
+        attacker_path=self.journal.save(attacker_ticket)
+        with self.assertRaisesRegex(FailClosed,'RECOVERY_SOURCE_HISTORY_MISMATCH'):
+            recover(self.client,self.journal,attacker_path)
+        self.assertEqual(self.backend.db.read(REPORT_KEY).value,ticket.candidate_value)
+        self.assertEqual(len(self.backend.db.writes),1)
+
+    def test_restore_rejects_valid_mac_with_nonhistorical_source_sha(self):
+        from migration import Evidence
+        source=self.backend.db.read(REPORT_KEY)
+        ticket,path=prepare(self.client,self.journal)
+        apply(self.client,self.journal,path)
+        forged=Evidence(source.key,source.value,source.version,'e'*64)
+        attacker_ticket=self.journal.seal(forged,ticket.candidate_value)
+        attacker_path=self.journal.save(attacker_ticket)
+        with self.assertRaisesRegex(FailClosed,'RECOVERY_SOURCE_HISTORY_MISMATCH'):
+            recover(self.client,self.journal,attacker_path)
+        self.assertEqual(len(self.backend.db.writes),1)
+
+    def test_restore_fails_closed_if_official_source_revision_missing(self):
+        ticket,path=prepare(self.client,self.journal)
+        apply(self.client,self.journal,path)
+        self.backend.db.hist.pop((REPORT_KEY,ticket.source_version),None)
+        with self.assertRaisesRegex(FailClosed,'RECOVERY_OFFICIAL_HISTORY_MISSING'):
+            recover(self.client,self.journal,path)
         self.assertEqual(len(self.backend.db.writes),1)
 
 

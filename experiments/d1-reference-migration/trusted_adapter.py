@@ -280,6 +280,17 @@ def recover(store: TrustedAdapter, journal: FileRecoveryJournal, path: Path) -> 
     current = store.read(REPORT_KEY)
     if current is None:
         raise FailClosed('RECOVERY_SOURCE_MISSING')
+    # A locally signed journal is not proof that its original bytes came from D1.
+    # Before classifying any completed write/rollback, independently authenticate
+    # the official original revision and compare full bytes plus opaque receipt.
+    if current.version > ticket.source_version:
+        historical = store.history_at(REPORT_KEY, ticket.source_version)
+        if historical is None:
+            raise FailClosed('RECOVERY_OFFICIAL_HISTORY_MISSING')
+        if (historical.version != ticket.source_version or
+                historical.value != ticket.source_value or
+                historical.content_sha != ticket.source_content_sha):
+            raise FailClosed('RECOVERY_SOURCE_HISTORY_MISMATCH')
     if (current.version == ticket.source_version
             and current.value == ticket.source_value
             and current.content_sha == ticket.source_content_sha):
