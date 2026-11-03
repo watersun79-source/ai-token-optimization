@@ -409,5 +409,36 @@ class MigrationTests(unittest.TestCase):
         self.assertFalse(db.writes)
 
 
+    def test_duplicate_component_and_reconstructed_refs_fail_closed(self):
+        db=make_store()
+        def mutate(obj):
+            obj['observed_snapshots'][1]['component']='coordinator'
+            obj['source_runs']='|'.join(
+                row['component']+':'+row['run_id'] for row in obj['observed_snapshots'])
+        modify_json_record(db,REPORT_KEY,mutate)
+        with self.assertRaisesRegex(FailClosed,'DUPLICATE_OR_INVALID_COMPONENT'):
+            migrate(db)
+        self.assertEqual(db.writes,[])
+
+    def test_conflicting_snapshot_run_id_pair_fail_closed(self):
+        db=make_store()
+        modify_json_record(db,REPORT_KEY,
+            lambda obj:obj['observed_snapshots'][1].__setitem__('last_run_id','other-run'))
+        with self.assertRaisesRegex(FailClosed,'CONFLICTING_SNAPSHOT_RUN_IDS'):
+            migrate(db)
+        self.assertEqual(db.writes,[])
+
+    def test_unknown_component_with_reconstructed_refs_fail_closed(self):
+        db=make_store()
+        def mutate(obj):
+            obj['observed_snapshots'][1]['component']='unknown-service'
+            obj['source_runs']='|'.join(
+                row['component']+':'+row['run_id'] for row in obj['observed_snapshots'])
+        modify_json_record(db,REPORT_KEY,mutate)
+        with self.assertRaisesRegex(FailClosed,'LATEST_COMPONENT_SET_INVALID'):
+            migrate(db)
+        self.assertEqual(db.writes,[])
+
+
 if __name__=='__main__':
     unittest.main()

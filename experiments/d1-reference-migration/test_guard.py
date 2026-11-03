@@ -326,4 +326,21 @@ class GuardTests(unittest.TestCase):
         self.assertIn('old_timeline',compact['archived_fields'])
         self.assertIn('cross_system_receipt_check',compact['archived_fields'])
 
+
+    def test_duplicate_component_with_distinct_run_ids_fails_closed(self):
+        obj=json.loads(fixture());obj['observed_snapshots'][1]['component']='coordinator'
+        obj['source_runs']='|'.join(
+            f"{row['component']}:{row['last_run_id']}" for row in obj['observed_snapshots'])
+        db=FakeStore(json.dumps(obj,ensure_ascii=False,separators=(',',':')))
+        with self.assertRaisesRegex(FailClosed,'DUPLICATE_OR_INVALID_COMPONENT'):
+            rotate(db,KEY)
+        self.assertEqual(db.writes,[])
+
+    def test_conflicting_dual_run_ids_fails_closed(self):
+        obj=json.loads(fixture());obj['observed_snapshots'][1]['run_id']='different-run'
+        db=FakeStore(json.dumps(obj,ensure_ascii=False,separators=(',',':')))
+        with self.assertRaisesRegex(FailClosed,'CONFLICTING_SNAPSHOT_RUN_IDS'):
+            rotate(db,KEY)
+        self.assertEqual(db.writes,[])
+
 if __name__=='__main__':unittest.main(verbosity=2)

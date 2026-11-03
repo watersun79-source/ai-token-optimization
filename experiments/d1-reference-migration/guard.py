@@ -100,10 +100,18 @@ def _validate_run_refs(obj: dict) -> None:
     references = source_runs.split('|')
     if len(references) != len(snapshots) or len(set(references)) != len(references):
         raise FailClosed('SOURCE_RUN_REFERENCE_COUNT_MISMATCH')
+    seen_components = set()
     for snap in snapshots:
         if not isinstance(snap, dict):
             raise FailClosed('INVALID_SNAPSHOT')
-        name, run = snap.get('component'), snap.get('last_run_id') or snap.get('run_id')
+        name = snap.get('component')
+        if not isinstance(name, str) or not name or name in seen_components:
+            raise FailClosed('DUPLICATE_OR_INVALID_COMPONENT')
+        seen_components.add(name)
+        if (snap.get('last_run_id') and snap.get('run_id')
+                and snap['last_run_id'] != snap['run_id']):
+            raise FailClosed('CONFLICTING_SNAPSHOT_RUN_IDS')
+        run = snap.get('last_run_id') or snap.get('run_id')
         if not isinstance(name, str) or not isinstance(run, str) or f'{name}:{run}' not in references:
             raise FailClosed('SOURCE_RUN_ID_MISMATCH')
 

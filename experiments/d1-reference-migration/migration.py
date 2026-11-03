@@ -21,6 +21,7 @@ TRACE_SCHEMA = 'AI_BOT_RENDER_TRACE_SOURCE_AUDIT_V1'
 LEGACY_HISTORY = (27, 28, 29, 30, 31)
 REF_HISTORY = (32, 33)
 ARCHIVE_RECENT = 36
+EXPECTED_COMPONENTS = frozenset({'coordinator', 'render', 'dev', 'site', 'neon'})
 HARD_LIMIT = 10000
 WARNING_AT = 9300
 _SHA_RE = re.compile(r'^[0-9a-f]{64}$')
@@ -90,6 +91,8 @@ def _validate_current(live: Evidence, obj: dict) -> None:
     if utf16_units(live.value) > HARD_LIMIT:
         raise FailClosed('LIVE_ABOVE_HARD_LIMIT')
     _validate_run_refs(obj)
+    if {row['component'] for row in obj['observed_snapshots']} != EXPECTED_COMPONENTS:
+        raise FailClosed('LATEST_COMPONENT_SET_INVALID')
     if obj['summary'].get('enabled') != len(obj['observed_snapshots']):
         raise FailClosed('LATEST_ENABLED_COUNT_INVALID')
     if any(not isinstance(row.get('enabled'), bool) or not row['enabled'] for row in obj['observed_snapshots']):
