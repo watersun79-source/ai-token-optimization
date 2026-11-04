@@ -263,7 +263,7 @@ class Adapter:
                     pass
 
     def version(self):
-        value = self._run(["--version"], timeout=15, output_limit=4096).strip()
+        value = self._run(["--version"], timeout=30, output_limit=4096).strip()
         if value != EXPECTED_VERSION:
             raise Blocked("BLOCKED_CLI_VERSION_MISMATCH")
         return value

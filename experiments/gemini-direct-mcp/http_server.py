@@ -55,14 +55,14 @@ def _cli_env(home, system_settings_path, *, interactive):
     return env
 
 
-def probe_cli_auth(cli, home, work, system_settings_path, timeout=15):
+def probe_cli_auth(cli, home, work, system_settings_path, timeout=30):
     """Official ACP initialize+session/new only; never sends session/prompt.
 
     This can refresh OAuth and perform Code Assist onboarding/quota metadata
     requests. It is a nongeneration authentication probe, not a read-only call.
     Raw stdout/stderr, account information, and session IDs are never returned.
     """
-    if not 0 < timeout <= 15:
+    if not 0 < timeout <= 30:
         return False
     replies = queue.Queue(maxsize=4)
     failed = threading.Event()
@@ -388,7 +388,7 @@ class ManualAuthSession:
             if remaining <= 0:
                 break
             authenticated = self.probe(self.cli, self.home, self.work,
-                                       self.system_settings_path, timeout=min(15.0, remaining))
+                                       self.system_settings_path, timeout=min(30.0, remaining))
             if authenticated:
                 with self._lock:
                     if self.state != "VERIFYING" or time.monotonic() >= self.deadline:
