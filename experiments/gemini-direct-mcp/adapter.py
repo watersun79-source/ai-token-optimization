@@ -30,6 +30,15 @@ SECRET = re.compile(
     r"(?:access_token|refresh_token|authorization_code)\s*[=:]\s*[\"']?[A-Za-z0-9_./+\-]{16,}", re.I
 )
 DENY_POLICY = '[[rule]]\ntoolName = "*"\ndecision = "deny"\npriority = 999\n'
+# Public, noncredential controls. Install this exact object as a root-owned
+# system settings file during image build, before switching to the runtime user.
+CLI_SYSTEM_SETTINGS = {
+    "model": {"maxSessionTurns": 1},
+    "experimental": {"autoMemory": False},
+    "security": {"auth": {"selectedType": "oauth-personal"}},
+    "hooksConfig": {"enabled": False},
+    "telemetry": {"enabled": False},
+}
 
 
 class Blocked(Exception):
@@ -46,6 +55,7 @@ class Config:
     gate_file: Path | None = None
     timeout_seconds: float = 60.0
     max_output_bytes: int = 1_048_576
+    system_settings_file: Path = Path("/etc/gemini-cli/settings.json")
 
     @classmethod
     def from_env(cls):
@@ -125,8 +135,42 @@ class Adapter:
         # No arbitrary application credentials, Node injection or proxy secrets.
         keep = ("PATH", "HOME", "USERPROFILE", "SystemRoot", "WINDIR", "COMSPEC", "PATHEXT", "TEMP", "TMP", "LANG", "LC_ALL", "TZ")
         env = {k: os.environ[k] for k in keep if k in os.environ}
-        env.update({"GEMINI_CLI_HOME": str(self.config.cli_home), "GEMINI_TELEMETRY_ENABLED": "false", "NO_BROWSER": "true", "CI": "true", "TERM": "dumb"})
+        env.update({"GEMINI_CLI_HOME": str(self.config.cli_home), "GEMINI_TELEMETRY_ENABLED": "false", "NO_BROWSER": "true", "CI": "true", "TERM": "dumb",
+                    "GEMINI_CLI_SYSTEM_SETTINGS_PATH": str(self.config.system_settings_file)})
         return env
+
+    @staticmethod
+    def _root_control_path_is_secure(path):
+        # Gemini CLI 0.66.0 skips system settings unless the file and every
+        # ancestor are root-owned and cannot be changed by group/other users.
+        if os.name != "posix" or not path.is_absolute():
+            return False
+        try:
+            for item in (path, *path.parents):
+                st = item.lstat()
+                if stat.S_ISLNK(st.st_mode) or st.st_uid != 0 or st.st_mode & 0o022:
+                    return False
+                if item == path and not stat.S_ISREG(st.st_mode):
+                    return False
+                if item != path and not stat.S_ISDIR(st.st_mode):
+                    return False
+            return True
+        except OSError:
+            return False
+
+    def _system_controls(self):
+        path = self.config.system_settings_file
+        if not path.is_file():
+            raise Blocked("BLOCKED_SYSTEM_CONTROLS_MISSING")
+        if not self._root_control_path_is_secure(path):
+            raise Blocked("BLOCKED_UNSAFE_SYSTEM_CONTROLS")
+        try:
+            if path.stat().st_size > 16_384 or json.loads(path.read_text()) != CLI_SYSTEM_SETTINGS:
+                raise Blocked("BLOCKED_SYSTEM_CONTROLS_CHANGED")
+        except (OSError, ValueError, UnicodeError):
+            raise Blocked("BLOCKED_SYSTEM_CONTROLS_CHANGED") from None
+        return {"status": "PASS", "max_session_turns": 1,
+                "settings_path": str(path), "provider_request_count": "UNVERIFIED"}
 
     @staticmethod
     def _stop(process):
@@ -249,11 +293,12 @@ class Adapter:
         auth, quota = gate.get("auth"), gate.get("quota")
         if not isinstance(auth, dict) or not isinstance(quota, dict):
             raise Blocked("BLOCKED_INVALID_VERIFICATION_GATE")
-        if (gate.get("schema") != "GEMINI_CLI_VERIFIED_GATE_V1" or gate.get("cli_version") != EXPECTED_VERSION
+        if (gate.get("schema") != "GEMINI_CLI_VERIFIED_GATE_V2" or gate.get("cli_version") != EXPECTED_VERSION
                 or self.config.cli is None or gate.get("cli_realpath") != str(self.config.cli.resolve())
                 or gate.get("cli_home") != str(self.config.cli_home)
                 or gate.get("isolated_cli_configuration_reviewed") is not True
-                or type(gate.get("max_model_calls")) is not int or gate.get("max_model_calls") != 1
+                or "max_model_calls" in gate
+                or type(gate.get("max_cli_invocations")) is not int or gate.get("max_cli_invocations") != 1
                 or not re.fullmatch(r"[A-Za-z0-9_-]{8,80}", str(gate.get("gate_id", "")))):
             raise Blocked("BLOCKED_INVALID_VERIFICATION_GATE")
         if auth.get("status") != "PASS" or auth.get("method") != "oauth-personal" or auth.get("source_kind") != "official-cli-runtime-verification" or not auth.get("evidence_ref"):
@@ -280,6 +325,10 @@ class Adapter:
             gate_state = {"status": "LOCAL_OPERATOR_EVIDENCE_PRESENT", "gate_id": gate["gate_id"]}
         except Blocked as exc:
             gate_state = {"status": exc.code}
+        try:
+            controls = self._system_controls()
+        except Blocked as exc:
+            controls = {"status": exc.code}
         with self._db() as db:
             in_flight = db.execute("SELECT COUNT(*) FROM requests WHERE state='running'").fetchone()[0]
             consumed = bool(db.execute("SELECT 1 FROM consumed_gates WHERE gate_id=?", (gate_state.get("gate_id"),)).fetchone())
@@ -287,8 +336,9 @@ class Adapter:
                 "cli_home": str(self.config.cli_home), "credential_cache_location": str(self.config.cli_home / ".gemini" / "oauth_creds.json"),
                 "credential_contents_read": False, "credential_validity": "UNVERIFIED_BY_STATUS",
                 "verification_gate": gate_state, "in_flight_or_uncertain_requests": in_flight,
-                "one_call_budget_consumed": consumed,
-                "generation_ready": runtime["status"] == "PASS" and gate_state["status"] == "LOCAL_OPERATOR_EVIDENCE_PRESENT" and not consumed and not in_flight,
+                "one_cli_invocation_budget_consumed": consumed, "provider_request_count": "UNVERIFIED",
+                "system_controls": controls,
+                "generation_ready": runtime["status"] == "PASS" and controls["status"] == "PASS" and gate_state["status"] == "LOCAL_OPERATOR_EVIDENCE_PRESENT" and not consumed and not in_flight,
                 "generation_readiness_semantics": "Local externally verified evidence gate, not independent provider authentication proof.",
                 "chatgpt_native_connection": "UNVERIFIED", "scheduled_delegation": "UNVERIFIED"}
 
@@ -314,7 +364,7 @@ class Adapter:
             if db.execute("SELECT 1 FROM requests WHERE state='running' LIMIT 1").fetchone():
                 raise Blocked("BLOCKED_CONCURRENCY_LIMIT")
             if db.execute("SELECT 1 FROM consumed_gates WHERE gate_id=?", (gate["gate_id"],)).fetchone():
-                raise Blocked("BLOCKED_VERIFIED_ONE_CALL_BUDGET_CONSUMED")
+                raise Blocked("BLOCKED_VERIFIED_ONE_CLI_INVOCATION_BUDGET_CONSUMED")
             db.execute("INSERT INTO consumed_gates VALUES (?,?)", (gate["gate_id"], request_id))
             db.execute("INSERT INTO requests VALUES (?,?, 'running',NULL,?)", (request_id, prompt_sha, time.time()))
             return None
@@ -338,6 +388,7 @@ class Adapter:
             return old
         self._env()  # Detect forbidden paid-provider environment before any call.
         gate = self._gate()
+        self._system_controls()
         self.version()
         if self.policy.read_text() != DENY_POLICY or self.policy.is_symlink():
             raise Blocked("BLOCKED_POLICY_CHANGED")
@@ -364,11 +415,11 @@ class Adapter:
             if SECRET.search(body["response"]):
                 raise Blocked("BLOCKED_SECRET_LIKE_OUTPUT")
             result = {"status": "PASS_REAL_CLI_JSON_RESPONSE", "request_id": request_id, "response": body["response"], "cli_version": EXPECTED_VERSION,
-                      "provider_call_id": None, "provider_call_id_status": "NOT_PROVIDED_BY_CLI_OUTPUT", "native_scheduled_run": "UNVERIFIED"}
+                      "provider_call_id": None, "provider_call_id_status": "NOT_PROVIDED_BY_CLI_OUTPUT", "provider_request_count": "UNVERIFIED", "native_scheduled_run": "UNVERIFIED"}
         except Blocked as exc:
-            result = {"status": exc.code, "request_id": request_id, "response": None, "provider_completion": "UNVERIFIED", "automatic_retry": False}
+            result = {"status": exc.code, "request_id": request_id, "response": None, "provider_completion": "UNVERIFIED", "provider_request_count": "UNVERIFIED", "automatic_retry": False}
         except Exception:
-            result = {"status": "BLOCKED_UNEXPECTED_EXECUTION_ERROR", "request_id": request_id, "response": None, "provider_completion": "UNVERIFIED", "automatic_retry": False}
+            result = {"status": "BLOCKED_UNEXPECTED_EXECUTION_ERROR", "request_id": request_id, "response": None, "provider_completion": "UNVERIFIED", "provider_request_count": "UNVERIFIED", "automatic_retry": False}
         with self._db() as db:
             db.execute("UPDATE requests SET state='done',result_json=? WHERE request_id=?", (json.dumps(result), request_id))
         return result

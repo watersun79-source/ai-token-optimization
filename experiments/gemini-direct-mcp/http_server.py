@@ -6,11 +6,13 @@ HTTP auth route, never as MCP arguments. This module never reads CLI credentials
 from __future__ import annotations
 
 import dataclasses
+import hashlib
 import hmac
 import json
 import os
 from pathlib import Path
 import re
+import queue
 import secrets
 import signal
 import subprocess
@@ -40,6 +42,157 @@ class RequestError(Exception):
         self.status, self.code = status, code
 
 
+def _cli_env(home, system_settings_path, *, interactive):
+    if any(os.environ.get(k) for k in PROVIDER_ENV):
+        raise RequestError(503, "BLOCKED_PROVIDER_KEY_OR_VERTEX_ENV")
+    keep = ("PATH", "HOME", "USERPROFILE", "LANG", "LC_ALL", "TZ")
+    env = {k: os.environ[k] for k in keep if k in os.environ}
+    env.update({"GEMINI_CLI_HOME": str(home), "GEMINI_TELEMETRY_ENABLED": "false",
+                "GEMINI_CLI_SYSTEM_SETTINGS_PATH": str(system_settings_path),
+                "NO_BROWSER": "true", "TERM": "xterm-256color" if interactive else "dumb"})
+    if not interactive:
+        env["CI"] = "true"
+    return env
+
+
+def probe_cli_auth(cli, home, work, system_settings_path, timeout=15):
+    """Official ACP initialize+session/new only; never sends session/prompt.
+
+    This can refresh OAuth and perform Code Assist onboarding/quota metadata
+    requests. It is a nongeneration authentication probe, not a read-only call.
+    Raw stdout/stderr, account information, and session IDs are never returned.
+    """
+    if not 0 < timeout <= 15:
+        return False
+    replies = queue.Queue(maxsize=4)
+    failed = threading.Event()
+    p = None
+    reader = None
+    try:
+        env = _cli_env(home, system_settings_path, interactive=False)
+        p = subprocess.Popen([str(cli), "--acp", "--approval-mode", "plan"],
+                             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                             stderr=subprocess.DEVNULL, cwd=work, env=env,
+                             shell=False, start_new_session=True)
+
+        def read_responses():
+            total = 0
+            try:
+                while True:
+                    line = p.stdout.readline(MAX_BODY + 1)
+                    if not line:
+                        return
+                    total += len(line)
+                    if total > MAX_BODY or len(line) > MAX_BODY:
+                        failed.set()
+                        return
+                    try:
+                        response = json.loads(line)
+                    except (ValueError, UnicodeError):
+                        continue
+                    if not isinstance(response, dict) or type(response.get("id")) is not int or response["id"] not in (1, 2):
+                        continue
+                    result = response.get("result")
+                    valid = False
+                    if isinstance(result, dict):
+                        if response["id"] == 1:
+                            valid = type(result.get("protocolVersion")) is int and result["protocolVersion"] == 1
+                        else:
+                            sid = result.get("sessionId")
+                            valid = isinstance(sid, str) and bool(re.fullmatch(r"[A-Za-z0-9_-]{1,256}", sid))
+                    # Normalize immediately; no raw ACP message or session ID escapes.
+                    replies.put_nowait((response["id"], valid))
+            except (OSError, ValueError, queue.Full):
+                failed.set()
+
+        reader = threading.Thread(target=read_responses, daemon=True)
+        reader.start()
+        deadline = time.monotonic() + timeout
+        requests = [
+            {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {
+                "protocolVersion": 1, "clientCapabilities": {},
+                "clientInfo": {"name": "gemini-auth-probe", "version": "0.1.0"}}},
+            {"jsonrpc": "2.0", "id": 2, "method": "session/new", "params": {
+                "cwd": str(work), "mcpServers": []}},
+        ]
+        for request in requests:
+            p.stdin.write((json.dumps(request, separators=(",", ":")) + "\n").encode())
+            p.stdin.flush()
+            while True:
+                left = deadline - time.monotonic()
+                if left <= 0 or failed.is_set():
+                    return False
+                try:
+                    rid, valid = replies.get(timeout=min(0.1, left))
+                except queue.Empty:
+                    if p.poll() is not None:
+                        return False
+                    continue
+                if rid == request["id"]:
+                    if not valid:
+                        return False
+                    break
+        return True
+    except (OSError, ValueError, RequestError):
+        return False
+    finally:
+        if p is not None:
+            if p.poll() is None:
+                try:
+                    os.killpg(p.pid, signal.SIGKILL)
+                except OSError:
+                    pass
+            try:
+                p.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                pass
+            for pipe in (p.stdin, p.stdout):
+                if pipe is not None:
+                    try:
+                        pipe.close()
+                    except OSError:
+                        pass
+        if reader is not None:
+            reader.join(timeout=1)
+
+
+class OwnerBinding:
+    """Noncredential, immutable first-owner binding persisted with mode 0600."""
+    def __init__(self, state_dir):
+        self.path = state_dir / "owner-actor.json"
+        self.lock = threading.RLock()
+        self.actor = None
+        if self.path.exists() or self.path.is_symlink():
+            st = self.path.lstat()
+            if self.path.is_symlink() or not self.path.is_file() or st.st_uid != os.getuid() or st.st_mode & 0o077 or st.st_size > 4096:
+                raise ValueError("Unsafe owner metadata")
+            value = json.loads(self.path.read_text())
+            if not isinstance(value, dict) or set(value) != {"owner_actor"} or not isinstance(value["owner_actor"], str) or not ACTOR.fullmatch(value["owner_actor"]):
+                raise ValueError("Invalid owner metadata")
+            self.actor = value["owner_actor"]
+
+    def require(self, actor, *, bind=False):
+        if not isinstance(actor, str) or not ACTOR.fullmatch(actor):
+            raise RequestError(400, "INVALID_ACTOR")
+        with self.lock:
+            if self.actor is None and bind:
+                flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_NOFOLLOW", 0)
+                try:
+                    fd = os.open(self.path, flags, 0o600)
+                    with os.fdopen(fd, "w") as f:
+                        json.dump({"owner_actor": actor}, f)
+                        f.flush()
+                        os.fsync(f.fileno())
+                except FileExistsError:
+                    raise RequestError(409, "OWNER_BINDING_CONFLICT") from None
+                self.actor = actor
+            if self.actor is None:
+                raise RequestError(403, "OWNER_NOT_BOUND")
+            if not hmac.compare_digest(self.actor, actor):
+                raise RequestError(403, "ACTOR_NOT_OWNER")
+            return actor
+
+
 def valid_initial_auth_url(value):
     try:
         u = urlsplit(value)
@@ -61,8 +214,13 @@ def valid_initial_auth_url(value):
 
 class ManualAuthSession:
     """Bounded Linux PTY flow using the unmodified official CLI."""
-    def __init__(self, actor, cli, auth_root, on_success, ttl=300):
+    def __init__(self, actor, cli, auth_root, on_success, ttl=300,
+                 system_settings_path=Path("/etc/gemini-cli/settings.json"),
+                 probe=probe_cli_auth):
         self.actor = actor
+        self.cli = cli
+        self.system_settings_path = system_settings_path
+        self.probe = probe
         self.id = secrets.token_hex(24)
         self.deadline = time.monotonic() + ttl
         self.state = "STARTING"
@@ -71,21 +229,24 @@ class ManualAuthSession:
         self._buffer = bytearray()
         self._trust_handled = False
         self._google_handled = False
-        self._success_match = 0
         self._output_count = 0
         self._lock = threading.RLock()
         self._stopped = threading.Event()
         self._on_success = on_success
         self.home = Path(tempfile.mkdtemp(prefix="google-auth-", dir=auth_root))
         self.home.chmod(0o700)
-        work = self.home / "empty-work"
-        work.mkdir(mode=0o700)
+        self.work = self.home / "empty-work"
+        self.work.mkdir(mode=0o700)
         settings = self.home / ".gemini"
         settings.mkdir(mode=0o700)
         # Public CLI configuration only. No token is read or written by us.
         (settings / "settings.json").write_text(json.dumps({
             "security": {"auth": {"selectedType": "oauth-personal"}},
             "telemetry": {"enabled": False},
+            "experimental": {"autoMemory": False},
+            "mcpServers": {},
+            "hooks": {},
+            "model": {"maxSessionTurns": 1},
             "ui": {"accessibility": {"screenReader": True}},
         }))
         if os.name != "posix" or any(os.environ.get(k) for k in PROVIDER_ENV):
@@ -98,14 +259,11 @@ class ManualAuthSession:
         attrs[3] &= ~(termios.ECHO | termios.ECHONL)
         termios.tcsetattr(slave, termios.TCSANOW, attrs)
         self.master = master
-        keep = ("PATH", "HOME", "USERPROFILE", "LANG", "LC_ALL", "TZ")
-        env = {k: os.environ[k] for k in keep if k in os.environ}
-        env.update({"GEMINI_CLI_HOME": str(self.home), "GEMINI_TELEMETRY_ENABLED": "false",
-                    "NO_BROWSER": "true", "TERM": "xterm-256color"})
+        env = _cli_env(self.home, self.system_settings_path, interactive=True)
         try:
             self.process = subprocess.Popen(
                 [str(cli), "--screen-reader", "--approval-mode", "plan"],
-                stdin=slave, stdout=slave, stderr=slave, cwd=work, env=env,
+                stdin=slave, stdout=slave, stderr=slave, cwd=self.work, env=env,
                 shell=False, start_new_session=True, close_fds=True,
             )
         except OSError:
@@ -130,18 +288,8 @@ class ManualAuthSession:
                 self.stop()
                 return
             if self.submitted:
-                # A fixed public success marker only; no retained output or account data.
-                marker = b"Authentication succeeded"
-                for byte in clean:
-                    if byte == marker[self._success_match]:
-                        self._success_match += 1
-                    else:
-                        self._success_match = 1 if byte == marker[0] else 0
-                    if self._success_match == len(marker):
-                        self.state = "CLI_AUTHENTICATED_QUOTA_UNVERIFIED"
-                        self._on_success(self.home)
-                        self.stop()
-                        break
+                # Manual 0.66.0 login has no reliable success text. Discard it all;
+                # a separate bounded official ACP probe performs authentication.
                 return
             if len(self._buffer) + len(clean) > MAX_BODY:
                 self.state = "BLOCKED_AUTH_OUTPUT_LIMIT"
@@ -183,10 +331,11 @@ class ManualAuthSession:
             pass
         finally:
             with self._lock:
-                if self.state in ACTIVE_STATES:
+                if self.state in {"STARTING", "WAITING_FOR_AUTH_CODE"}:
                     self.state = "CLI_AUTH_RESULT_UNVERIFIED"
                 self._buffer.clear()
-                self.stop()
+                if self.state != "VERIFYING":
+                    self.stop()
 
     def _expire(self):
         # Event wait returns promptly when the flow is stopped.
@@ -222,14 +371,49 @@ class ManualAuthSession:
                 self.state = "CLI_AUTH_RESULT_UNVERIFIED"
                 self.stop()
                 raise RequestError(502, "AUTH_INPUT_FAILED") from None
+            threading.Thread(target=self._verify_authentication, daemon=True).start()
             return self.public()
+
+    def _verify_authentication(self):
+        # Allow the official interactive process to finish its own token exchange.
+        # At most three nongeneration ACP probes; the original session TTL wins.
+        for attempt in range(3):
+            remaining = self.deadline - time.monotonic()
+            if remaining <= 0 or self._stopped.wait(min(1.0, max(0.0, remaining))):
+                return
+            with self._lock:
+                if self.state != "VERIFYING":
+                    return
+            remaining = self.deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            authenticated = self.probe(self.cli, self.home, self.work,
+                                       self.system_settings_path, timeout=min(15.0, remaining))
+            if authenticated:
+                with self._lock:
+                    if self.state != "VERIFYING" or time.monotonic() >= self.deadline:
+                        return
+                    try:
+                        self._on_success(self.actor, self.home)
+                    except (RequestError, ValueError, OSError):
+                        self.state = "BLOCKED_AUTH_OWNER_BINDING"
+                        self.stop()
+                        return
+                    self.state = "CLI_AUTHENTICATED_QUOTA_UNVERIFIED"
+                    self.stop()
+                    return
+        with self._lock:
+            if self.state == "VERIFYING":
+                self.state = "CLI_AUTH_RESULT_UNVERIFIED"
+                self.stop()
 
     def public(self):
         with self._lock:
             result = {"session_id": self.id, "status": self.state,
                       "expires_in_seconds": max(0, int(self.deadline - time.monotonic())),
                       "quota": "UNVERIFIED", "model_called": False,
-                      "authenticated": self.state == "CLI_AUTHENTICATED_QUOTA_UNVERIFIED"}
+                      "authenticated": self.state == "CLI_AUTHENTICATED_QUOTA_UNVERIFIED",
+                      "auth_probe": "ACP_SESSION_NEW_NO_GENERATION"}
             if self.state == "WAITING_FOR_AUTH_CODE" and self.url:
                 result["authorization_url"] = self.url
             return result
@@ -253,6 +437,10 @@ class ManualAuthSession:
                     os.killpg(process.pid, signal.SIGKILL)
                 except OSError:
                     pass
+                try:
+                    process.wait(timeout=2)
+                except subprocess.TimeoutExpired:
+                    pass
         if descriptor is not None:
             try:
                 os.close(descriptor)
@@ -261,9 +449,13 @@ class ManualAuthSession:
 
 
 class AuthManager:
-    def __init__(self, cli, auth_root, on_success, factory=ManualAuthSession):
+    def __init__(self, cli, auth_root, on_success, factory=ManualAuthSession,
+                 owner=None, preflight=None, system_settings_path=Path("/etc/gemini-cli/settings.json")):
         self.cli, self.root, self.callback = cli, auth_root, on_success
         self.factory = factory
+        self.owner = owner
+        self.preflight = preflight
+        self.system_settings_path = system_settings_path
         self.session = None
         self.lock = threading.RLock()
 
@@ -274,17 +466,26 @@ class AuthManager:
     def start(self, actor):
         self._actor(actor)
         with self.lock:
+            if self.owner is not None and self.owner.actor is not None:
+                self.owner.require(actor)
             if self.session and self.session.state in ACTIVE_STATES:
                 if hmac.compare_digest(self.session.actor, actor):
                     return self.session.public()
                 raise RequestError(409, "AUTH_SESSION_BUSY")
             if self.cli is None:
                 raise RequestError(503, "CLI_UNAVAILABLE")
-            self.session = self.factory(actor, self.cli, self.root, self.callback)
+            if self.preflight is not None:
+                self.preflight()
+            if self.owner is not None:
+                self.owner.require(actor, bind=True)
+            self.session = self.factory(actor, self.cli, self.root, self.callback,
+                                        system_settings_path=self.system_settings_path)
             return self.session.public()
 
     def get(self, actor, session_id):
         self._actor(actor)
+        if self.owner is not None:
+            self.owner.require(actor)
         if not isinstance(session_id, str) or not SESSION_ID.fullmatch(session_id):
             raise RequestError(400, "INVALID_SESSION_ID")
         with self.lock:
@@ -299,21 +500,45 @@ class Runtime:
         if not isinstance(key, str) or not re.fullmatch(r"[A-Za-z0-9_-]{32,256}", key):
             raise ValueError("GEMINI_BRIDGE_KEY must be a secret of 32 to 256 URL-safe characters")
         self.adapter, self.server_class, self.key = adapter, server_class, key
+        self.owner = OwnerBinding(adapter.config.state_dir)
         auth_root = adapter.config.state_dir / "auth-attempts"
         if auth_root.is_symlink():
             raise ValueError("Unsafe authentication state directory")
         auth_root.mkdir(mode=0o700, parents=True, exist_ok=True)
-        self.auth = AuthManager(adapter.config.cli, auth_root, self.activate_home, auth_factory)
+        self.auth = AuthManager(adapter.config.cli, auth_root, self.activate_home, auth_factory,
+                                owner=self.owner, preflight=self.verify_auth_controls,
+                                system_settings_path=adapter.config.system_settings_file)
 
-    def activate_home(self, home):
+    def verify_auth_controls(self):
+        try:
+            self.adapter._system_controls()
+        except Exception:
+            raise RequestError(503, "BLOCKED_AUTH_SYSTEM_CONTROLS") from None
+
+    def activate_home(self, actor, home):
         # Change a path only; credentials remain opaque and owned by the CLI.
-        self.adapter.config = dataclasses.replace(self.adapter.config, cli_home=home)
+        self.owner.require(actor)
+        home = Path(home)
+        root = (self.adapter.config.state_dir / "auth-attempts").resolve()
+        if home.is_symlink() or home.parent.resolve() != root:
+            raise RequestError(403, "AUTH_HOME_OUTSIDE_BOUNDARY")
+        # A new login never inherits another account/session's free-quota proof.
+        self.adapter.config = dataclasses.replace(self.adapter.config, cli_home=home, gate_file=None)
 
-    def mcp(self, req):
+    def mcp(self, req, actor=None):
         if isinstance(req, dict) and req.get("jsonrpc") == "2.0" and req.get("method") == "server/discover":
             if "id" not in req:
                 return None
             return {"jsonrpc": "2.0", "id": req["id"], "result": {"supportedVersions": ["2026-07-28"], "capabilities": {"tools": {}}}}
+        if isinstance(req, dict) and req.get("method") == "tools/call" and isinstance(req.get("params"), dict) and req["params"].get("name") == "gemini_review":
+            self.owner.require(actor)
+            args = req["params"].get("arguments")
+            if isinstance(args, dict) and set(args) == {"request_id", "prompt"}:
+                raw_id = args["request_id"]
+                if not isinstance(raw_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{8,80}", raw_id):
+                    return self.server_class.error(req.get("id"), -32602, "Invalid request_id")
+                request_id = hashlib.sha256((actor + "\0" + raw_id).encode()).hexdigest()
+                req = {**req, "params": {**req["params"], "arguments": {**args, "request_id": request_id}}}
         server = self.server_class(self.adapter)
         server.initialized = True  # This HTTP transport is deliberately stateless.
         reply = server.handle(req)
@@ -380,9 +605,7 @@ class Handler(BaseHTTPRequestHandler):
                 raise RequestError(400, "OBJECT_REQUIRED")
             rt = self.server.runtime
             if self.path == "/mcp":
-                if payload.get("method") == "tools/call" and isinstance(payload.get("params"), dict) and payload["params"].get("name") == "gemini_review":
-                    rt.auth._actor(self.headers.get("X-Bridge-Actor"))
-                reply = rt.mcp(payload)
+                reply = rt.mcp(payload, self.headers.get("X-Bridge-Actor"))
                 self._reply(200 if reply is not None else 202, reply or {})
                 return
             actor = self.headers.get("X-Bridge-Actor")
