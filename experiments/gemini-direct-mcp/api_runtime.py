@@ -40,6 +40,24 @@ PROJECT_PATTERN = re.compile(r"[a-z][a-z0-9-]{4,61}[a-z0-9]\Z")
 REF_PATTERN = re.compile(r"private:[A-Za-z0-9._/-]{1,200}\Z")
 PASS = "PASS_REAL_GEMINI_API_RESPONSE"
 UNVERIFIED = "UNVERIFIED_GEMINI_API_RESULT"
+METADATA_AUTHENTICATED = "API_METADATA_AUTHENTICATED"
+METADATA_FAILURE_CODES = frozenset("API_METADATA_" + suffix for suffix in (
+    "HTTP_UNAUTHENTICATED", "HTTP_FORBIDDEN", "MODEL_NOT_FOUND", "RATE_LIMITED",
+    "PROVIDER_UNAVAILABLE", "AUTH_TYPE_UNSUPPORTED", "KEY_INVALID", "SERVICE_DISABLED",
+    "KEY_RESTRICTED", "REDIRECT_REJECTED", "TIMEOUT", "TLS_ERROR", "NETWORK_ERROR",
+    "INVALID_RESPONSE", "MODEL_MISMATCH", "METHOD_UNAVAILABLE", "WORKER_UNVERIFIED",
+))
+_ERROR_INFO_REASONS = {
+    "ACCESS_TOKEN_TYPE_UNSUPPORTED": "API_METADATA_AUTH_TYPE_UNSUPPORTED",
+    "API_KEY_INVALID": "API_METADATA_KEY_INVALID",
+    "SERVICE_DISABLED": "API_METADATA_SERVICE_DISABLED",
+    **{reason: "API_METADATA_KEY_RESTRICTED" for reason in (
+        "API_KEY_SERVICE_BLOCKED", "HTTP_REFERRER_BLOCKED", "IP_ADDRESS_BLOCKED",
+        "ANDROID_APP_BLOCKED", "IOS_APP_BLOCKED",
+        "API_KEY_HTTP_REFERRER_BLOCKED", "API_KEY_IP_ADDRESS_BLOCKED",
+        "API_KEY_ANDROID_APP_BLOCKED", "API_KEY_IOS_APP_BLOCKED",
+    )},
+}
 _CHILDREN = set()
 _CHILDREN_LOCK = threading.Lock()
 _CANDIDATE = None
@@ -47,8 +65,9 @@ _CANDIDATE = None
 
 class ApiError(Exception):
     """Static public code only. Never pass an upstream exception here."""
-    def __init__(self, code, http_status=409):
+    def __init__(self, code, http_status=409, provider_http_status=None):
         self.code, self.http_status = code, http_status
+        self.provider_http_status = _public_http_status(provider_http_status)
         super().__init__(code)
 
 
@@ -66,6 +85,23 @@ class _SavedDigestBinding:
 
 def utc_now():
     return datetime.now(timezone.utc).isoformat()
+
+
+def _public_http_status(value):
+    return value if type(value) is int and 100 <= value <= 599 else None
+
+
+def metadata_failure(code="API_METADATA_WORKER_UNVERIFIED", provider_http_status=None):
+    if type(code) is not str or code not in METADATA_FAILURE_CODES:
+        code = "API_METADATA_WORKER_UNVERIFIED"
+    return {"status": code, "provider_http_status": _public_http_status(provider_http_status)}
+
+
+def sanitize_metadata_result(value):
+    if value == {"status": METADATA_AUTHENTICATED}:
+        return {"status": METADATA_AUTHENTICATED}
+    if not isinstance(value, dict): return metadata_failure()
+    return metadata_failure(value.get("status"), value.get("provider_http_status"))
 
 
 def candidate_module():
@@ -114,11 +150,14 @@ def run_child(payload, *, command=None, deadline=DEADLINE_SECONDS):
     command/deadline are internal process-double seams, never HTTP/MCP arguments.
     No key, prompt or evidence is placed in argv, environment or a temporary file.
     """
+    is_metadata = isinstance(payload, dict) and payload.get("operation") == "metadata"
+    def unavailable(code="API_METADATA_WORKER_UNVERIFIED"):
+        return metadata_failure(code) if is_metadata else {"status": UNVERIFIED}
     if not 0 < deadline <= DEADLINE_SECONDS:
-        return {"status": UNVERIFIED}
+        return unavailable()
     data = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode()
     if len(data) > LIMIT:
-        return {"status": UNVERIFIED}
+        return unavailable()
     env = {k: os.environ[k] for k in ("LANG", "LC_ALL", "TZ") if k in os.environ}
     process = None
     reader = writer = None
@@ -155,15 +194,19 @@ def run_child(payload, *, command=None, deadline=DEADLINE_SECONDS):
         writer.start()
         while process.poll() is None:
             remaining = expires - time.monotonic()
-            if remaining <= 0 or overflow.wait(min(0.01, max(0, remaining))):
-                return {"status": UNVERIFIED}
+            if remaining <= 0:
+                return unavailable("API_METADATA_TIMEOUT")
+            if overflow.wait(min(0.01, max(0, remaining))):
+                return unavailable()
         reader.join(timeout=max(0, expires - time.monotonic()))
-        if reader.is_alive() or overflow.is_set() or process.returncode != 0 or time.monotonic() > expires:
-            return {"status": UNVERIFIED}
+        if time.monotonic() > expires:
+            return unavailable("API_METADATA_TIMEOUT")
+        if reader.is_alive() or overflow.is_set() or process.returncode != 0:
+            return unavailable()
         value = json.loads(collected)
-        return value if isinstance(value, dict) else {"status": UNVERIFIED}
+        return value if isinstance(value, dict) else unavailable()
     except Exception:
-        return {"status": UNVERIFIED}
+        return unavailable()
     finally:
         if process is not None:
             _kill(process)
@@ -187,7 +230,8 @@ def _tls_context():
 def metadata_once(api_key):
     """One fixed model GET; no generation, redirects, proxies, retries or logs."""
     connection = None
-    result = {"status": UNVERIFIED}
+    result = metadata_failure("API_METADATA_INVALID_RESPONSE")
+    provider_status = None
     try:
         if type(api_key) is not str or not KEY_PATTERN.fullmatch(api_key):
             return result
@@ -196,7 +240,15 @@ def metadata_once(api_key):
         connection.request("GET", MODEL_PATH, headers={"x-goog-api-key": api_key,
                            "Accept": "application/json", "Accept-Encoding": "identity"})
         response = connection.getresponse()
-        if response.status != 200 or response.getheader("content-encoding", "identity").lower() != "identity":
+        provider_status = _public_http_status(response.status)
+        code = {401: "API_METADATA_HTTP_UNAUTHENTICATED", 403: "API_METADATA_HTTP_FORBIDDEN",
+                404: "API_METADATA_MODEL_NOT_FOUND", 429: "API_METADATA_RATE_LIMITED"}.get(provider_status)
+        if provider_status is not None and 300 <= provider_status <= 399:
+            code = "API_METADATA_REDIRECT_REJECTED"
+        elif provider_status is not None and 500 <= provider_status <= 599:
+            code = "API_METADATA_PROVIDER_UNAVAILABLE"
+        result = metadata_failure(code or "API_METADATA_INVALID_RESPONSE", provider_status)
+        if response.getheader("content-encoding", "identity").lower() != "identity":
             return result
         length = response.getheader("content-length")
         if length is not None and (not length.isdecimal() or int(length) > LIMIT):
@@ -204,17 +256,42 @@ def metadata_once(api_key):
         raw = response.read(LIMIT + 1)
         if len(raw) > LIMIT:
             return result
-        body = json.loads(raw)
-        if (isinstance(body, dict) and body.get("name") == "models/" + MODEL
-                and isinstance(body.get("supportedGenerationMethods"), list)
-                and "generateContent" in body["supportedGenerationMethods"]):
-            result = {"status": "API_METADATA_AUTHENTICATED"}
+        try: body = json.loads(raw)
+        except (ValueError, UnicodeError): return result
+        if provider_status != 200:
+            # Only the fixed ErrorInfo type/reason is selected. Never copy its
+            # message, metadata, account/project values, raw body or headers.
+            if code != "API_METADATA_REDIRECT_REJECTED" and isinstance(body, dict):
+                error = body.get("error")
+                details = error.get("details") if isinstance(error, dict) else None
+                if isinstance(details, list):
+                    for detail in details:
+                        if (isinstance(detail, dict) and detail.get("@type") == "type.googleapis.com/google.rpc.ErrorInfo"
+                                and detail.get("domain") in {"googleapis.com", "generativelanguage.googleapis.com"}
+                                and type(detail.get("reason")) is str and detail["reason"] in _ERROR_INFO_REASONS):
+                            result = metadata_failure(_ERROR_INFO_REASONS[detail["reason"]], provider_status)
+                            break
+            return result
+        if not isinstance(body, dict) or not isinstance(body.get("name"), str):
+            return result
+        if body["name"] != "models/" + MODEL:
+            return metadata_failure("API_METADATA_MODEL_MISMATCH", provider_status)
+        methods = body.get("supportedGenerationMethods")
+        if not isinstance(methods, list) or "generateContent" not in methods:
+            return metadata_failure("API_METADATA_METHOD_UNAVAILABLE", provider_status)
+        result = {"status": METADATA_AUTHENTICATED}
+    except TimeoutError:
+        result = metadata_failure("API_METADATA_TIMEOUT", provider_status)
+    except ssl.SSLError:
+        result = metadata_failure("API_METADATA_TLS_ERROR", provider_status)
+    except OSError:
+        result = metadata_failure("API_METADATA_NETWORK_ERROR", provider_status)
     except Exception:
         pass
     finally:
         if connection is not None:
             try: connection.close()
-            except Exception: result = {"status": UNVERIFIED}
+            except Exception: result = metadata_failure("API_METADATA_NETWORK_ERROR", provider_status)
     return result
 
 
@@ -399,16 +476,41 @@ class ApiRuntime:
                 if self._json("api-auth.json") is not None:
                     auth = self._auth(api_key)
             if auth is None:
-                result = self.runner({"operation": "metadata", "api_key": api_key})
-                if result != {"status": "API_METADATA_AUTHENTICATED"}:
-                    raise ApiError("API_KEY_AUTHENTICATION_UNVERIFIED", 502)
+                try: result = sanitize_metadata_result(self.runner({"operation": "metadata", "api_key": api_key}))
+                except Exception: result = metadata_failure()
+                if result != {"status": METADATA_AUTHENTICATED}:
+                    self._save_json("api-registration.json", {"result": "FAILED", "code": result["status"],
+                                    "provider_http_status": result["provider_http_status"], "observed_at": utc_now()})
+                    raise ApiError(result["status"], 502, result["provider_http_status"])
                 auth = {"owner": actor, "project_id": self._project(),
                         "api_key_sha256": hashlib.sha256(api_key.encode()).hexdigest(), "auth_verified_at": utc_now()}
                 if existing is None:
                     self._write("api-key", api_key.encode("ascii"), replace=False)
                 self._save_json("api-auth.json", auth)
+                self._save_json("api-registration.json", {"result": "SUCCEEDED", "code": METADATA_AUTHENTICATED,
+                                "provider_http_status": 200, "observed_at": utc_now()})
             return {"status": "API_KEY_AUTHENTICATED_FREE_EVIDENCE_REQUIRED", "configured": True,
                     "auth_verified_at": auth["auth_verified_at"], "model": MODEL, "model_called": False}
+
+    def _last_registration(self):
+        record = self._json("api-registration.json")
+        if record is None: return None
+        valid = (set(record) == {"result", "code", "provider_http_status", "observed_at"}
+                 and type(record.get("observed_at")) is str and len(record["observed_at"]) <= 40
+                 and type(record.get("code")) is str
+                 and (record.get("provider_http_status") is None or _public_http_status(record["provider_http_status"]) is not None))
+        success = (record.get("result") == "SUCCEEDED" and record.get("code") == METADATA_AUTHENTICATED
+                   and type(record.get("provider_http_status")) is int and record["provider_http_status"] == 200)
+        failure = record.get("result") == "FAILED" and type(record.get("code")) is str and record["code"] in METADATA_FAILURE_CODES
+        if not valid or not (success or failure): raise ApiError("BLOCKED_UNSAFE_API_STORAGE", 503)
+        try:
+            stamp = datetime.fromisoformat(record["observed_at"])
+            if stamp.tzinfo is None: raise ValueError()
+            stamp = stamp.astimezone(timezone.utc).isoformat()
+        except (ValueError, OverflowError):
+            raise ApiError("BLOCKED_UNSAFE_API_STORAGE", 503) from None
+        return {"result": record["result"], "code": record["code"],
+                "provider_http_status": record["provider_http_status"], "observed_at": stamp}
 
     def _evidence(self, key):
         return self._evidence_for_digest(hashlib.sha256(key.encode()).hexdigest())
@@ -541,10 +643,11 @@ class ApiRuntime:
     def status(self):
         result = {"status": "API_KEY_NOT_CONFIGURED", "configured": False, "auth_verified_at": None,
                   "model": MODEL, "project_id": None, "free_evidence_status": "MISSING", "generation_ready": False,
-                  "last_response_at": None, "last_result_status": None}
+                  "last_response_at": None, "last_result_status": None, "last_registration": None}
         # Only local private metadata/ledger reads; no worker, auth, GET or model call.
         with self.lock:
             try:
+                result["last_registration"] = self._last_registration()
                 last = self._json("api-last-result.json")
                 if last and last.get("last_result_status") in {PASS, UNVERIFIED}:
                     result["last_result_status"] = last["last_result_status"]

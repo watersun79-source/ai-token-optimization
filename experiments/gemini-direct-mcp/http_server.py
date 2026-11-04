@@ -22,7 +22,7 @@ import time
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
-from api_runtime import ApiRuntime, ApiError, stop_children
+from api_runtime import ApiRuntime, ApiError, METADATA_FAILURE_CODES, stop_children
 
 MAX_BODY = 65_536
 ACTOR = re.compile(r"[A-Za-z0-9:_.-]{1,200}\Z")
@@ -710,7 +710,10 @@ class Handler(BaseHTTPRequestHandler):
         except RequestError as exc:
             self._reply(exc.status, {"error": exc.code})
         except ApiError as exc:
-            self._reply(exc.http_status, {"error": exc.code})
+            result = {"error": exc.code}
+            if self.path == "/api-key/register" and exc.code in METADATA_FAILURE_CODES:
+                result.update(provider_http_status=exc.provider_http_status, model_called=False)
+            self._reply(exc.http_status, result)
         except (ValueError, UnicodeError, TimeoutError, OSError):
             self._reply(400, {"error": "INVALID_REQUEST"})
         except Exception:

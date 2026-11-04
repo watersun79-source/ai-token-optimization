@@ -18,6 +18,12 @@ The host browser's automated credential prompt was rejected by automatic approva
 
 ## Live state
 
+Registration failures are distinct from never having attempted registration. Five historical Site requests to `/api-key/register` returned HTTP 503 on 2026-11-04; their upstream Google reason was discarded by the earlier implementation and remains unknown. Do not label those events as missing user input or infer a Google 401/403 from the Site's 503.
+
+The fixed metadata GET now classifies failures using a small static code allowlist, numeric HTTP status, and narrowly validated Google ErrorInfo reasons. No raw provider body, message, header, account, project, key or key hash is reported. The local 0600 `api-registration.json` stores only result, fixed code, provider HTTP status and observation time. `api_connection.last_registration` exposes only that sanitized record. A failed metadata check still stores no key/auth/free evidence and consumes no generation budget. Missing diagnostics do not prove that no prior attempt happened, especially after an ephemeral runtime restart.
+
+The private Site returns only the same fixed error codes and renders them in Korean. It never retries registration automatically. Ask the user only for the non-secret error classification when more information is needed; never ask them to paste a key into chat.
+
 Both existing private Sites poll read-only status every 30 seconds while visible and online. `api_connection` separates key presence, recorded metadata authentication, Free evidence, readiness and actual response time. Cached CLI installation metadata remains a separately labelled legacy view. Readiness is not proof of a Gemini response or a provider quota guarantee.
 
 The current free Render service has an ephemeral filesystem. The SQLite budget persists across process restarts on that filesystem, but a platform restart/redeploy can erase keys and the ledger. Missing state closes the gate; do not automatically re-register, re-arm or retry an uncertain prior run. This is not persistent secret storage or a 24/7 service guarantee. No paid disk, service upgrade or billing account is provisioned.

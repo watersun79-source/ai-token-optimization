@@ -140,6 +140,23 @@ class HTTPTests(unittest.TestCase):
         self.assertNotIn('api_key',schema)
         self.assertIn('operator',schema.lower())
 
+    def test_failed_registration_returns_only_fixed_diagnostics_and_local_status_record(self):
+        self.runtime.api.allowed_project_id='offline-fixture-project'
+        self.runtime.api.runner=lambda payload:{'status':'API_METADATA_SERVICE_DISABLED',
+                                                'provider_http_status':403,'raw':'OFFLINE_PRIVATE_ERROR'}
+        code='offline-fixture-key-for-http-000000001'
+        status,result=self.request('/api-key/register',{'api_key':code})
+        self.assertEqual(status,502)
+        self.assertEqual(result,{'error':'API_METADATA_SERVICE_DISABLED','provider_http_status':403,'model_called':False})
+        _,reply=self.request('/mcp',{'jsonrpc':'2.0','id':9,'method':'tools/call',
+                                   'params':{'name':'gemini_status','arguments':{}}})
+        snapshot=reply['result']['structuredContent']['api_connection']
+        self.assertEqual(snapshot['last_registration']['code'],'API_METADATA_SERVICE_DISABLED')
+        self.assertFalse(snapshot['configured'])
+        self.assertFalse(snapshot['generation_ready'])
+        for secret in [code,'OFFLINE_PRIVATE_ERROR','raw']:
+            self.assertNotIn(secret,json.dumps([result,snapshot]))
+
     def test_remote_mcp_api_prepare_review_and_status_use_no_legacy_fallback(self):
         self.assertTrue(hasattr(self.runtime,'api'),'remote API runtime is not wired')
         self.runtime.api.allowed_project_id='offline-fixture-project'

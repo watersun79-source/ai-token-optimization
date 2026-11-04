@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import ssl
 import sys
 import tempfile
 import threading
@@ -117,10 +118,43 @@ class ApiRuntimeTests(unittest.TestCase):
 
     def test_key_metadata_failure_never_persists_or_exposes_upstream(self):
         self.runtime.runner=lambda payload:{'status':'unsafe-'+KEY,'upstream':'raw-provider-error'}
-        with self.assertRaisesRegex(api.ApiError,'API_KEY_AUTHENTICATION_UNVERIFIED') as error:
+        with self.assertRaisesRegex(api.ApiError,'API_METADATA_WORKER_UNVERIFIED') as error:
             self.register()
         self.assertNotIn(KEY,str(error.exception))
         self.assertFalse(self.runtime.key_path.exists())
+
+    def test_registration_records_only_sanitized_failure_and_does_not_configure_or_spend(self):
+        self.runtime.runner=lambda payload:{'status':'API_METADATA_AUTH_TYPE_UNSUPPORTED',
+                                             'provider_http_status':401,'raw_message':KEY}
+        with self.assertRaisesRegex(api.ApiError,'^API_METADATA_AUTH_TYPE_UNSUPPORTED$') as error:
+            self.register()
+        self.assertEqual(error.exception.http_status,502)
+        self.assertEqual(error.exception.provider_http_status,401)
+        record=self.runtime._json('api-registration.json')
+        self.assertEqual(set(record),{'result','code','provider_http_status','observed_at'})
+        self.assertEqual((record['result'],record['code'],record['provider_http_status']),
+                         ('FAILED','API_METADATA_AUTH_TYPE_UNSUPPORTED',401))
+        self.assertEqual((self.runtime.root/'api-registration.json').stat().st_mode&0o777,0o600)
+        for name in ['api-key','api-auth.json','operator-evidence.json']:
+            self.assertFalse((self.runtime.root/name).exists())
+        with self.runtime._db() as db:
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM requests').fetchone()[0],0)
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM consumed_gates').fetchone()[0],0)
+        with patch.object(self.runtime,'_key',side_effect=AssertionError('status key read')):
+            status=self.runtime.status()
+        self.assertEqual(status.get('last_registration'),record)
+        self.assertFalse(status['configured'])
+        self.assertFalse(status['generation_ready'])
+        self.assertNotIn(KEY,json.dumps([record,status]))
+
+    def test_success_registration_record_does_not_issue_free_evidence(self):
+        self.register()
+        record=self.runtime.status().get('last_registration')
+        self.assertIsInstance(record,dict)
+        self.assertEqual((record['result'],record['code'],record['provider_http_status']),
+                         ('SUCCEEDED','API_METADATA_AUTHENTICATED',200))
+        self.assertIsNotNone(datetime.fromisoformat(record['observed_at']).tzinfo)
+        self.assertEqual(self.runtime.status()['free_evidence_status'],'MISSING')
 
     def test_explicit_same_key_registration_can_recover_missing_auth_metadata(self):
         self.register()
@@ -305,6 +339,65 @@ class ApiRuntimeTests(unittest.TestCase):
 class ProcessAndMetadataTests(unittest.TestCase):
     def setUp(self): self.assertIsNotNone(api,'API runtime is not implemented')
 
+    def metadata_fixture(self,*,status=200,body=None,headers=None,error=None):
+        raw=(json.dumps(body).encode() if not isinstance(body,bytes) else body)
+        class Response:
+            def __init__(self): self.status=status
+            def getheader(self,name,default=None): return (headers or {}).get(name,default)
+            def read(self,limit): return raw[:limit]
+        class Connection:
+            def __init__(self,*args,**kwargs): pass
+            def set_debuglevel(self,value): pass
+            def request(self,*args,**kwargs):
+                if error is not None: raise error
+            def getresponse(self): return Response()
+            def close(self): pass
+        with patch('api_runtime.http.client.HTTPSConnection',Connection):
+            return api.metadata_once(KEY)
+
+    def test_metadata_http_statuses_are_static_and_preserve_only_numeric_status(self):
+        cases=[(401,'HTTP_UNAUTHENTICATED'),(403,'HTTP_FORBIDDEN'),(404,'MODEL_NOT_FOUND'),
+               (429,'RATE_LIMITED'),(500,'PROVIDER_UNAVAILABLE'),(503,'PROVIDER_UNAVAILABLE'),
+               (302,'REDIRECT_REJECTED')]
+        for status,code in cases:
+            with self.subTest(status=status):
+                result=self.metadata_fixture(status=status,body={'error':{'message':KEY,'account':'private-account'}})
+                self.assertEqual(result,{'status':'API_METADATA_'+code,'provider_http_status':status})
+                self.assertNotIn(KEY,json.dumps(result))
+
+    def test_metadata_error_info_reasons_are_exactly_allowlisted(self):
+        cases=[(401,'ACCESS_TOKEN_TYPE_UNSUPPORTED','AUTH_TYPE_UNSUPPORTED'),
+               (400,'API_KEY_INVALID','KEY_INVALID'),(403,'SERVICE_DISABLED','SERVICE_DISABLED'),
+               *[(403,reason,'KEY_RESTRICTED') for reason in ['API_KEY_SERVICE_BLOCKED','HTTP_REFERRER_BLOCKED',
+                 'IP_ADDRESS_BLOCKED','ANDROID_APP_BLOCKED','IOS_APP_BLOCKED',
+                 'API_KEY_HTTP_REFERRER_BLOCKED','API_KEY_IP_ADDRESS_BLOCKED',
+                 'API_KEY_ANDROID_APP_BLOCKED','API_KEY_IOS_APP_BLOCKED']]]
+        for status,reason,code in cases:
+            with self.subTest(reason=reason):
+                body={'error':{'message':KEY,'details':[{'@type':'type.googleapis.com/google.rpc.ErrorInfo',
+                      'domain':'googleapis.com','reason':reason,'metadata':{'account':KEY,'consumer':KEY}}]}}
+                self.assertEqual(self.metadata_fixture(status=status,body=body),
+                                 {'status':'API_METADATA_'+code,'provider_http_status':status})
+        body={'error':{'details':[{'@type':'untrusted-type','reason':'ACCESS_TOKEN_TYPE_UNSUPPORTED'}]}}
+        self.assertEqual(self.metadata_fixture(status=401,body=body),
+                         {'status':'API_METADATA_HTTP_UNAUTHENTICATED','provider_http_status':401})
+        body={'error':{'details':[{'@type':'type.googleapis.com/google.rpc.ErrorInfo',
+              'domain':'untrusted.invalid','reason':'ACCESS_TOKEN_TYPE_UNSUPPORTED'}]}}
+        self.assertEqual(self.metadata_fixture(status=401,body=body),
+                         {'status':'API_METADATA_HTTP_UNAUTHENTICATED','provider_http_status':401})
+
+    def test_metadata_invalid_body_model_method_and_transport_failures_are_distinct(self):
+        cases=[(b'not JSON '+KEY.encode(),'INVALID_RESPONSE'),([], 'INVALID_RESPONSE'),
+               ({'name':'models/wrong-model','supportedGenerationMethods':['generateContent']},'MODEL_MISMATCH'),
+               ({'name':'models/'+MODEL,'supportedGenerationMethods':['countTokens']},'METHOD_UNAVAILABLE')]
+        for body,code in cases:
+            with self.subTest(code=code):
+                self.assertEqual(self.metadata_fixture(body=body),{'status':'API_METADATA_'+code,'provider_http_status':200})
+        for error,code in [(TimeoutError(KEY),'TIMEOUT'),(ssl.SSLError(KEY),'TLS_ERROR'),(OSError(KEY),'NETWORK_ERROR')]:
+            with self.subTest(code=code):
+                self.assertEqual(self.metadata_fixture(error=error),{'status':'API_METADATA_'+code,'provider_http_status':None})
+        self.assertEqual(self.metadata_fixture(body=b'x'*65537),{'status':'API_METADATA_INVALID_RESPONSE','provider_http_status':200})
+
     def test_process_receives_secrets_only_through_stdin_and_scrubs_environment(self):
         with tempfile.TemporaryDirectory() as folder:
             script=Path(folder)/'offline-worker.py'
@@ -325,11 +418,14 @@ class ProcessAndMetadataTests(unittest.TestCase):
             start=time.monotonic()
             result=api.run_child({'operation':'metadata','api_key':KEY},command=[sys.executable,str(script)],deadline=0.15)
             self.assertLess(time.monotonic()-start,2)
-            self.assertEqual(result,{'status':'UNVERIFIED_GEMINI_API_RESULT'})
+            self.assertEqual(result,{'status':'API_METADATA_TIMEOUT','provider_http_status':None})
             with self.assertRaises(ProcessLookupError): os.kill(int(pid.read_text()),0)
             script.write_text('print("x"*70000)\n')
             self.assertEqual(api.run_child({'operation':'metadata','api_key':KEY},command=[sys.executable,str(script)]),
-                             {'status':'UNVERIFIED_GEMINI_API_RESULT'})
+                             {'status':'API_METADATA_WORKER_UNVERIFIED','provider_http_status':None})
+            script.write_text('import sys\nsys.exit(3)\n')
+            self.assertEqual(api.run_child({'operation':'metadata','api_key':KEY},command=[sys.executable,str(script)]),
+                             {'status':'API_METADATA_WORKER_UNVERIFIED','provider_http_status':None})
 
     def test_metadata_has_one_fixed_direct_tls_get_and_no_raw_error_output(self):
         seen=[]
@@ -356,7 +452,7 @@ class ProcessAndMetadataTests(unittest.TestCase):
         self.assertEqual(seen[3][1]['headers']['x-goog-api-key'],AQ_KEY)
         Response.status=302
         with patch('api_runtime.http.client.HTTPSConnection',Connection):
-            self.assertEqual(api.metadata_once(KEY),{'status':'UNVERIFIED_GEMINI_API_RESULT'})
+            self.assertEqual(api.metadata_once(KEY),{'status':'API_METADATA_REDIRECT_REJECTED','provider_http_status':302})
 
 
 if __name__=='__main__': unittest.main()
