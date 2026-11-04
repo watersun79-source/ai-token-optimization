@@ -27,7 +27,7 @@ PROVIDER_ENV = (
     "GOOGLE_CLOUD_PROJECT", "GOOGLE_CLOUD_PROJECT_ID", "GOOGLE_CLOUD_LOCATION",
 )
 SECRET = re.compile(
-    r"AIza[\w-]{20,}|sk-[\w-]{20,}|-----BEGIN (?:RSA |EC )?PRIVATE KEY-----|"
+    r"AQ\.[A-Za-z0-9_-]{16,}|AIza[\w-]{20,}|sk-[\w-]{20,}|-----BEGIN (?:RSA |EC )?PRIVATE KEY-----|"
     r"(?:access_token|refresh_token|authorization_code)\s*[=:]\s*[\"']?[A-Za-z0-9_./+\-]{16,}", re.I
 )
 DENY_POLICY = '[[rule]]\ntoolName = "*"\ndecision = "deny"\npriority = 999\n'

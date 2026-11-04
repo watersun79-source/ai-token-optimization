@@ -2,6 +2,10 @@
 
 The hosted path is ChatGPT → the existing owner-private Sites MCP gateway → the existing bearer-protected Render free runner → Google's official Gemini REST API. Y700 and the user's phone are not execution hosts. The fixed generation model is `gemini-3.5-flash-lite`.
 
+Google AI Studio authorization keys use the `AQ.` public prefix and are sent only in the `x-goog-api-key` header. The private registration form and both Python validators accept that prefix with 16–253 ASCII letters, digits, underscores or hyphens after the dot, while retaining the existing 16–256-character non-dot key format. Extra dots, whitespace and control characters are rejected. Syntax acceptance is not authentication, project binding, Free-tier or quota verification. The public prefix is also detected and rejected in model prompts and model output. Tests use unmistakably synthetic strings; no chat-provided credential is used.
+
+The host browser's automated credential prompt was rejected by automatic approval review because it labels API-key registration as sign-in. Do not relabel the form as a login, retry automated collection, use the clipboard, read page secrets or bypass that rejection through another surface. Use the existing private manual form under the user's control. A credential pasted into chat must not be copied into tests, reports or model arguments.
+
 ## Boundaries
 
 - Only `/healthz` is public. All runner operations require the bridge bearer. Key registration, evidence preparation and review also require the bound Sites owner actor.
@@ -32,4 +36,6 @@ Official references:
 - https://aistudio.google.com/api-reference/generate-content
 - https://aistudio.google.com/docs/pricing
 - https://aistudio.google.com/docs/billing
+- https://aistudio.google.com/docs/api-key
+- https://discuss.ai.google.dev/t/new-aq-auth-key-returns-401-unauthenticated-access-token-type-unsupported-with-google-genai/186891
 - https://antigravity.google/docs/faq/

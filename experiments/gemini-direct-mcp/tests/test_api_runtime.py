@@ -25,6 +25,7 @@ except ImportError:
     api=None
 
 KEY='offline-fixture-api-key-0000000000000001'
+AQ_KEY='AQ.OFFLINE_SYNTHETIC_NOT_A_PROVIDER_CREDENTIAL_0001'
 ACTOR='offline-api-owner'
 PROJECT='offline-fixture-project'
 MODEL='gemini-3.5-flash-lite'
@@ -72,6 +73,40 @@ class ApiRuntimeTests(unittest.TestCase):
         self.assertFalse(status['generation_ready'])
         self.assertNotIn(KEY,json.dumps([result,status]))
         self.assertNotIn('api_key_sha256',json.dumps([result,status]))
+
+    def test_aq_key_registration_and_evidence_use_offline_doubles_only(self):
+        try:
+            result=self.runtime.register(ACTOR,AQ_KEY)
+        except api.ApiError:
+            self.fail('A supported synthetic AQ. key was rejected')
+        self.assertEqual(result['status'],'API_KEY_AUTHENTICATED_FREE_EVIDENCE_REQUIRED')
+        self.assertEqual(self.runtime._key(),AQ_KEY)
+        self.runtime.prepare(ACTOR,self.evidence())
+        self.assertTrue(self.runtime.status()['generation_ready'])
+        self.assertNotIn(AQ_KEY,json.dumps([result,self.runtime.status()]))
+        self.assertEqual([call['operation'] for call in self.calls],['metadata'])
+
+    def test_aq_format_rejects_other_dots_whitespace_controls_and_oversize_before_metadata(self):
+        invalid=['AQ.','AQ.'+'O'*15,'AQ.'+'O'*254,'AX.'+'O'*20,
+                 AQ_KEY+'.extra',' '+AQ_KEY,AQ_KEY+'\r\n',AQ_KEY+'\t',
+                 'AQ.OFFLINE.OTHER_TOKEN_0001','AQ.'+'한'*20]
+        for key in invalid:
+            with self.subTest(length=len(key)),self.assertRaisesRegex(api.ApiError,'^INVALID_API_KEY_FORMAT$'):
+                self.runtime.register(ACTOR,key)
+        self.assertEqual(self.calls,[])
+
+    def test_aq_secret_in_evidence_refs_is_rejected_without_saving_or_generation(self):
+        self.register()
+        args=self.evidence()
+        args['evidence_refs']['auth']='private:fixture/'+AQ_KEY
+        with self.assertRaisesRegex(api.ApiError,'^INVALID_PRIVATE_API_EVIDENCE_REFS$'):
+            self.runtime.prepare(ACTOR,args)
+        self.assertFalse((self.runtime.root/'operator-evidence.json').exists())
+        with self.runtime._db() as db:
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM requests').fetchone()[0],0)
+            self.assertEqual(db.execute('SELECT COUNT(*) FROM consumed_gates').fetchone()[0],0)
+        self.assertEqual(self.runtime.status()['free_evidence_status'],'MISSING')
+        self.assertEqual([call['operation'] for call in self.calls],['metadata'])
 
     def test_other_actor_and_unapproved_key_replacement_are_blocked(self):
         self.register()
@@ -313,10 +348,12 @@ class ProcessAndMetadataTests(unittest.TestCase):
             def close(self): pass
         with patch('api_runtime.http.client.HTTPSConnection',Connection):
             self.assertEqual(api.metadata_once(KEY),{'status':'API_METADATA_AUTHENTICATED'})
+            self.assertEqual(api.metadata_once(AQ_KEY),{'status':'API_METADATA_AUTHENTICATED'})
         self.assertEqual(seen[0][0],'generativelanguage.googleapis.com')
         self.assertTrue(seen[0][1]['context'].check_hostname)
         self.assertEqual(seen[1][0],('GET','/v1beta/models/gemini-3.5-flash-lite'))
         self.assertEqual(seen[1][1]['headers']['x-goog-api-key'],KEY)
+        self.assertEqual(seen[3][1]['headers']['x-goog-api-key'],AQ_KEY)
         Response.status=302
         with patch('api_runtime.http.client.HTTPSConnection',Connection):
             self.assertEqual(api.metadata_once(KEY),{'status':'UNVERIFIED_GEMINI_API_RESULT'})

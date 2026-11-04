@@ -20,6 +20,7 @@ import uuid
 
 NOW = datetime(2026, 11, 4, 12, 0, tzinfo=timezone.utc)
 SYNTHETIC_KEY = "offline-fixture-key-not-a-provider-credential"
+SYNTHETIC_AQ_KEY = "AQ.OFFLINE_SYNTHETIC_NOT_A_PROVIDER_CREDENTIAL_0001"
 PROMPT = "Return the word ready."
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -136,6 +137,52 @@ class CandidateTests(unittest.TestCase):
         self.assert_blocked_without_connection(
             self.client(), self.direct.OperatorEvidence.from_mapping(sample)
         )
+
+    def test_aq_key_format_is_bounded_and_disabled_by_default(self):
+        for key in (SYNTHETIC_AQ_KEY, "AQ." + "O" * 16, "AQ." + "O" * 253,
+                    "O" * 16, "O" * 256):
+            with self.subTest(length=len(key), aq=key.startswith("AQ.")):
+                try:
+                    config = self.direct.Config(api_key=key)
+                except self.direct.CandidateError:
+                    self.fail("A supported synthetic key format was rejected")
+                self.assertFalse(config.enabled)
+                self.assertNotIn(key, repr(config))
+        invalid = ("AQ.", "AQ." + "O" * 15, "AQ." + "O" * 254,
+                   "O" * 15, "O" * 257, "AX." + "O" * 20,
+                   SYNTHETIC_AQ_KEY + ".extra", " " + SYNTHETIC_AQ_KEY,
+                   SYNTHETIC_AQ_KEY + "\r\n", SYNTHETIC_AQ_KEY + "\t",
+                   "AQ.OFFLINE.OTHER_TOKEN_0001", "AQ." + "한" * 20)
+        for key in invalid:
+            with self.subTest(length=len(key)), self.assertRaisesRegex(self.direct.CandidateError, "^KEY_INVALID$"):
+                self.direct.Config(api_key=key)
+
+    def test_aq_key_in_prompt_or_response_is_redacted_without_provider_io(self):
+        try:
+            client = self.client(key=SYNTHETIC_AQ_KEY)
+        except self.direct.CandidateError:
+            self.fail("The synthetic AQ. key format must reach the secret checks")
+        evidence = self.evidence(api_key_sha256=hashlib.sha256(SYNTHETIC_AQ_KEY.encode()).hexdigest())
+        self.assert_blocked_without_connection(client, evidence, prompt="Do not send " + SYNTHETIC_AQ_KEY)
+        echoed = json.loads((FIXTURES / "success.json").read_text())
+        echoed["candidates"][0]["content"]["parts"][0]["text"] = SYNTHETIC_AQ_KEY
+        with self.assertRaisesRegex(self.direct.CandidateError, "^RESPONSE_SECRET_REDACTED$") as error:
+            self.run_fixture(client, evidence, ResponseFixture(json.dumps(echoed).encode()))
+        self.assertNotIn(SYNTHETIC_AQ_KEY, str(error.exception))
+
+    def test_other_aq_key_in_prompt_or_response_is_also_rejected(self):
+        self.assert_blocked_without_connection(self.client(), self.evidence(), prompt=SYNTHETIC_AQ_KEY)
+        echoed = json.loads((FIXTURES / "success.json").read_text())
+        echoed["candidates"][0]["content"]["parts"][0]["text"] = SYNTHETIC_AQ_KEY
+        with self.assertRaisesRegex(self.direct.CandidateError, "^RESPONSE_SECRET_REDACTED$") as error:
+            self.run_fixture(self.client(), self.evidence(), ResponseFixture(json.dumps(echoed).encode()))
+        self.assertNotIn(SYNTHETIC_AQ_KEY, str(error.exception))
+
+    def test_aq_key_in_operator_evidence_refs_is_rejected_before_http(self):
+        refs = verified_fixture()["evidence_refs"]
+        refs["auth"] = "private:fixture/" + SYNTHETIC_AQ_KEY
+        evidence = self.evidence(evidence_refs=refs)
+        self.assert_blocked_without_connection(self.client(), evidence)
 
     def test_changed_key_model_paid_status_or_unverified_operator_fact_blocks_http(self):
         for changed in (

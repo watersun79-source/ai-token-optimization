@@ -44,6 +44,7 @@ else:
     if mode=='large': print('X'*200000); sys.exit(0)
     if mode=='invalid': print('invalid JSON'); sys.exit(0)
     if mode=='secret': print(json.dumps({'response':'AIza'+'a'*30})); sys.exit(0)
+    if mode=='auth-key-secret': print(json.dumps({'response':'AQ.'+'OFFLINE_SYNTHETIC_ONLY_'*2})); sys.exit(0)
     print('OFFLINE_TEST_STDERR_SENTINEL',file=sys.stderr)
     print(json.dumps({'response':'OFFLINE_TEST_EXECUTABLE_RESPONSE'}))
 ''')
@@ -233,6 +234,19 @@ else:
         for rid,prompt in [('bad id; echo leak','plan'),('request-0001','AIza'+'a'*25),('request-0001','bad\x00input')]:
             with self.assertRaises(Blocked): self.adapter.review(rid,prompt)
         self.assertEqual(self.calls(),0)
+
+    def test_auth_key_cannot_enter_model_prompt(self):
+        # Public prefix plus an unmistakably synthetic payload, never a credential.
+        with self.assertRaisesRegex(Blocked, 'BLOCKED_SECRET_LIKE_OR_CONTROL_INPUT'):
+            self.adapter.review('request-auth-key', 'Review AQ.'+'OFFLINE_SYNTHETIC_ONLY_'*2)
+        self.assertEqual(self.calls(),0)
+
+    def test_auth_key_output_is_never_returned(self):
+        self.verified_gate(gate_id='offline-auth-key-gate')
+        (self.root/'mode').write_text('auth-key-secret')
+        result=self.adapter.review('request-auth-output','Review this public plan.')
+        self.assertEqual(result['status'],'BLOCKED_SECRET_LIKE_OUTPUT')
+        self.assertIsNone(result['response'])
 
     def test_real_subprocess_runner_fixture_and_durable_deduplication(self):
         self.verified_gate()

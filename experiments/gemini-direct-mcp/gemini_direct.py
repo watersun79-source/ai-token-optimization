@@ -33,6 +33,8 @@ _BODY_LIMIT = 64 * 1024
 _TIMEOUT_SECONDS = 30
 _MAX_EVIDENCE_AGE_SECONDS = 15 * 60
 _KEY_ENVIRONMENT_NAME = "GEMINI_DIRECT_API_KEY"
+_KEY_PATTERN = re.compile(r"(?:[A-Za-z0-9_-]{16,256}|AQ\.[A-Za-z0-9_-]{16,253})\Z")
+_AQ_SECRET = re.compile(r"AQ\.[A-Za-z0-9_-]{16,}")
 _GENERATION_CONFIG = {
     "candidateCount": 1,
     "maxOutputTokens": 256,
@@ -70,7 +72,7 @@ class Config:
     __slots__ = ("__api_key", "enabled")
 
     def __init__(self, *, api_key: str, enabled: bool = False):
-        if type(api_key) is not str or re.fullmatch(r"[A-Za-z0-9_-]{16,256}", api_key) is None:
+        if type(api_key) is not str or _KEY_PATTERN.fullmatch(api_key) is None:
             raise CandidateError("KEY_INVALID")
         if type(enabled) is not bool:
             raise CandidateError("ENABLE_FLAG_INVALID")
@@ -142,7 +144,7 @@ class OperatorEvidence:
         refs = data.get("evidence_refs")
         if not isinstance(refs, Mapping) or set(refs) != _REF_FIELDS:
             raise CandidateError("EVIDENCE_REFERENCES_MISSING")
-        if any(type(value) is not str or re.fullmatch(r"[A-Za-z0-9:._/-]{1,256}", value) is None
+        if any(type(value) is not str or re.fullmatch(r"[A-Za-z0-9:._/-]{1,256}", value) is None or _AQ_SECRET.search(value)
                for value in refs.values()):
             raise CandidateError("EVIDENCE_REFERENCES_INVALID")
         observed_at = data.get("observed_at")
@@ -224,7 +226,7 @@ def _tls_context() -> ssl.SSLContext:
 def _request_body(prompt: str, config: Config) -> bytes:
     if type(prompt) is not str or not prompt.strip():
         raise CandidateError("PROMPT_INVALID")
-    if config._header_value() in prompt:
+    if config._header_value() in prompt or _AQ_SECRET.search(prompt):
         raise CandidateError("SECRET_IN_PROMPT")
     if len(prompt) > _BODY_LIMIT:
         raise CandidateError("REQUEST_TOO_LARGE")
@@ -331,7 +333,7 @@ def _parse_response(raw: bytes, config: Config) -> TextResult:
     text = "".join(text_parts)
     if not text:
         raise CandidateError("RESPONSE_TEXT_EMPTY")
-    if config._header_value() in text:
+    if config._header_value() in text or _AQ_SECRET.search(text):
         raise CandidateError("RESPONSE_SECRET_REDACTED")
     usage = {}
     metadata = payload.get("usageMetadata", {})

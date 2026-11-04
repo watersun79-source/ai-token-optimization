@@ -34,7 +34,8 @@ HOST = "generativelanguage.googleapis.com"
 MODEL_PATH = "/v1beta/models/" + MODEL
 REF_FIELDS = {"auth", "project_binding", "free_tier", "billing", "daily_quota"}
 PREPARE_FIELDS = {"project_id", "observed_at", "quota_day_pacific", "remaining_requests", "evidence_refs"}
-KEY_PATTERN = re.compile(r"[A-Za-z0-9_-]{16,256}\Z")
+KEY_PATTERN = re.compile(r"(?:[A-Za-z0-9_-]{16,256}|AQ\.[A-Za-z0-9_-]{16,253})\Z")
+AQ_SECRET = re.compile(r"AQ\.[A-Za-z0-9_-]{16,}")
 PROJECT_PATTERN = re.compile(r"[a-z][a-z0-9-]{4,61}[a-z0-9]\Z")
 REF_PATTERN = re.compile(r"private:[A-Za-z0-9._/-]{1,200}\Z")
 PASS = "PASS_REAL_GEMINI_API_RESPONSE"
@@ -442,7 +443,7 @@ class ApiRuntime:
         if type(remaining) is not int or not 1 <= remaining <= 1000000:
             raise ApiError("INVALID_API_REMAINING_REQUESTS", 400)
         if (not isinstance(refs, dict) or set(refs) != REF_FIELDS
-                or any(type(v) is not str or not REF_PATTERN.fullmatch(v) for v in refs.values())):
+                or any(type(v) is not str or not REF_PATTERN.fullmatch(v) or AQ_SECRET.search(v) for v in refs.values())):
             raise ApiError("INVALID_PRIVATE_API_EVIDENCE_REFS", 400)
         with self.lock:
             key = self._key()
