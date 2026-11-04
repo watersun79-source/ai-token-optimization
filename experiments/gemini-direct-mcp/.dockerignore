@@ -1,0 +1,8 @@
+**/__pycache__
+**/*.pyc
+**/state
+**/.gemini
+**/*.sqlite3
+**/.env
+**/*credentials*
+**/*token*
