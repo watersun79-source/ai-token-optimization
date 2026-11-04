@@ -1,10 +1,10 @@
 FROM node:22-bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends python3 ca-certificates \
+RUN apt-get update && apt-get install -y --no-install-recommends python3 ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/* \
     && npm install --global @google/gemini-cli@0.66.0 \
     && npm cache clean --force
 WORKDIR /app
-COPY adapter.py server.py http_server.py ./
+COPY adapter.py server.py http_server.py api_runtime.py gemini_direct.py ./
 RUN python3 -c 'import json,pathlib; from adapter import CLI_SYSTEM_SETTINGS; p=pathlib.Path("/etc/gemini-cli/settings.json"); p.parent.mkdir(mode=0o755,parents=True,exist_ok=True); p.write_text(json.dumps(CLI_SYSTEM_SETTINGS)); p.chmod(0o644)'
 RUN mkdir -p /data/gemini && chown -R node:node /app /data/gemini && chmod 700 /data/gemini
 USER node

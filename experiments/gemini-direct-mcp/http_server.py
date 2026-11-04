@@ -22,6 +22,7 @@ import time
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
+from api_runtime import ApiRuntime, ApiError, stop_children
 
 MAX_BODY = 65_536
 ACTOR = re.compile(r"[A-Za-z0-9:_.-]{1,200}\Z")
@@ -36,6 +37,23 @@ PUBLIC_AUTH_STATES = ACTIVE_STATES | {
     "AUTH_SESSION_EXPIRED", "AUTH_SESSION_CANCELLED", "BLOCKED_AUTH_RUNTIME",
     "BLOCKED_AUTH_START", "BLOCKED_AUTH_OUTPUT_LIMIT", "BLOCKED_UNEXPECTED_AUTH_URL",
     "BLOCKED_AUTH_OWNER_BINDING",
+}
+API_PREPARE_TOOL = {
+    "name": "gemini_prepare_free_api_run",
+    "description": "Record owner/operator assertions for one Gemini API attempt after independently checking authentication, the allowlisted key project, free tier, billing unlinked and today's model quota. Inputs do not independently prove those facts. No network call or generation; never send keys or codes here.",
+    "inputSchema": {"type": "object", "additionalProperties": False,
+        "required": ["project_id", "observed_at", "quota_day_pacific", "remaining_requests", "evidence_refs"],
+        "properties": {
+            "project_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{4,61}[a-z0-9]$"},
+            "observed_at": {"type": "string", "maxLength": 64},
+            "quota_day_pacific": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+            "remaining_requests": {"type": "integer", "minimum": 1, "maximum": 1000000},
+            "evidence_refs": {"type": "object", "additionalProperties": False,
+                "required": ["auth", "project_binding", "free_tier", "billing", "daily_quota"],
+                "properties": {field: {"type": "string", "pattern": "^private:[A-Za-z0-9._/-]{1,200}$"}
+                               for field in ("auth", "project_binding", "free_tier", "billing", "daily_quota")}},
+        }},
+    "annotations": {"readOnlyHint": False, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False},
 }
 PROVIDER_ENV = {
     "GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_APPLICATION_CREDENTIALS",
@@ -510,6 +528,7 @@ class Runtime:
             raise ValueError("GEMINI_BRIDGE_KEY must be a secret of 32 to 256 URL-safe characters")
         self.adapter, self.server_class, self.key = adapter, server_class, key
         self.owner = OwnerBinding(adapter.config.state_dir)
+        self.api = ApiRuntime(adapter, self.owner)
         auth_root = adapter.config.state_dir / "auth-attempts"
         if auth_root.is_symlink():
             raise ValueError("Unsafe authentication state directory")
@@ -563,15 +582,24 @@ class Runtime:
             if "id" not in req:
                 return None
             return {"jsonrpc": "2.0", "id": req["id"], "result": {"supportedVersions": ["2026-07-28"], "capabilities": {"tools": {}}}}
-        if isinstance(req, dict) and req.get("method") == "tools/call" and isinstance(req.get("params"), dict) and req["params"].get("name") == "gemini_review":
+        if (isinstance(req, dict) and req.get("method") == "tools/call" and isinstance(req.get("params"), dict)
+                and req["params"].get("name") in {"gemini_review", "gemini_prepare_free_api_run"}):
             self.owner.require(actor)
-            args = req["params"].get("arguments")
-            if isinstance(args, dict) and set(args) == {"request_id", "prompt"}:
-                raw_id = args["request_id"]
-                if not isinstance(raw_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{8,80}", raw_id):
-                    return self.server_class.error(req.get("id"), -32602, "Invalid request_id")
-                request_id = hashlib.sha256((actor + "\0" + raw_id).encode()).hexdigest()
-                req = {**req, "params": {**req["params"], "arguments": {**args, "request_id": request_id}}}
+            rid = req.get("id")
+            if req.get("jsonrpc") != "2.0" or isinstance(rid, bool) or not isinstance(rid, (int, str)):
+                return self.server_class.error(None, -32600, "Invalid Request")
+            args = req["params"].get("arguments", {})
+            try:
+                if req["params"]["name"] == "gemini_prepare_free_api_run":
+                    value = self.api.prepare(actor, args)
+                elif isinstance(args, dict) and set(args) == {"request_id", "prompt"}:
+                    value = self.api.review(actor, args["request_id"], args["prompt"])
+                else:
+                    return self.server_class.error(rid, -32602, "Invalid tool arguments")
+            except ApiError as error:
+                value = {"status": error.code, "model_called": "UNVERIFIED", "automatic_retry": False}
+            failed = value["status"] not in {"PASS_REAL_GEMINI_API_RESPONSE", "OPERATOR_EVIDENCE_PRESENT"}
+            return self.server_class.ok(rid, self.server_class.tool(value, failed))
         server = self.server_class(self.adapter)
         server.initialized = True  # This HTTP transport is deliberately stateless.
         reply = server.handle(req)
@@ -583,7 +611,18 @@ class Runtime:
             status = dict(reply["result"]["structuredContent"])
             status.setdefault("observed_at_utc", datetime.now(timezone.utc).isoformat())
             status["authentication"] = self.authentication_status()
+            status["api_connection"] = self.api.status()
+            status["generation_ready"] = status["api_connection"]["generation_ready"]
+            status["generation_readiness_semantics"] = "Fixed Gemini API only; local registration/evidence metadata, not independent proof. Status never reads key contents; actual review rechecks private key binding and fresh owner/operator free-tier, billing-unlinked, project and model-quota evidence. No legacy CLI fallback."
+            status["legacy_runtime_note"] = "The 0.66.0 CLI runtime is installation metadata only; consumer Google CLI login is retired."
             reply["result"] = self.server_class.tool(status)
+        if isinstance(req, dict) and req.get("method") == "tools/list" and reply and "result" in reply:
+            tools = []
+            for tool in reply["result"].get("tools", []):
+                if tool["name"] == "gemini_review":
+                    tool = {**tool, "description": "Run one fixed Gemini REST API attempt using the registered owner key and fresh operator evidence for its allowlisted project, free tier, billing unlinked and model daily quota. Durable single-attempt budget; no automatic retry or legacy CLI fallback. Never send keys/codes in arguments."}
+                tools.append(tool)
+            reply["result"]["tools"] = tools + [API_PREPARE_TOOL]
         if isinstance(req, dict) and req.get("method") == "initialize" and reply and "result" in reply:
             requested = req.get("params", {}).get("protocolVersion")
             if requested == "2026-07-28":
@@ -651,6 +690,11 @@ class Handler(BaseHTTPRequestHandler):
                 self._reply(200 if reply is not None else 202, reply or {})
                 return
             actor = self.headers.get("X-Bridge-Actor")
+            if self.path == "/api-key/register":
+                if set(payload) != {"api_key"}:
+                    raise RequestError(400, "INVALID_FIELDS")
+                self._reply(200, rt.api.register(actor, payload["api_key"]))
+                return
             if self.path == "/auth/start" and not payload:
                 self._reply(200, rt.auth.start(actor))
                 return
@@ -665,6 +709,8 @@ class Handler(BaseHTTPRequestHandler):
             raise RequestError(404, "NOT_FOUND")
         except RequestError as exc:
             self._reply(exc.status, {"error": exc.code})
+        except ApiError as exc:
+            self._reply(exc.http_status, {"error": exc.code})
         except (ValueError, UnicodeError, TimeoutError, OSError):
             self._reply(400, {"error": "INVALID_REQUEST"})
         except Exception:
@@ -727,6 +773,7 @@ def main():
         server = HTTPServer((address, port), Handler)
         server.runtime = runtime
         def terminate(signum, frame):
+            stop_children()
             if runtime.auth.session is not None:
                 with runtime.auth.session._lock:
                     if runtime.auth.session.state in ACTIVE_STATES:

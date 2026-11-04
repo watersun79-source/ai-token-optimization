@@ -1,19 +1,35 @@
-> Current provider policy, verified 2026-11-04: Google ended Gemini CLI consumer Login with Google (individual/free, Google AI Pro and Ultra) on 2026-06-18. See https://developers.google.com/gemini-code-assist/docs/deprecations/code-assist-individuals . An installed CLI and successful private MCP status response do not prove model-service access. The model gate remains closed. The official Gemini API route requires separate verified Free-tier project credentials; none are configured here. Antigravity consumer wrappers are not a supported substitute (https://antigravity.google/docs/faq/).
+# Gemini direct private MCP
 
-# Gemini private MCP runner
+The hosted path is ChatGPT → the existing owner-private Sites MCP gateway → the existing bearer-protected Render free runner → Google's official Gemini REST API. Y700 and the user's phone are not execution hosts. The fixed generation model is `gemini-3.5-flash-lite`.
 
-Official Gemini CLI 0.66.0 is invoked through a private Sites MCP gateway and this bearer-protected Docker HTTP runner. Y700 and other user devices are not execution hosts.
+## Boundaries
 
-Only `/healthz` is public. Every other route requires GEMINI_BRIDGE_KEY; auth and review also bind the Sites authenticated actor. Use a new isolated Render free web service with auto-deploy disabled, Docker context `experiments/gemini-direct-mcp` and repository-relative Dockerfile `experiments/gemini-direct-mcp/Dockerfile`. Never reuse an existing production service.
+- Only `/healthz` is public. All runner operations require the bridge bearer. Key registration, evidence preparation and review also require the bound Sites owner actor.
+- `/api-key/register` accepts one key through the private same-origin password form, never through MCP arguments. It verifies only the fixed model's metadata with one GET and does not generate text or establish the key's project, billing tier or remaining quota.
+- `gemini_prepare_free_api_run` records already independently observed private evidence references for the allowlisted project. It is an operator assertion, not a provider attestation. Supply it only after actual key/project binding, Free tier, unlinked billing and the same Pacific day's model quota have been observed. Evidence expires after 15 minutes.
+- `gemini_review` accepts only `request_id` and non-sensitive `prompt`. A fresh, owner/key/model/project-bound evidence record permits one generation attempt. No paid project, model fallback, tools, search, proxy, redirect or automatic retry is supported.
+- Claiming the SQLite evidence budget is atomic, shared with the existing request ledger and precedes network execution. Repeated request IDs return the recorded result; conflicting prompts or uncertain requests are blocked. Reusing the same source references cannot restore a consumed evidence budget.
+- A child process receives secrets only through a private stdin pipe. A 35-second total host deadline bounds DNS/TLS/body handling; output is capped at 64 KiB. Parent exit kills the child on Linux. Only a validated STOP response receives `PASS_REAL_GEMINI_API_RESPONSE`; timeout, partial response and uncertainty remain unverified.
+- Keys use no-follow, owner-only 0600 files in a 0700 directory. Raw keys, hashes, provider errors and auth codes are never returned to the page or MCP. Replacing a different registered key is denied. Status polling reads only local non-secret metadata/file attributes and never authenticates or generates.
 
-The Site holds the same bridge key as a secret and the exact returned onrender HTTPS origin. Google credentials never enter MCP tool arguments, logs, Git or this README. Official Google consent and CLI auth-code entry use secure browser authentication. The initial OAuth authorization URL is not a credential. Auth finish returns VERIFYING while bounded official ACP initialize/session-new checks run without a model prompt.
+## Live state
 
-Authentication, free CLI quota, model generation, native ChatGPT tool exposure and scheduled delegation are separate states. Model generation stays blocked until independent, recent official CLI free-quota evidence is supplied through a private operator verification gate. No provider API keys, Vertex route or paid provider fallback are supported. One CLI invocation does not prove exactly one provider request. No native schedules are modified by this runner.
+Both existing private Sites poll read-only status every 30 seconds while visible and online. `api_connection` separates key presence, recorded metadata authentication, Free evidence, readiness and actual response time. Cached CLI installation metadata remains a separately labelled legacy view. Readiness is not proof of a Gemini response or a provider quota guarantee.
 
-Root-owned system settings disable auto-memory, hooks and telemetry and cap model session turns at one. A verified explicit admin deny policy blocks all tools. No central policy directory is created. A free ephemeral instance is not a persistent credential vault or a 24/7 guarantee; restarts can require Google login again. No paid disk, paid service plan or paid model API has been provisioned by this source.
+The current free Render service has an ephemeral filesystem. The SQLite budget persists across process restarts on that filesystem, but a platform restart/redeploy can erase keys and the ledger. Missing state closes the gate; do not automatically re-register, re-arm or retry an uncertain prior run. This is not persistent secret storage or a 24/7 service guarantee. No paid disk, service upgrade or billing account is provisioned.
 
-Local unit tests use process doubles, not real Google authentication or provider generations. See ADAPTER.md for the adapter contract. Run from this directory: `python3 -m unittest discover -s tests -v`.
+## Deployment and tests
 
-## Live status semantics
+Keep auto-deploy disabled, the existing service's free plan, existing bridge secret and private Site audiences. Docker context: `experiments/gemini-direct-mcp`; Dockerfile: `experiments/gemini-direct-mcp/Dockerfile`. Set only `GEMINI_API_ALLOWED_PROJECT_ID` to the independently observed dedicated Free project. Never put a provider key in Git, environment inspection output, a URL or a chat.
 
-Visible, online dashboard pages query metadata every 30 seconds without model generation. The backend collapses concurrent CLI version checks into one process and caches only that executable/home-specific observation for up to 300 seconds. Every status read still checks provider environment, gate and system controls. observed_at_utc is a status-observation time; runtime.verified_at_utc is the actual version verification time. authentication.last_verified_at is set only after an actual non-generation official ACP session succeeds. Missing evidence remains unverified. These reads do not prove live model inference, quota or scheduled delegation.
+The Docker image copies `adapter.py`, `server.py`, `http_server.py`, `api_runtime.py` and `gemini_direct.py`. Offline unit tests use fixtures and process/transport doubles, and do not establish Google authentication, quota or inference. Existing native schedules, other services and GitHub main are untouched.
+
+Google ended consumer Gemini CLI Login with Google on 2026-06-18. The installed CLI 0.66.0 and the standalone adapter contract in `ADAPTER.md` are historical installation metadata, not the hosted inference route. Consumer Antigravity CLI wrappers are not used.
+
+Official references:
+
+- https://developers.google.com/gemini-code-assist/docs/deprecations/code-assist-individuals
+- https://aistudio.google.com/api-reference/generate-content
+- https://aistudio.google.com/docs/pricing
+- https://aistudio.google.com/docs/billing
+- https://antigravity.google/docs/faq/

@@ -11,6 +11,7 @@ import threading
 import time
 import unittest
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'gemini-real-mcp'))
@@ -100,7 +101,7 @@ class HTTPTests(unittest.TestCase):
 
     def test_health_only_public(self):
         self.assertEqual(self.request('/healthz', auth=False, method='GET')[0], 200)
-        for path in ['/mcp', '/auth/start', '/auth/status', '/auth/finish', '/unknown']:
+        for path in ['/mcp', '/auth/start', '/auth/status', '/auth/finish', '/api-key/register', '/unknown']:
             self.assertEqual(self.request(path, {}, auth=False)[0], 401)
         self.assertEqual(self.adapter.calls, 0)
 
@@ -112,10 +113,68 @@ class HTTPTests(unittest.TestCase):
 
     def test_real_server_metadata_and_status_path(self):
         _, tools = self.request('/mcp', {'jsonrpc':'2.0','id':1,'method':'tools/list'}, actor=None)
-        self.assertEqual([t['name'] for t in tools['result']['tools']], ['gemini_status','gemini_review'])
+        self.assertEqual([t['name'] for t in tools['result']['tools']], ['gemini_status','gemini_review','gemini_prepare_free_api_run'])
         _, status = self.request('/mcp', {'jsonrpc':'2.0','id':2,'method':'tools/call','params':{'name':'gemini_status','arguments':{}}}, actor=None)
         self.assertEqual(status['result']['structuredContent']['status'], 'OFFLINE_TEST_ADAPTER')
         self.assertEqual(self.adapter.calls, 1)
+        self.assertFalse(status['result']['structuredContent']['generation_ready'])
+        self.assertFalse(status['result']['structuredContent']['api_connection']['configured'])
+
+    def test_api_registration_is_protected_and_not_an_mcp_secret_argument(self):
+        self.assertTrue(hasattr(self.runtime,'api'),'remote API runtime is not wired')
+        self.runtime.api.allowed_project_id='offline-fixture-project'
+        calls=[]
+        self.runtime.api.runner=lambda payload:calls.append(payload) or {'status':'API_METADATA_AUTHENTICATED'}
+        key='offline-fixture-key-for-http-000000001'
+        self.assertEqual(self.request('/api-key/register',{'api_key':key},auth=False)[0],401)
+        status,result=self.request('/api-key/register',{'api_key':key})
+        self.assertEqual(status,200)
+        self.assertEqual(result['status'],'API_KEY_AUTHENTICATED_FREE_EVIDENCE_REQUIRED')
+        self.assertNotIn(key,json.dumps(result))
+        self.assertEqual(len(calls),1)
+        self.assertEqual(self.request('/api-key/register',{'api_key':key},actor='another-user')[0],403)
+        self.assertEqual(self.request('/api-key/register',{'api_key':key,'extra':True})[0],400)
+        self.assertEqual(self.request('/api-key/register?api_key='+key,{'api_key':key})[0],404)
+        _,tools=self.request('/mcp',{'jsonrpc':'2.0','id':1,'method':'tools/list'})
+        schema=json.dumps(tools['result']['tools'])
+        self.assertNotIn('api_key',schema)
+        self.assertIn('operator',schema.lower())
+
+    def test_remote_mcp_api_prepare_review_and_status_use_no_legacy_fallback(self):
+        self.assertTrue(hasattr(self.runtime,'api'),'remote API runtime is not wired')
+        self.runtime.api.allowed_project_id='offline-fixture-project'
+        calls=[]
+        def runner(payload):
+            calls.append(payload['operation'])
+            if payload['operation']=='metadata': return {'status':'API_METADATA_AUTHENTICATED'}
+            return {'status':'PASS_REAL_GEMINI_API_RESPONSE','model':'gemini-3.5-flash-lite',
+                    'response':'OFFLINE_API_RESPONSE','finish_reason':'STOP','usage':{}}
+        self.runtime.api.runner=runner
+        self.request('/api-key/register',{'api_key':'offline-fixture-key-for-http-000000001'})
+        now=datetime.now(timezone.utc)
+        args={'project_id':'offline-fixture-project','observed_at':now.isoformat(),
+              'quota_day_pacific':now.astimezone(ZoneInfo('America/Los_Angeles')).date().isoformat(),
+              'remaining_requests':1,'evidence_refs':{field:'private:d1/fixture/r1/'+field for field in
+              ['auth','project_binding','free_tier','billing','daily_quota']}}
+        prepare={'jsonrpc':'2.0','id':3,'method':'tools/call','params':{'name':'gemini_prepare_free_api_run','arguments':args}}
+        _,ready=self.request('/mcp',prepare)
+        self.assertFalse(ready['result']['isError'])
+        self.assertFalse(ready['result']['structuredContent']['independently_verified_by_tool'])
+        review={'jsonrpc':'2.0','id':4,'method':'tools/call','params':{'name':'gemini_review',
+                'arguments':{'request_id':'offline-api-0001','prompt':'Review this public plan.'}}}
+        _,result=self.request('/mcp',review)
+        self.assertEqual(result['result']['structuredContent']['status'],'PASS_REAL_GEMINI_API_RESPONSE')
+        self.assertEqual(result['result']['structuredContent']['response'],'OFFLINE_API_RESPONSE')
+        _,again=self.request('/mcp',review)
+        self.assertEqual(again,result)
+        _,status=self.request('/mcp',{'jsonrpc':'2.0','id':5,'method':'tools/call','params':{'name':'gemini_status','arguments':{}}})
+        api_status=status['result']['structuredContent']['api_connection']
+        self.assertEqual(api_status['free_evidence_status'],'CONSUMED')
+        self.assertFalse(status['result']['structuredContent']['generation_ready'])
+        self.assertEqual(api_status['last_result_status'],'PASS_REAL_GEMINI_API_RESPONSE')
+        self.assertNotIn('OFFLINE_API_RESPONSE',json.dumps(status))
+        self.assertEqual(calls,['metadata','generate'])
+        self.assertEqual(self.adapter.review_ids,[])
 
     def test_status_authentication_is_unknown_without_a_session(self):
         req={'jsonrpc':'2.0','id':2,'method':'tools/call','params':{'name':'gemini_status','arguments':{}}}
@@ -164,8 +223,8 @@ class HTTPTests(unittest.TestCase):
         self.request('/auth/start', {})
         _, result = self.request('/mcp', req)
         self.assertTrue(result['result']['isError'])
-        self.assertEqual(result['result']['structuredContent']['status'], 'BLOCKED_VERIFICATION_GATE_MISSING')
-        self.assertEqual(self.adapter.review_ids, [hashlib.sha256((ACTOR + '\0test-req-1').encode()).hexdigest()])
+        self.assertIn(result['result']['structuredContent']['status'], ['BLOCKED_API_PROJECT_NOT_CONFIGURED','BLOCKED_API_KEY_MISSING'])
+        self.assertEqual(self.adapter.review_ids, [])
         self.assertEqual(self.request('/mcp', req, actor='another-user')[0], 403)
 
     def test_auth_actor_binding_and_no_code_echo(self):
