@@ -1,0 +1,4 @@
+{
+  "promptFeedback": {"blockReason": "SAFETY", "safetyRatings": []},
+  "usageMetadata": {"promptTokenCount": 9, "totalTokenCount": 9}
+}

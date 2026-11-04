@@ -1,0 +1,9 @@
+{
+  "candidates": [
+    {
+      "content": {"role": "model", "parts": [{"functionCall": {"name": "run_command", "args": {"command": "never-execute"}}}]},
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ]
+}

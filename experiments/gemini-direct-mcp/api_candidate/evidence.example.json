@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "status": "UNVERIFIED",
+  "evidence_id": null,
+  "api_key_sha256": null,
+  "model": "gemini-3.5-flash-lite",
+  "observed_at": null,
+  "quota_day_pacific": null,
+  "auth_verified": false,
+  "key_project_binding_verified": false,
+  "free_tier_verified": false,
+  "billing_account_linked": null,
+  "paid_billing_enabled": null,
+  "quota_verified": false,
+  "remaining_requests": null,
+  "evidence_refs": {}
+}

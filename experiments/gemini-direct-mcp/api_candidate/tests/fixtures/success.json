@@ -1,0 +1,13 @@
+{
+  "candidates": [
+    {
+      "content": {"role": "model", "parts": [{"text": "ready"}]},
+      "finishReason": "STOP",
+      "index": 0,
+      "safetyRatings": []
+    }
+  ],
+  "usageMetadata": {"promptTokenCount": 9, "candidatesTokenCount": 2, "totalTokenCount": 11},
+  "modelVersion": "gemini-3.5-flash-lite",
+  "responseId": "offline-fixture-not-a-provider-response"
+}
