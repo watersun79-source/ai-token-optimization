@@ -165,7 +165,8 @@ def run_child(payload, *, command=None, deadline=DEADLINE_SECONDS):
     overflow = threading.Event()
     expires = time.monotonic() + deadline
     try:
-        process = subprocess.Popen(command or [sys.executable, "-I", str(Path(__file__).resolve()), "--worker"],
+        process = subprocess.Popen(command or [sys.executable, "-I", str(Path(__file__).resolve()),
+                                               "--worker", "--parent-pid", str(os.getpid())],
                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                                    env=env, shell=False, start_new_session=(os.name == "posix"),
                                    cwd=Path(__file__).resolve().parent, close_fds=True)
@@ -643,7 +644,8 @@ class ApiRuntime:
     def status(self):
         result = {"status": "API_KEY_NOT_CONFIGURED", "configured": False, "auth_verified_at": None,
                   "model": MODEL, "project_id": None, "free_evidence_status": "MISSING", "generation_ready": False,
-                  "last_response_at": None, "last_result_status": None, "last_registration": None}
+                  "last_response_at": None, "last_result_status": None, "last_registration": None,
+                  "worker_host_is_init": os.getpid() == 1}
         # Only local private metadata/ledger reads; no worker, auth, GET or model call.
         with self.lock:
             try:
@@ -683,8 +685,17 @@ class ApiRuntime:
 def _worker_main():
     # Linux parent-death protection supplements the host deadline/SIGTERM cleanup.
     try:
+        if (len(sys.argv) != 4 or sys.argv[:3] != [__file__, "--worker", "--parent-pid"]
+                or re.fullmatch(r"[1-9][0-9]{0,9}", sys.argv[3]) is None):
+            return {"status": UNVERIFIED}
+        expected_parent_pid = int(sys.argv[3])
         import ctypes
-        if not sys.platform.startswith("linux") or ctypes.CDLL(None).prctl(1, signal.SIGKILL, 0, 0, 0) != 0 or os.getppid() == 1:
+        # PID 1 can be the legitimate HTTP server in an exec-style container.
+        # Compare against the spawning host AFTER installing the death signal,
+        # so reparenting in the setup window is rejected before reading stdin.
+        if (not sys.platform.startswith("linux")
+                or ctypes.CDLL(None).prctl(1, signal.SIGKILL, 0, 0, 0) != 0
+                or os.getppid() != expected_parent_pid):
             return {"status": UNVERIFIED}
         raw = sys.stdin.buffer.read(LIMIT + 1)
         if len(raw) > LIMIT: return {"status": UNVERIFIED}
@@ -694,5 +705,5 @@ def _worker_main():
 
 
 if __name__ == "__main__":
-    value = _worker_main() if sys.argv == [__file__, "--worker"] else {"status": UNVERIFIED}
+    value = _worker_main()
     print(json.dumps(value, ensure_ascii=False, separators=(",", ":")))
