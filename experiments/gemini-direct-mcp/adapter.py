@@ -20,6 +20,7 @@ from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parent
 EXPECTED_VERSION = "0.66.0"
+VERSION_CACHE_TTL_SECONDS = 300
 PROVIDER_ENV = (
     "GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_APPLICATION_CREDENTIALS",
     "GOOGLE_GENAI_USE_VERTEXAI", "GOOGLE_GENAI_USE_GCA",
@@ -95,6 +96,9 @@ def private_dir(path: Path):
 class Adapter:
     def __init__(self, config: Config):
         self.config = config
+        self._version_condition = threading.Condition()
+        self._version_check_running = False
+        self._version_cache = None
         if (config.cli is not None and not config.cli.is_absolute()) or not (0 < config.timeout_seconds <= 120):
             raise Blocked("BLOCKED_INVALID_CONFIGURATION")
         private_dir(config.state_dir)
@@ -262,11 +266,72 @@ class Adapter:
                 except (OSError, ValueError):
                     pass
 
+    def _version_scope(self):
+        cli = self.config.cli
+        if cli is None:
+            raise Blocked("BLOCKED_CLI_UNAVAILABLE")
+        try:
+            info = cli.stat()
+            resolved = str(cli.resolve(strict=True))
+        except (OSError, RuntimeError):
+            raise Blocked("BLOCKED_CLI_UNAVAILABLE") from None
+        if not stat.S_ISREG(info.st_mode) or not os.access(cli, os.X_OK):
+            raise Blocked("BLOCKED_CLI_UNAVAILABLE")
+        # Filesystem identity/metadata fingerprint, not a content digest. A new
+        # executable, target, mode or CLI home invalidates the local version cache.
+        return (str(cli), resolved, info.st_dev, info.st_ino, info.st_mode,
+                info.st_size, info.st_mtime_ns, info.st_ctime_ns,
+                str(self.config.cli_home))
+
+    @staticmethod
+    def _version_observation(status, version=None, checked_at=None):
+        return {"status": status, "version": version, "cached": False,
+                "cache_age_seconds": None, "cache_ttl_seconds": VERSION_CACHE_TTL_SECONDS,
+                "checked_at_utc": checked_at,
+                "verified_at_utc": checked_at if status == "PASS" else None}
+
+    def version_snapshot(self):
+        while True:
+            # A cache hit never bypasses provider-env or executable protection.
+            self._env()
+            scope = self._version_scope()
+            with self._version_condition:
+                cached = self._version_cache
+                age = time.monotonic() - cached[1] if cached is not None else None
+                if cached is not None and cached[0] == scope and 0 <= age < VERSION_CACHE_TTL_SECONDS:
+                    return {**cached[2], "cached": True, "cache_age_seconds": round(age, 3)}
+                if self._version_check_running:
+                    self._version_condition.wait()
+                    continue
+                self._version_check_running = True
+            try:
+                try:
+                    value = self._run(["--version"], timeout=30, output_limit=4096).strip()
+                    if value != EXPECTED_VERSION:
+                        raise Blocked("BLOCKED_CLI_VERSION_MISMATCH")
+                    result = self._version_observation("PASS", value)
+                except Blocked as exc:
+                    result = self._version_observation(exc.code)
+                checked_at = datetime.now(timezone.utc).isoformat()
+                result["checked_at_utc"] = checked_at
+                if result["status"] == "PASS":
+                    result["verified_at_utc"] = checked_at
+                self._env()
+                if self._version_scope() != scope:
+                    continue
+                with self._version_condition:
+                    self._version_cache = (scope, time.monotonic(), result)
+                    return {**result, "cache_age_seconds": 0.0}
+            finally:
+                with self._version_condition:
+                    self._version_check_running = False
+                    self._version_condition.notify_all()
+
     def version(self):
-        value = self._run(["--version"], timeout=30, output_limit=4096).strip()
-        if value != EXPECTED_VERSION:
-            raise Blocked("BLOCKED_CLI_VERSION_MISMATCH")
-        return value
+        result = self.version_snapshot()
+        if result["status"] != "PASS":
+            raise Blocked(result["status"])
+        return result["version"]
 
     def help(self):
         value = self._run(["--help"], timeout=15, output_limit=32768)
@@ -317,9 +382,9 @@ class Adapter:
 
     def status(self):
         try:
-            runtime = {"status": "PASS", "version": self.version()}
+            runtime = self.version_snapshot()
         except Blocked as exc:
-            runtime = {"status": exc.code, "version": None}
+            runtime = self._version_observation(exc.code)
         try:
             gate = self._gate()
             gate_state = {"status": "LOCAL_OPERATOR_EVIDENCE_PRESENT", "gate_id": gate["gate_id"]}
@@ -333,6 +398,15 @@ class Adapter:
             in_flight = db.execute("SELECT COUNT(*) FROM requests WHERE state='running'").fetchone()[0]
             consumed = bool(db.execute("SELECT 1 FROM consumed_gates WHERE gate_id=?", (gate_state.get("gate_id"),)).fetchone())
         return {"adapter": "gemini-real-cli-mcp", "version": "0.1.0", "cli_path": str(self.config.cli) if self.config.cli else None, "runtime": runtime,
+                "observed_at_utc": datetime.now(timezone.utc).isoformat(),
+                "authentication": {"status": "UNVERIFIED", "authenticated": None, "last_verified_at": None},
+                "provider_access": {
+                    "status": "CONSUMER_GOOGLE_LOGIN_RETIRED",
+                    "consumer_google_login_supported": False,
+                    "effective_from": "2026-06-18",
+                    "source_url": "https://developers.google.com/gemini-code-assist/docs/deprecations/code-assist-individuals",
+                    "replacement": "Antigravity CLI", "replacement_verified": False,
+                },
                 "cli_home": str(self.config.cli_home), "credential_cache_location": str(self.config.cli_home / ".gemini" / "oauth_creds.json"),
                 "credential_contents_read": False, "credential_validity": "UNVERIFIED_BY_STATUS",
                 "verification_gate": gate_state, "in_flight_or_uncertain_requests": in_flight,

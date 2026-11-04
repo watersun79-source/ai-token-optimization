@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
@@ -25,7 +26,10 @@ class AdapterTests(unittest.TestCase):
 import json, os, pathlib, sys, time
 root=pathlib.Path(__file__).parent
 if '--version' in sys.argv:
-    print('0.66.0')
+    with (root/'version-checks').open('a') as f: f.write('checked\\n')
+    mode=(root/'version-mode').read_text() if (root/'version-mode').exists() else 'ok'
+    if mode=='hold': time.sleep(0.2)
+    print('0.0.0' if mode=='wrong' else '0.66.0')
 elif '--help' in sys.argv:
     print('--prompt --output-format --policy --approval-mode')
 else:
@@ -83,6 +87,105 @@ else:
     def calls(self):
         p=self.root/'calls'
         return len(p.read_text().splitlines()) if p.exists() else 0
+
+    def version_checks(self):
+        p=self.root/'version-checks'
+        return len(p.read_text().splitlines()) if p.exists() else 0
+
+    def test_status_version_cache_expires_at_300_seconds(self):
+        clock=[1000.0]
+        with patch('adapter.time.monotonic', side_effect=lambda: clock[0]):
+            first=self.adapter.status()
+            clock[0]=1299.0
+            second=self.adapter.status()
+            self.assertEqual(self.version_checks(),1)
+            self.assertFalse(first['runtime'].get('cached'))
+            self.assertTrue(second['runtime'].get('cached'))
+            self.assertEqual(second['runtime']['cache_age_seconds'],299.0)
+            self.assertEqual(second['runtime']['cache_ttl_seconds'],300)
+            self.assertEqual(first['runtime']['verified_at_utc'],second['runtime']['verified_at_utc'])
+            self.assertIsNotNone(datetime.fromisoformat(second['observed_at_utc']).tzinfo)
+            clock[0]=1300.0
+            third=self.adapter.status()
+            self.assertEqual(self.version_checks(),2)
+            self.assertFalse(third['runtime']['cached'])
+            self.assertEqual(third['runtime']['cache_age_seconds'],0)
+        self.assertEqual(self.calls(),0)
+
+    def test_concurrent_status_version_checks_use_single_flight(self):
+        (self.root/'version-mode').write_text('hold')
+        barrier=threading.Barrier(8)
+        def poll():
+            barrier.wait(timeout=3)
+            return self.adapter.status()['runtime']
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            results=list(pool.map(lambda _:poll(),range(8)))
+        self.assertEqual(self.version_checks(),1)
+        self.assertEqual([x['version'] for x in results],['0.66.0']*8)
+        self.assertEqual(sum(x.get('cached') is False for x in results),1)
+        self.assertEqual(len({x['verified_at_utc'] for x in results}),1)
+
+    def test_version_cache_invalidates_on_cli_file_or_home_change(self):
+        self.adapter.status()
+        self.assertTrue(self.adapter.status()['runtime'].get('cached'))
+        with self.cli.open('a') as f:
+            f.write('\n# changed executable fingerprint\n')
+        self.assertFalse(self.adapter.status()['runtime'].get('cached'))
+        new_home=self.root/'new-private-home'
+        new_home.mkdir(mode=0o700)
+        self.adapter.config=replace(self.config,cli_home=new_home)
+        self.assertFalse(self.adapter.status()['runtime'].get('cached'))
+        self.assertEqual(self.version_checks(),3)
+
+    def test_version_cache_never_bypasses_provider_environment_guard(self):
+        self.adapter.status()
+        with patch.dict(os.environ,{'GEMINI_API_KEY':'OFFLINE_DUMMY_DO_NOT_USE'}):
+            status=self.adapter.status()
+        self.assertEqual(status['runtime']['status'],'BLOCKED_PROVIDER_KEY_OR_VERTEX_ENV')
+        self.assertIsNone(status['runtime']['version'])
+        self.assertFalse(status['runtime'].get('cached'))
+        self.assertEqual(self.version_checks(),1)
+        self.assertTrue(self.adapter.status()['runtime'].get('cached'))
+        self.assertNotIn('OFFLINE_DUMMY',json.dumps(status))
+
+    def test_cached_version_does_not_cache_gate_or_system_controls(self):
+        self.verified_gate()
+        self.assertTrue(self.adapter.status()['generation_ready'])
+        self.gate.unlink()
+        self.controls.write_text('{}')
+        status=self.adapter.status()
+        self.assertTrue(status['runtime'].get('cached'))
+        self.assertEqual(status['verification_gate']['status'],'BLOCKED_VERIFICATION_GATE_MISSING')
+        self.assertEqual(status['system_controls']['status'],'BLOCKED_SYSTEM_CONTROLS_CHANGED')
+        self.assertFalse(status['generation_ready'])
+        self.assertEqual(self.version_checks(),1)
+        self.assertEqual(self.calls(),0)
+
+    def test_version_failure_is_cached_without_verification_claim(self):
+        (self.root/'version-mode').write_text('wrong')
+        first=self.adapter.status()['runtime']
+        second=self.adapter.status()['runtime']
+        self.assertEqual(self.version_checks(),1)
+        self.assertEqual(first['status'],'BLOCKED_CLI_VERSION_MISMATCH')
+        self.assertIsNone(first['version'])
+        self.assertIsNone(first['verified_at_utc'])
+        self.assertIsNotNone(first['checked_at_utc'])
+        self.assertTrue(second['cached'])
+
+    def test_status_reports_retired_consumer_google_login_without_verified_replacement(self):
+        status=self.adapter.status()
+        self.assertEqual(status.get('provider_access'),{
+            'status':'CONSUMER_GOOGLE_LOGIN_RETIRED',
+            'consumer_google_login_supported':False,
+            'effective_from':'2026-06-18',
+            'source_url':'https://developers.google.com/gemini-code-assist/docs/deprecations/code-assist-individuals',
+            'replacement':'Antigravity CLI',
+            'replacement_verified':False,
+        })
+        self.assertIs(type(status['provider_access']['consumer_google_login_supported']),bool)
+        self.assertIs(type(status['provider_access']['replacement_verified']),bool)
+        self.assertFalse(status['generation_ready'])
+        self.assertEqual(self.calls(),0)
 
     def test_missing_gate_never_invokes_model(self):
         with self.assertRaisesRegex(Blocked,'VERIFICATION_GATE_MISSING'):

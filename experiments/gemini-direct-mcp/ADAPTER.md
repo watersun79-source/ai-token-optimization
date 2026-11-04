@@ -1,3 +1,5 @@
+> Current provider policy, verified 2026-11-04: Google ended Gemini CLI consumer Login with Google (individual/free, Google AI Pro and Ultra) on 2026-06-18. See https://developers.google.com/gemini-code-assist/docs/deprecations/code-assist-individuals . An installed CLI and successful private MCP status response do not prove model-service access. The model gate remains closed. The official Gemini API route requires separate verified Free-tier project credentials; none are configured here. Antigravity consumer wrappers are not a supported substitute (https://antigravity.google/docs/faq/).
+
 # 실제 Gemini CLI MCP 호출부 · v0.1.0
 
 `gemini_review`는 공식 Gemini CLI를 별도 프로세스로 실행하는 실제 호출부야. 응답을 모의 텍스트로 대체하지 않아. 현재 인증·CLI 무료 할당량 검증 기록이 없으므로 모델 호출은 차단돼.

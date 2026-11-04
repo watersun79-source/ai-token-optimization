@@ -10,6 +10,7 @@ import tempfile
 import threading
 import time
 import unittest
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'gemini-real-mcp'))
@@ -52,6 +53,8 @@ class FakeSession:
         self.actor, self.id = actor, 'c' * 48
         self.state = 'WAITING_FOR_AUTH_CODE'
         self.submitted = False
+        self.last_verified_at = None
+        self._lock = threading.RLock()
 
     def public(self):
         return {'session_id': self.id, 'status': self.state,
@@ -113,6 +116,46 @@ class HTTPTests(unittest.TestCase):
         _, status = self.request('/mcp', {'jsonrpc':'2.0','id':2,'method':'tools/call','params':{'name':'gemini_status','arguments':{}}}, actor=None)
         self.assertEqual(status['result']['structuredContent']['status'], 'OFFLINE_TEST_ADAPTER')
         self.assertEqual(self.adapter.calls, 1)
+
+    def test_status_authentication_is_unknown_without_a_session(self):
+        req={'jsonrpc':'2.0','id':2,'method':'tools/call','params':{'name':'gemini_status','arguments':{}}}
+        with patch.object(self.runtime.auth,'start',side_effect=AssertionError('must not start authentication')):
+            _,reply=self.request('/mcp',req,actor=None)
+        status=reply['result']['structuredContent']
+        self.assertEqual(status.get('authentication'),{'status':'UNVERIFIED','authenticated':None,'last_verified_at':None})
+        self.assertIsNotNone(datetime.fromisoformat(status['observed_at_utc']).tzinfo)
+        self.assertEqual(json.loads(reply['result']['content'][0]['text']),status)
+        self.assertIsNone(self.runtime.auth.session)
+
+    def test_status_authentication_snapshot_never_exposes_auth_secrets(self):
+        self.request('/auth/start',{})
+        session=self.runtime.auth.session
+        session.authorization_code='OFFLINE_CODE_MUST_NOT_APPEAR'
+        session.access_token='OFFLINE_TOKEN_MUST_NOT_APPEAR'
+        req={'jsonrpc':'2.0','id':2,'method':'tools/call','params':{'name':'gemini_status','arguments':{}}}
+        with patch.object(session,'public',side_effect=AssertionError('auth public includes sensitive flow data')):
+            _,reply=self.request('/mcp',req,actor='another-user')
+        status=reply['result']['structuredContent']
+        self.assertEqual(status.get('authentication'),{'status':'WAITING_FOR_AUTH_CODE','authenticated':None,'last_verified_at':None})
+        for forbidden in [session.id,URL,'OFFLINE_CODE_MUST_NOT_APPEAR','OFFLINE_TOKEN_MUST_NOT_APPEAR',ACTOR]:
+            self.assertNotIn(forbidden,json.dumps(reply))
+
+    def test_status_reports_only_a_timestamped_verified_authentication(self):
+        self.request('/auth/start',{})
+        session=self.runtime.auth.session
+        session.state='CLI_AUTHENTICATED_QUOTA_UNVERIFIED'
+        req={'jsonrpc':'2.0','id':2,'method':'tools/call','params':{'name':'gemini_status','arguments':{}}}
+        _,unverified=self.request('/mcp',req)
+        self.assertIsNone(unverified['result']['structuredContent'].get('authentication',{}).get('authenticated'))
+        session.last_verified_at='2026-11-04T00:00:00+00:00'
+        _,verified=self.request('/mcp',req)
+        self.assertEqual(verified['result']['structuredContent'].get('authentication'),{
+            'status':'CLI_AUTHENTICATED_QUOTA_UNVERIFIED','authenticated':True,
+            'last_verified_at':'2026-11-04T00:00:00+00:00'})
+        session.state='AUTH_SESSION_EXPIRED'
+        _,expired=self.request('/mcp',req)
+        self.assertEqual(expired['result']['structuredContent']['authentication'],{
+            'status':'AUTH_SESSION_EXPIRED','authenticated':None,'last_verified_at':None})
 
     def test_review_requires_actor_and_keeps_verification_gate(self):
         req = {'jsonrpc':'2.0','id':1,'method':'tools/call','params':{'name':'gemini_review','arguments':{'request_id':'test-req-1','prompt':'hello'}}}
@@ -184,6 +227,7 @@ class SessionTests(unittest.TestCase):
         s = ManualAuthSession.__new__(ManualAuthSession)
         s.actor, s.id, s.deadline = ACTOR, 'a' * 48, time.monotonic() + 300
         s.state, s.url, s.submitted = 'STARTING', None, False
+        s.last_verified_at = None
         s._buffer, s._trust_handled, s._google_handled = bytearray(), False, False
         s._output_count = 0
         s._lock, s._stopped = threading.RLock(), threading.Event()
@@ -256,6 +300,8 @@ class SessionTests(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         self.assertFalse(s.public()['model_called'])
         self.assertEqual(s.public()['quota'], 'UNVERIFIED')
+        self.assertIsNotNone(s.last_verified_at)
+        self.assertIsNotNone(datetime.fromisoformat(s.last_verified_at).tzinfo)
 
     def test_failed_acp_probes_are_bounded_to_three(self):
         s = self.session()
@@ -269,6 +315,7 @@ class SessionTests(unittest.TestCase):
         self.assertEqual(len(calls), 3)
         self.assertEqual(s.state, 'CLI_AUTH_RESULT_UNVERIFIED')
         self.assertEqual(s.callbacks, [])
+        self.assertIsNone(s.last_verified_at)
 
 
 class ACPProbeTests(unittest.TestCase):

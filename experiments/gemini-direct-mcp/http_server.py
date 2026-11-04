@@ -19,6 +19,7 @@ import subprocess
 import tempfile
 import threading
 import time
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
@@ -30,6 +31,12 @@ ANSI = re.compile(rb"\x1b\[[0-?]*[ -/]*[@-~]|\x1b\][^\x07]*(?:\x07|\x1b\\)")
 AUTH_URL = re.compile(rb"https://accounts\.google\.com/o/oauth2/v2/auth\?[^\s\x1b]+")
 OFFICIAL_CLI_OAUTH_CLIENT_ID = "681255809395-oo8ft2oprdrnp9e3aqf6av3hmdib135j.apps.googleusercontent.com"
 ACTIVE_STATES = {"STARTING", "WAITING_FOR_AUTH_CODE", "VERIFYING"}
+PUBLIC_AUTH_STATES = ACTIVE_STATES | {
+    "CLI_AUTHENTICATED_QUOTA_UNVERIFIED", "CLI_AUTH_RESULT_UNVERIFIED",
+    "AUTH_SESSION_EXPIRED", "AUTH_SESSION_CANCELLED", "BLOCKED_AUTH_RUNTIME",
+    "BLOCKED_AUTH_START", "BLOCKED_AUTH_OUTPUT_LIMIT", "BLOCKED_UNEXPECTED_AUTH_URL",
+    "BLOCKED_AUTH_OWNER_BINDING",
+}
 PROVIDER_ENV = {
     "GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_APPLICATION_CREDENTIALS",
     "GOOGLE_GENAI_USE_VERTEXAI", "GOOGLE_GENAI_USE_GCA", "GOOGLE_CLOUD_PROJECT",
@@ -224,6 +231,7 @@ class ManualAuthSession:
         self.id = secrets.token_hex(24)
         self.deadline = time.monotonic() + ttl
         self.state = "STARTING"
+        self.last_verified_at = None
         self.url = None
         self.submitted = False
         self._buffer = bytearray()
@@ -399,6 +407,7 @@ class ManualAuthSession:
                         self.state = "BLOCKED_AUTH_OWNER_BINDING"
                         self.stop()
                         return
+                    self.last_verified_at = datetime.now(timezone.utc).isoformat()
                     self.state = "CLI_AUTHENTICATED_QUOTA_UNVERIFIED"
                     self.stop()
                     return
@@ -525,6 +534,30 @@ class Runtime:
         # A new login never inherits another account/session's free-quota proof.
         self.adapter.config = dataclasses.replace(self.adapter.config, cli_home=home, gate_file=None)
 
+    def authentication_status(self):
+        # This is a local observation only. Never call public() (which exposes
+        # the auth-flow ID/URL), start a flow, inspect credentials or probe here.
+        result = {"status": "UNVERIFIED", "authenticated": None, "last_verified_at": None}
+        with self.auth.lock:
+            session = self.auth.session
+            if session is None:
+                return result
+            with session._lock:
+                state = session.state
+                if state in PUBLIC_AUTH_STATES:
+                    result["status"] = state
+                if state == "CLI_AUTHENTICATED_QUOTA_UNVERIFIED":
+                    stamp = session.last_verified_at
+                    if isinstance(stamp, str) and len(stamp) <= 40:
+                        try:
+                            verified = datetime.fromisoformat(stamp)
+                            if verified.tzinfo is not None:
+                                result["last_verified_at"] = verified.astimezone(timezone.utc).isoformat()
+                                result["authenticated"] = True
+                        except (ValueError, OverflowError):
+                            pass
+        return result
+
     def mcp(self, req, actor=None):
         if isinstance(req, dict) and req.get("jsonrpc") == "2.0" and req.get("method") == "server/discover":
             if "id" not in req:
@@ -542,6 +575,15 @@ class Runtime:
         server = self.server_class(self.adapter)
         server.initialized = True  # This HTTP transport is deliberately stateless.
         reply = server.handle(req)
+        if (isinstance(req, dict) and req.get("method") == "tools/call"
+                and isinstance(req.get("params"), dict) and req["params"].get("name") == "gemini_status"
+                and reply and isinstance(reply.get("result"), dict)
+                and reply["result"].get("isError") is False
+                and isinstance(reply["result"].get("structuredContent"), dict)):
+            status = dict(reply["result"]["structuredContent"])
+            status.setdefault("observed_at_utc", datetime.now(timezone.utc).isoformat())
+            status["authentication"] = self.authentication_status()
+            reply["result"] = self.server_class.tool(status)
         if isinstance(req, dict) and req.get("method") == "initialize" and reply and "result" in reply:
             requested = req.get("params", {}).get("protocolVersion")
             if requested == "2026-07-28":
