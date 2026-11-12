@@ -15,6 +15,12 @@ SOURCE_HEAD = "be5bbae7725369db97215c8e5888136ab6e4a68c"
 SOURCE_RUN = 43299315660
 BLOCKED = frozenset({"activepieces", "openhands", "crewai", "letta"})
 CLEAN = frozenset({"langgraph", "mem0", "langfuse", "agent-framework", "openai-agents"})
+EXPECTED_BLOCKED = {
+    "activepieces": (9, "UNVERIFIED"),
+    "openhands": (13, "REVIEW"),
+    "crewai": (5, "UNVERIFIED"),
+    "letta": (4, "REVIEW"),
+}
 ALL = BLOCKED | CLEAN | {"flowise"}
 LOCKS = ROOT / "locks"
 EVIDENCE = ROOT / "activation_security_evidence.json"
@@ -75,6 +81,12 @@ def verify_evidence(evidence: dict, *, locks_dir: Path = LOCKS) -> dict:
         if license_state not in ("DECLARED_METADATA_ONLY", "REVIEW", "UNVERIFIED"):
             raise SecurityBlock("LICENSE_STATUS_UNKNOWN:" + name)
         if name in BLOCKED:
+            if (count, license_state) != EXPECTED_BLOCKED[name]:
+                raise SecurityBlock("IMMUTABLE_AUDIT_RESULT_CHANGED:" + name)
+            if not row.get("license_unverified_examples"):
+                raise SecurityBlock("LICENSE_UNKNOWN_EVIDENCE_MISSING:" + name)
+            if license_state == "REVIEW" and not row.get("license_review_packages"):
+                raise SecurityBlock("LICENSE_REVIEW_EVIDENCE_MISSING:" + name)
             if (count < 1 or row.get("status") != "BLOCKED_VULNERABILITY"
                     or not isinstance(row.get("advisory_ids"), list)
                     or not row["advisory_ids"]):
