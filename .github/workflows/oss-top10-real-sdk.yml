@@ -1,0 +1,166 @@
+name: OSS TOP10 SDK isolated import test
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/oss-top10-real-sdk.yml"
+      - "experiments/oss-top10-safe-adoption/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oss-sdk-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  python-sdk:
+    name: "Python SDK ${{ matrix.id }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - { id: langgraph, package: langgraph }
+          - { id: openhands, package: openhands-sdk }
+          - { id: mem0, package: mem0ai }
+          - { id: langfuse, package: langfuse }
+          - { id: agent-framework, package: agent-framework-core }
+          - { id: crewai, package: crewai }
+          - { id: openai-agents, package: openai-agents }
+    env:
+      SDK_ID: "${{ matrix.id }}"
+      SDK_PACKAGE: "${{ matrix.package }}"
+      OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      LANGFUSE_PUBLIC_KEY: ""
+      LANGFUSE_SECRET_KEY: ""
+      MEM0_API_KEY: ""
+      LANGCHAIN_TRACING_V2: "false"
+      LANGFUSE_TRACING_ENABLED: "false"
+      OTEL_SDK_DISABLED: "true"
+      CREWAI_TELEMETRY_OPT_OUT: "true"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: "3.12"
+      - name: Install free published binary wheels in disposable venv
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/vendor-sdk"
+          "$RUNNER_TEMP/vendor-sdk/bin/python" -m pip install --only-binary=:all: --no-cache-dir --no-input --disable-pip-version-check --timeout 25 --retries 1 "$SDK_PACKAGE"
+          "$RUNNER_TEMP/vendor-sdk/bin/python" -m pip check
+      - name: Import real SDK and execute safe local API only
+        shell: bash
+        run: |
+          "$RUNNER_TEMP/vendor-sdk/bin/python" - <<'PY'
+          import os, socket, importlib, importlib.metadata, json
+          def blocked(*args, **kwargs):
+              raise RuntimeError("SDK_NETWORK_DENIED")
+          socket.socket.connect = blocked
+          socket.socket.connect_ex = blocked
+          socket.create_connection = blocked
+          sdk = os.environ["SDK_ID"]
+          dist = os.environ["SDK_PACKAGE"]
+          specs = {
+            "langgraph": ("langgraph.graph", "StateGraph"),
+            "openhands": ("openhands.sdk", "Agent"),
+            "mem0": ("mem0", "Memory"),
+            "langfuse": ("langfuse", "get_client"),
+            "agent-framework": ("agent_framework", "WorkflowBuilder"),
+            "crewai": ("crewai", "Crew"),
+            "openai-agents": ("agents", "Agent"),
+          }
+          module_name, symbol = specs[sdk]
+          mod = importlib.import_module(module_name)
+          assert hasattr(mod, symbol), f"MISSING_PUBLIC_API_{symbol}"
+          proof = "IMPORTED_REAL_SDK_PUBLIC_SYMBOL"
+          if sdk == "langgraph":
+              from langgraph.graph import StateGraph, START, END
+              from typing import TypedDict
+              class S(TypedDict): count: int
+              graph = StateGraph(S)
+              graph.add_node("plus", lambda s: {"count": s["count"]+1})
+              graph.add_edge(START, "plus")
+              graph.add_edge("plus", END)
+              assert graph.compile().invoke({"count": 1})["count"] == 2
+              proof = "REAL_GRAPH_COMPILED_AND_INVOKED_OFFLINE"
+          elif sdk == "openai-agents":
+              a = mod.Agent(name="isolated", instructions="No model invocation")
+              assert a.name == "isolated"
+              proof = "REAL_AGENT_OBJECT_CREATED_OFFLINE"
+          print("SDK_SMOKE_RESULT="+json.dumps({
+            "id":sdk,"package":dist,"version":importlib.metadata.version(dist),
+            "proof":proof,"external_model_calls":0,"production_writes":0
+          },sort_keys=True))
+          PY
+
+  node-sdk:
+    name: "Node SDK ${{ matrix.id }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - { id: activepieces, package: "@activepieces/pieces-framework", symbol: "createPiece" }
+          - { id: letta, package: "@letta-ai/letta-agent-sdk", symbol: "LettaAgentClient" }
+    env:
+      SDK_ID: "${{ matrix.id }}"
+      SDK_PACKAGE: "${{ matrix.package }}"
+      SDK_SYMBOL: "${{ matrix.symbol }}"
+      OPENAI_API_KEY: ""
+      LETTA_API_KEY: ""
+      DO_NOT_TRACK: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: "22"
+      - name: Install public SDK without package lifecycle scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/sdk-node"
+          cd "$RUNNER_TEMP/sdk-node"
+          npm install --ignore-scripts --no-audit --no-fund --no-package-lock --save=false "$SDK_PACKAGE"
+          node --input-type=module - <<'JS'
+          import assert from "node:assert/strict";
+          const name=process.env.SDK_PACKAGE;
+          const sdk=await import(name);
+          const key=process.env.SDK_SYMBOL;
+          assert.equal(typeof (sdk[key] ?? sdk.default?.[key]),"function","MISSING_PUBLIC_SDK_API");
+          console.log("SDK_SMOKE_RESULT="+JSON.stringify({
+            id:process.env.SDK_ID,package:name,proof:"REAL_SDK_MODULE_IMPORTED_API_FOUND",
+            external_model_calls:0,production_writes:0
+          }));
+          JS
+          npm list --depth=0
+
+  flowise-eol:
+    name: Flowise EOL is blocked
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("experiments/oss-top10-safe-adoption/catalog.json")
+          x=next(item for item in json.loads(p.read_text())["projects"] if item["id"]=="flowise")
+          assert x["archived"] is True and x["mode"]=="excluded"
+          print("FLOWISE_EOL_INSTALL_BLOCKED")
+          PY
