@@ -1,0 +1,137 @@
+{
+  "schema": "OSS_TOP10_ACTIVATION_GUARD_V1",
+  "source": "GITHUB_ACTIONS_OFFICIAL_ADVISORY_CLIENTS",
+  "audit_head": "be5bbae7725369db97215c8e5888136ab6e4a68c",
+  "audit_run_id": 43299315660,
+  "security_scan_date_kst": "2026-11-13",
+  "scope": "READ_ONLY_OFFICIAL_CI_AND_NINE_PINNED_LOCKS_NO_HOSTED_DEPLOYMENT",
+  "note": "Metadata-only license verification is not legal license approval. All vendor SDK activation remains blocked; local deterministic mock dry-runs continue.",
+  "projects": {
+    "activepieces": {
+      "status": "BLOCKED_VULNERABILITY",
+      "lock_file": "activepieces-package-lock.json.gz.b64",
+      "git_blob_sha": "87349e98abe1390dcdd9dd3df1d04b211629ae12",
+      "known_advisories": 9,
+      "license_state": "UNVERIFIED",
+      "advisory_ids": [
+        "GHSA-8gw3-rxh4-v6jx",
+        "GHSA-ggr8-5vv4-36mx"
+      ],
+      "license_unverified_examples": [
+        "@activepieces/pieces-framework",
+        "@activepieces/shared"
+      ],
+      "license_review_packages": []
+    },
+    "openhands": {
+      "status": "BLOCKED_VULNERABILITY",
+      "lock_file": "openhands-pip.txt",
+      "git_blob_sha": "cdfe11e6d879b60470535b193a3ea09a2c0a7303",
+      "known_advisories": 13,
+      "license_state": "REVIEW",
+      "advisory_ids": [
+        "CVE-2026-112940"
+      ],
+      "license_unverified_examples": [
+        "agent-client-protocol",
+        "openhands-sdk"
+      ],
+      "license_review_packages": [
+        "lmnr-claude-code-proxy"
+      ]
+    },
+    "crewai": {
+      "status": "BLOCKED_VULNERABILITY",
+      "lock_file": "crewai-pip.txt",
+      "git_blob_sha": "ab95572ef7a898a7177245889e74d6588713698f",
+      "known_advisories": 5,
+      "license_state": "UNVERIFIED",
+      "advisory_ids": [
+        "PYSEC-2026-311",
+        "PYSEC-2026-3814",
+        "PYSEC-2026-3815",
+        "PYSEC-2026-3813"
+      ],
+      "license_unverified_examples": [
+        "cel-python",
+        "crewai",
+        "crewai-cli",
+        "crewai-core"
+      ],
+      "license_review_packages": []
+    },
+    "letta": {
+      "status": "BLOCKED_VULNERABILITY",
+      "lock_file": "letta-package-lock.json.gz.b64",
+      "git_blob_sha": "df29d0c5cc702d673891ab1656e3e6ca0c1bd6f3",
+      "known_advisories": 4,
+      "license_state": "REVIEW",
+      "advisory_ids": [
+        "GHSA-3g3m-2fjr-6pw4",
+        "GHSA-g3hv-75wg-m249"
+      ],
+      "license_unverified_examples": [
+        "@cursor/sdk-darwin-arm64",
+        "@cursor/sdk-darwin-x64"
+      ],
+      "license_review_packages": [
+        "@img/sharp-libvips-linux-x64",
+        "@img/sharp-wasm32"
+      ]
+    },
+    "langgraph": {
+      "status": "OFFLINE_ONLY",
+      "lock_file": "langgraph-pip.txt",
+      "git_blob_sha": "cbf4a1e0558d6c177b2df1afb2f42b5c8dbb1845",
+      "known_advisories": 0,
+      "license_state": "DECLARED_METADATA_ONLY",
+      "advisory_ids": [],
+      "license_unverified_examples": [],
+      "license_review_packages": []
+    },
+    "mem0": {
+      "status": "OFFLINE_ONLY",
+      "lock_file": "mem0-pip.txt",
+      "git_blob_sha": "0880bb37aedd243c138a1ee998df943c8c9d525b",
+      "known_advisories": 0,
+      "license_state": "DECLARED_METADATA_ONLY",
+      "advisory_ids": [],
+      "license_unverified_examples": [],
+      "license_review_packages": []
+    },
+    "langfuse": {
+      "status": "OFFLINE_ONLY",
+      "lock_file": "langfuse-pip.txt",
+      "git_blob_sha": "496067df63bdd812f7255c44220266ccb519d2f0",
+      "known_advisories": 0,
+      "license_state": "DECLARED_METADATA_ONLY",
+      "advisory_ids": [],
+      "license_unverified_examples": [],
+      "license_review_packages": []
+    },
+    "agent-framework": {
+      "status": "OFFLINE_ONLY",
+      "lock_file": "agent-framework-pip.txt",
+      "git_blob_sha": "2657ddcf779c4dd56ef33480d6ee4daf3813b7b5",
+      "known_advisories": 0,
+      "license_state": "DECLARED_METADATA_ONLY",
+      "advisory_ids": [],
+      "license_unverified_examples": [],
+      "license_review_packages": []
+    },
+    "openai-agents": {
+      "status": "OFFLINE_ONLY",
+      "lock_file": "openai-agents-pip.txt",
+      "git_blob_sha": "c4d3924595b8d70145f9ec28d10c9c0625c00aa7",
+      "known_advisories": 0,
+      "license_state": "DECLARED_METADATA_ONLY",
+      "advisory_ids": [],
+      "license_unverified_examples": [],
+      "license_review_packages": []
+    },
+    "flowise": {
+      "status": "BLOCKED_EOL",
+      "archive": true
+    }
+  }
+}
