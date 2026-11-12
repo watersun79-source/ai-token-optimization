@@ -57,10 +57,13 @@ jobs:
         run: |
           set -euo pipefail
           python -m venv "$RUNNER_TEMP/vendor-sdk"
-          "$RUNNER_TEMP/vendor-sdk/bin/python" -m pip install --only-binary=:all: --no-cache-dir --no-input --disable-pip-version-check --timeout 25 --retries 1 "$SDK_PACKAGE==$SDK_VERSION"
+          SDK_LOCK="experiments/oss-top10-safe-adoption/locks/$SDK_ID-pip.txt"
+          grep -Fqx "$SDK_PACKAGE==$SDK_VERSION" "$SDK_LOCK"
+          "$RUNNER_TEMP/vendor-sdk/bin/python" -m pip install --only-binary=:all: --no-cache-dir --no-input --disable-pip-version-check --timeout 25 --retries 1 -r "$SDK_LOCK"
           "$RUNNER_TEMP/vendor-sdk/bin/python" -m pip check
           echo "SDK_DEPENDENCY_LOCK_BEGIN:$SDK_ID"
-          "$RUNNER_TEMP/vendor-sdk/bin/python" -m pip freeze
+          "$RUNNER_TEMP/vendor-sdk/bin/python" -m pip freeze | tee "$RUNNER_TEMP/sdk-actual-freeze.txt"
+          diff -u "$SDK_LOCK" "$RUNNER_TEMP/sdk-actual-freeze.txt"
           echo "SDK_DEPENDENCY_LOCK_END:$SDK_ID"
       - name: Import real SDK and execute safe local API only
         shell: bash
@@ -145,8 +148,9 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/sdk-node"
           cd "$RUNNER_TEMP/sdk-node"
-          printf '{"name":"offline-sdk-smoke","private":true,"version":"1.0.0"}\n' > package.json
-          npm install --ignore-scripts --no-audit --no-fund --save-exact "$SDK_PACKAGE@$SDK_VERSION"
+          printf '{"name":"offline-sdk-smoke","private":true,"version":"1.0.0","dependencies":{"%s":"%s"}}\n' "$SDK_PACKAGE" "$SDK_VERSION" > package.json
+          base64 -d "$GITHUB_WORKSPACE/experiments/oss-top10-safe-adoption/locks/$SDK_ID-package-lock.json.gz.b64" | gzip -dc > package-lock.json
+          npm ci --ignore-scripts --no-audit --no-fund
           echo "NODE_LOCK_GZIP_B64_BEGIN:$SDK_ID"
           gzip -n -c package-lock.json | base64 -w 120
           echo "NODE_LOCK_GZIP_B64_END:$SDK_ID"
