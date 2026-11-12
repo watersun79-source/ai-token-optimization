@@ -55,10 +55,12 @@ jobs:
       - name: Read official Python Packaging vulnerability advisories for frozen lock
         shell: bash
         run: |
+          set +e
           set -uo pipefail
           LOCK="experiments/oss-top10-safe-adoption/locks/${{ matrix.id }}-pip.txt"
           python -m pip_audit --no-deps --disable-pip -r "$LOCK" --format json --progress-spinner off > "$RUNNER_TEMP/vuln.json"
           code=$?
+          set -e
           echo "AUDIT_STATUS_CODE=$code" >> "$GITHUB_ENV"
           echo "PYPA_AUDIT_QUERY_EXIT:$code"
           exit 0
@@ -115,9 +117,11 @@ jobs:
         shell: bash
         run: |
           cd "$RUNNER_TEMP/npm-audit"
+          set +e
           set -uo pipefail
           npm audit --json --package-lock-only > "$RUNNER_TEMP/npm-vuln.json"
           code=$?
+          set -e
           echo "AUDIT_STATUS_CODE=$code" >> "$GITHUB_ENV"
           echo "NPM_AUDIT_QUERY_EXIT:$code"
           exit 0
