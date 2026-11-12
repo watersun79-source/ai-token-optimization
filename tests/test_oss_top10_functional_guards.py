@@ -15,7 +15,7 @@ class TestOssFunctionalGuards(unittest.TestCase):
   cls.py=PY.read_text(encoding="utf-8")
   cls.js=JS.read_text(encoding="utf-8")
  def test_nine_direct_sdk_versions_pinned(self):
-  self.assertEqual(self.wf.count("version: \""),9)
+  self.assertEqual(len(re.findall(r'\{ id: [^}\n]+, version: "[^"]+" \}', self.wf)),9)
   self.assertIn('version: "1.62.0"',self.wf)
   self.assertIn('version: "0.8.86"',self.wf)
  def test_licensed_isolation_and_free_sdk(self):
