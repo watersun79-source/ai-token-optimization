@@ -1,0 +1,129 @@
+name: OSS TOP10 locked dependency security audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/oss-top10-dependency-audit.yml"
+      - ".github/security/**"
+      - "experiments/oss-top10-safe-adoption/locks/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oss-top10-security-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  python-security:
+    name: "PyPI advisory + dependency licenses ${{ matrix.id }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - { id: langgraph }
+          - { id: openhands }
+          - { id: mem0 }
+          - { id: langfuse }
+          - { id: agent-framework }
+          - { id: crewai }
+          - { id: openai-agents }
+    env:
+      OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      LANGFUSE_PUBLIC_KEY: ""
+      LANGFUSE_SECRET_KEY: ""
+      MEM0_API_KEY: ""
+      OTEL_SDK_DISABLED: "true"
+      LITELLM_LOCAL_MODEL_COST_MAP: "true"
+      PIP_NO_INPUT: "1"
+      PIP_CONFIG_FILE: /dev/null
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: "3.12"
+      - name: Install official public PyPA audit client
+        run: python -m pip install --index-url https://pypi.org/simple --only-binary=:all: --disable-pip-version-check --no-input "pip-audit==2.10.1"
+      - name: Read official Python Packaging vulnerability advisories for frozen lock
+        shell: bash
+        run: |
+          set -uo pipefail
+          LOCK="experiments/oss-top10-safe-adoption/locks/${{ matrix.id }}-pip.txt"
+          python -m pip_audit --no-deps --disable-pip -r "$LOCK" --format json --progress-spinner off > "$RUNNER_TEMP/vuln.json"
+          code=$?
+          echo "AUDIT_STATUS_CODE=$code" >> "$GITHUB_ENV"
+          echo "PYPA_AUDIT_QUERY_EXIT:$code"
+          exit 0
+      - name: Install immutable version set in disposable venv for package license metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/license-env"
+          "$RUNNER_TEMP/license-env/bin/python" -m pip install --index-url https://pypi.org/simple --only-binary=:all: --no-input --disable-pip-version-check --no-cache-dir -r "experiments/oss-top10-safe-adoption/locks/${{ matrix.id }}-pip.txt"
+          "$RUNNER_TEMP/license-env/bin/python" -m pip check
+      - name: Independently verify advisory coverage and licenses
+        shell: bash
+        run: |
+          "$RUNNER_TEMP/license-env/bin/python" .github/security/oss_top10_audit.py \
+            --kind python --lock "experiments/oss-top10-safe-adoption/locks/${{ matrix.id }}-pip.txt" \
+            --audit "$RUNNER_TEMP/vuln.json" --exit-code "$AUDIT_STATUS_CODE"
+
+  npm-security:
+    name: "npm advisory + dependency licenses ${{ matrix.id }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - { id: activepieces, package: "@activepieces/pieces-framework", version: "0.32.0" }
+          - { id: letta, package: "@letta-ai/letta-agent-sdk", version: "0.8.86" }
+    env:
+      OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      LETTA_API_KEY: ""
+      NPM_CONFIG_USERCONFIG: /dev/null
+      NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+      DO_NOT_TRACK: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: "22"
+      - name: Restore exact npm integrity lock with no lifecycle scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/npm-audit"
+          cd "$RUNNER_TEMP/npm-audit"
+          printf '{"name":"offline-sdk-smoke","private":true,"version":"1.0.0","dependencies":{"%s":"%s"}}\n' \
+            "${{ matrix.package }}" "${{ matrix.version }}" > package.json
+          base64 -d "$GITHUB_WORKSPACE/experiments/oss-top10-safe-adoption/locks/${{ matrix.id }}-package-lock.json.gz.b64" | gzip -dc > package-lock.json
+          npm ci --ignore-scripts --no-audit --no-fund
+      - name: Read npm public security advisories without changing dependency lock
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/npm-audit"
+          set -uo pipefail
+          npm audit --json --package-lock-only > "$RUNNER_TEMP/npm-vuln.json"
+          code=$?
+          echo "AUDIT_STATUS_CODE=$code" >> "$GITHUB_ENV"
+          echo "NPM_AUDIT_QUERY_EXIT:$code"
+          exit 0
+      - name: Independently verify npm advisory results and installed license metadata
+        shell: bash
+        run: |
+          python3 .github/security/oss_top10_audit.py \
+            --kind npm --root "$RUNNER_TEMP/npm-audit" \
+            --lock "$RUNNER_TEMP/npm-audit/package-lock.json" \
+            --audit "$RUNNER_TEMP/npm-vuln.json" --exit-code "$AUDIT_STATUS_CODE"
