@@ -50,7 +50,8 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install official public PyPA audit client
-        run: python -m pip install --index-url https://pypi.org/simple --only-binary=:all: --disable-pip-version-check --no-input "pip-audit==2.10.1"
+        run: |
+          python -m pip install --index-url https://pypi.org/simple --only-binary=:all: --disable-pip-version-check --no-input "pip-audit==2.10.1"
       - name: Read official Python Packaging vulnerability advisories for frozen lock
         shell: bash
         run: |
