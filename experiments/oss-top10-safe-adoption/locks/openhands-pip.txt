@@ -29,7 +29,7 @@ fakeredis==2.40.0
 fastmcp==4.1.8
 fastmcp-slim==4.1.8
 fastuuid==0.14.0
-filelock==3.32.7
+filelock==4.2.1
 frozenlist==1.8.0
 fsspec==2026.9.0
 googleapis-common-protos==1.76.0
