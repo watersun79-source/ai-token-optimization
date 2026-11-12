@@ -24,16 +24,17 @@ jobs:
       max-parallel: 2
       matrix:
         include:
-          - { id: langgraph, package: langgraph }
-          - { id: openhands, package: openhands-sdk }
-          - { id: mem0, package: mem0ai }
-          - { id: langfuse, package: langfuse }
-          - { id: agent-framework, package: agent-framework-core }
-          - { id: crewai, package: crewai }
-          - { id: openai-agents, package: openai-agents }
+          - { id: langgraph, package: langgraph, version: "1.2.20" }
+          - { id: openhands, package: openhands-sdk, version: "1.62.0" }
+          - { id: mem0, package: mem0ai, version: "2.2.1" }
+          - { id: langfuse, package: langfuse, version: "5.2.0" }
+          - { id: agent-framework, package: agent-framework-core, version: "1.25.0" }
+          - { id: crewai, package: crewai, version: "1.15.40" }
+          - { id: openai-agents, package: openai-agents, version: "0.24.0" }
     env:
       SDK_ID: "${{ matrix.id }}"
       SDK_PACKAGE: "${{ matrix.package }}"
+      SDK_VERSION: "${{ matrix.version }}"
       OPENAI_API_KEY: ""
       ANTHROPIC_API_KEY: ""
       LANGFUSE_PUBLIC_KEY: ""
@@ -56,8 +57,11 @@ jobs:
         run: |
           set -euo pipefail
           python -m venv "$RUNNER_TEMP/vendor-sdk"
-          "$RUNNER_TEMP/vendor-sdk/bin/python" -m pip install --only-binary=:all: --no-cache-dir --no-input --disable-pip-version-check --timeout 25 --retries 1 "$SDK_PACKAGE"
+          "$RUNNER_TEMP/vendor-sdk/bin/python" -m pip install --only-binary=:all: --no-cache-dir --no-input --disable-pip-version-check --timeout 25 --retries 1 "$SDK_PACKAGE==$SDK_VERSION"
           "$RUNNER_TEMP/vendor-sdk/bin/python" -m pip check
+          echo "SDK_DEPENDENCY_LOCK_BEGIN:$SDK_ID"
+          "$RUNNER_TEMP/vendor-sdk/bin/python" -m pip freeze
+          echo "SDK_DEPENDENCY_LOCK_END:$SDK_ID"
       - name: Import real SDK and execute safe local API only
         shell: bash
         run: |
@@ -102,6 +106,12 @@ jobs:
             "proof":proof,"external_model_calls":0,"production_writes":0
           },sort_keys=True))
           PY
+      - name: Run isolated real Python SDK offline function
+        if: matrix.id != 'langgraph' && matrix.id != 'openai-agents'
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/vendor-sdk/bin/python" experiments/oss-top10-safe-adoption/sdk_functional_python.py --project "$SDK_ID"
 
   node-sdk:
     name: "Node SDK ${{ matrix.id }}"
@@ -112,11 +122,12 @@ jobs:
       max-parallel: 1
       matrix:
         include:
-          - { id: activepieces, package: "@activepieces/pieces-framework", symbol: "createPiece" }
-          - { id: letta, package: "@letta-ai/letta-agent-sdk", symbol: "LettaAgentClient" }
+          - { id: activepieces, package: "@activepieces/pieces-framework", symbol: "createPiece", version: "0.32.0" }
+          - { id: letta, package: "@letta-ai/letta-agent-sdk", symbol: "LettaAgentClient", version: "0.8.86" }
     env:
       SDK_ID: "${{ matrix.id }}"
       SDK_PACKAGE: "${{ matrix.package }}"
+      SDK_VERSION: "${{ matrix.version }}"
       SDK_SYMBOL: "${{ matrix.symbol }}"
       OPENAI_API_KEY: ""
       LETTA_API_KEY: ""
@@ -134,7 +145,11 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/sdk-node"
           cd "$RUNNER_TEMP/sdk-node"
-          npm install --ignore-scripts --no-audit --no-fund --no-package-lock --save=false "$SDK_PACKAGE"
+          printf '{"name":"offline-sdk-smoke","private":true,"version":"1.0.0"}\n' > package.json
+          npm install --ignore-scripts --no-audit --no-fund --save-exact "$SDK_PACKAGE@$SDK_VERSION"
+          echo "NODE_LOCK_GZIP_B64_BEGIN:$SDK_ID"
+          gzip -n -c package-lock.json | base64 -w 120
+          echo "NODE_LOCK_GZIP_B64_END:$SDK_ID"
           node --input-type=module - <<'JS'
           import assert from "node:assert/strict";
           const name=process.env.SDK_PACKAGE;
@@ -147,6 +162,13 @@ jobs:
           }));
           JS
           npm list --depth=0
+      - name: Run isolated real Node SDK offline function
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp experiments/oss-top10-safe-adoption/sdk_functional_node.mjs "$RUNNER_TEMP/sdk-node/probe.mjs"
+          cd "$RUNNER_TEMP/sdk-node"
+          node probe.mjs "$SDK_ID"
 
   flowise-eol:
     name: Flowise EOL is blocked
