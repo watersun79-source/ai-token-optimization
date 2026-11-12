@@ -1,5 +1,4 @@
 """Provider-free sandbox SDK functions. No external accounts or models."""
-from __future__ import annotations
 import argparse
 import asyncio
 import importlib.metadata
@@ -40,7 +39,7 @@ def execute(project: str) -> dict:
   assert b.metadata=={"source":"offline-test"}
  elif project=="langfuse":
   from langfuse import Langfuse
-  client=Langfuse(enabled=False)
+  client=Langfuse(tracing_enabled=False)
   with client.start_as_current_observation(as_type="span",name="local-no-export") as span:
    span.update(output={"verified":True})
   client.flush()
