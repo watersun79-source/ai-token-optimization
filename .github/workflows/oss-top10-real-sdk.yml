@@ -43,6 +43,7 @@ jobs:
       LANGFUSE_TRACING_ENABLED: "false"
       OTEL_SDK_DISABLED: "true"
       CREWAI_TELEMETRY_OPT_OUT: "true"
+      LITELLM_LOCAL_MODEL_COST_MAP: "true"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
