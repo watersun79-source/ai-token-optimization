@@ -13,6 +13,7 @@ import re
 from pathlib import Path
 
 from safe_adoption import SafetyBlock, load_catalog, validate
+from activation_guard import status_snapshot
 
 SCHEMA = "OSS_TOP10_ADAPTER_DRY_RUN_V1"
 PROTECTED = frozenset({"main", "d1", "site", "booking", "secrets", "production"})
@@ -96,6 +97,7 @@ def simulate_all(catalog: dict, goal: str, *, mode: str = "dry_run") -> dict:
         raise SafetyBlock("Live integrations, installation, deploy or writes are not authorized")
     goal = _safe_goal(goal)
     records = validate(catalog)
+    security = status_snapshot()  # Verify all nine Git blobs before any adapter contract is exercised.
     indexed = {r["id"]: r for r in records}
     if set(indexed) != set(_ADAPTERS) or set(_ADAPTERS) != set(ALL_IDS):
         raise SafetyBlock("Ten-project adapter registry drift")
@@ -104,11 +106,21 @@ def simulate_all(catalog: dict, goal: str, *, mode: str = "dry_run") -> dict:
         record = indexed[project_id]
         if record["archived"] and project_id != "flowise":
             raise SafetyBlock("New archived project blocks simulated activation")
+        gate = security["projects"][project_id]
+        # Only provider-free contract mocks run here. Never start or activate a vulnerable SDK.
         artifact = _ADAPTERS[project_id](goal)
+        result_status = (
+            "EOL_VISUAL_REFERENCE_ONLY" if record["archived"] else
+            "BLOCKED_VULNERABILITY_LOCAL_CONTRACT_ONLY"
+            if gate["status"] == "BLOCKED_VULNERABILITY" else "LOCAL_CONTRACT_EXERCISED"
+        )
         results.append({
             "project": project_id,
             "upstream": record["repo"],
-            "status": "EOL_VISUAL_REFERENCE_ONLY" if record["archived"] else "LOCAL_CONTRACT_EXERCISED",
+            "status": result_status,
+            "security_status": gate["status"],
+            "activation_allowed": False,
+            "license_status": gate["license"],
             "vendor_runtime_imported": False,
             "artifact": artifact,
         })
@@ -122,7 +134,9 @@ def simulate_all(catalog: dict, goal: str, *, mode: str = "dry_run") -> dict:
         "vendor_packages_installed": 0,
         "external_requests": 0,
         "production_writes": 0,
-        "selection": {"orchestrator": "langgraph", "memory": "mem0", "observability": "langfuse", "automation": "activepieces"},
+        "selection": {"orchestrator": "langgraph", "memory": "mem0", "observability": "langfuse", "automation": None},
+        "blocked_sdk_activation": security["blocked_vulnerable"],
+        "security_run_id": security["source_security_run"],
         "selection_is_live": False,
         "results": results,
     }
