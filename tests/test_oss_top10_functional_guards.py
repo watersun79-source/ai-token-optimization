@@ -39,6 +39,29 @@ class TestOssFunctionalGuards(unittest.TestCase):
  def test_freeze_receipts(self):
   self.assertIn("SDK_DEPENDENCY_LOCK_BEGIN:",self.wf)
   self.assertIn("NODE_LOCK_GZIP_B64_BEGIN:",self.wf)
+ def test_all_nine_sdk_dependency_locks_exist(self):
+  pins={"langgraph":"1.2.20","openhands-sdk":"1.62.0","mem0ai":"2.2.1",
+   "langfuse":"5.2.0","agent-framework-core":"1.25.0","crewai":"1.15.40",
+   "openai-agents":"0.24.0"}
+  ids={"agent-framework-core":"agent-framework","openhands-sdk":"openhands",
+   "mem0ai":"mem0","openai-agents":"openai-agents"}
+  for package,version in pins.items():
+   ident=ids.get(package,package)
+   p=ROOT/"experiments/oss-top10-safe-adoption/locks"/(ident+"-pip.txt")
+   self.assertTrue(p.is_file(),ident)
+   lines=p.read_text(encoding="utf-8").splitlines()
+   self.assertIn(package+"=="+version,lines)
+   self.assertTrue(all(re.fullmatch(r"[A-Za-z0-9_.-]+==[A-Za-z0-9_.+!-]+",line) for line in lines))
+ def test_node_locks_valid_and_exact(self):
+  import gzip,base64,json
+  names={"activepieces":("@activepieces/pieces-framework","0.32.0"),
+   "letta":("@letta-ai/letta-agent-sdk","0.8.86")}
+  for ident,(package,version) in names.items():
+   p=ROOT/"experiments/oss-top10-safe-adoption/locks"/(ident+"-package-lock.json.gz.b64")
+   self.assertTrue(p.is_file(),ident)
+   lock=json.loads(gzip.decompress(base64.b64decode(p.read_text())))
+   self.assertEqual(lock["packages"][""]["dependencies"][package],version)
+
  def test_flowise_eol(self):
   self.assertIn("FLOWISE_EOL_INSTALL_BLOCKED",self.wf)
   self.assertNotIn("package: Flowise",self.wf)
