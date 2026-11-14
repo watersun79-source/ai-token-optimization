@@ -1,9 +1,11 @@
 """Fail-closed SDK activation regression tests; no third-party packages or providers."""
 from __future__ import annotations
 import copy
+import shutil
 import sys
 import unittest
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parents[1] / "experiments" / "oss-top10-safe-adoption"
 sys.path.insert(0, str(ROOT))
@@ -27,6 +29,32 @@ class TestSecurityActivationGate(unittest.TestCase):
         snap = guard.status_snapshot()
         self.assertEqual(set(snap["blocked_vulnerable"]), guard.BLOCKED)
         self.assertTrue(all(snap["projects"][x]["status"] == "BLOCKED_VULNERABILITY" for x in guard.BLOCKED))
+
+    def test_quarantined_locks_are_history_only(self):
+        snap = guard.status_snapshot()
+        for project in guard.BLOCKED:
+            with self.subTest(project=project):
+                saved = self.evidence["projects"][project]
+                self.assertFalse((guard.LOCKS / saved["lock_file"]).exists())
+                self.assertEqual(snap["projects"][project]["archived_lock_git_blob_sha"], saved["git_blob_sha"])
+                self.assertNotIn("lock_git_blob_sha", snap["projects"][project])
+
+    def test_unapproved_inventory_entries_fail_before_offline_tests(self):
+        with TemporaryDirectory() as temp:
+            locks = Path(temp) / "locks"
+            shutil.copytree(guard.LOCKS, locks)
+            for name in ("openhands-pip.txt", "other.txt"):
+                with self.subTest(name=name):
+                    candidate = locks / name
+                    candidate.write_text("openhands-sdk==1.62.0\n", encoding="utf-8")
+                    with self.assertRaisesRegex(guard.SecurityBlock, "UNAPPROVED_LOCK_INVENTORY"):
+                        guard.verify_evidence(self.evidence, locks_dir=locks)
+                    candidate.unlink()
+
+    def test_current_audit_matrix_contains_every_shipped_lock(self):
+        matrix = guard.current_audit_matrix()
+        self.assertEqual(set(matrix["id"]), guard.CLEAN)
+        self.assertEqual({name + "-pip.txt" for name in matrix["id"]}, {p.name for p in guard.LOCKS.iterdir()})
 
     def test_five_clean_are_still_not_authorized(self):
         snap = guard.status_snapshot()
@@ -68,10 +96,12 @@ class TestSecurityActivationGate(unittest.TestCase):
             guard.verify_evidence(changed)
 
     def test_bad_lock_sha_rejected(self):
-        changed = copy.deepcopy(self.evidence)
-        changed["projects"]["activepieces"]["git_blob_sha"] = "0" * 40
-        with self.assertRaises(guard.SecurityBlock):
-            guard.verify_evidence(changed)
+        for name in ("activepieces", "langgraph"):
+            with self.subTest(name=name):
+                changed = copy.deepcopy(self.evidence)
+                changed["projects"][name]["git_blob_sha"] = "0" * 40
+                with self.assertRaises(guard.SecurityBlock):
+                    guard.verify_evidence(changed)
 
     def test_attempt_to_clear_known_advisories_fails(self):
         changed = copy.deepcopy(self.evidence)

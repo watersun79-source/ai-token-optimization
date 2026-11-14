@@ -17,6 +17,10 @@
 
 선택식 권고: orchestration=LangGraph, memory=Mem0, observability=Langfuse, automation=Activepieces. 다른 실행 엔진·기억 백엔드는 중복 실행하지 않는다.
 
+2026-11-15 KST. 오프라인 SDK 설치 대상은 LangGraph, Mem0, Langfuse, Microsoft Agent Framework, OpenAI Agents SDK 다섯 개다. 보안 감사는 이 잠금 파일 전체에 적용한다. 잠금 파일 변경이나 추가가 검증된 목록과 어긋나면 설치가 차단된다.
+
+Activepieces, OpenHands, CrewAI, Letta는 취약한 잠금 파일과 SDK 실행 경로를 제거했고 로컬 모의 계약으로 사용할 수 있다. 삭제 전 잠금 파일과 원본 경고는 [이전 보안 감사](https://github.com/watersun79-source/ai-token-optimization/actions/runs/43648956618)와 `activation_security_evidence.json`에서 추적할 수 있다. 취약점이 제거된 호환 버전으로 복귀하려면 새 잠금 파일과 새 감사가 필요하다.
+
 실행: `python3 experiments/oss-top10-safe-adoption/ten_adapter_runtime.py --goal "Evidence audit"`
 
 테스트: `python3 -m unittest discover -s tests -p "test_oss_top10_*.py" -v`

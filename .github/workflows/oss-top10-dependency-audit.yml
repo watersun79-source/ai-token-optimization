@@ -6,7 +6,7 @@ on:
     paths:
       - ".github/workflows/oss-top10-dependency-audit.yml"
       - ".github/security/**"
-      - "experiments/oss-top10-safe-adoption/locks/**"
+      - "experiments/oss-top10-safe-adoption/**"
 
 permissions:
   contents: read
@@ -16,22 +16,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  dependency-inventory:
+    name: Verify dependency inventory and quarantines
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      matrix: ${{ steps.inventory.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Verify shipped lock hashes and reject removed locks
+        id: inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          matrix=$(python3 experiments/oss-top10-safe-adoption/activation_guard.py --audit-matrix)
+          printf 'matrix=%s\n' "$matrix" >> "$GITHUB_OUTPUT"
+          printf 'Audited lock inventory: `%s`\n' "$matrix" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Quarantined SDKs: Activepieces, CrewAI, Letta, OpenHands. Their lock files were removed. Historical findings: GitHub Actions run 43648956618.\n' >> "$GITHUB_STEP_SUMMARY"
+
   python-security:
     name: "PyPI advisory + dependency licenses ${{ matrix.id }}"
+    needs: dependency-inventory
     runs-on: ubuntu-latest
     timeout-minutes: 12
     strategy:
       fail-fast: false
       max-parallel: 2
-      matrix:
-        include:
-          - { id: langgraph }
-          - { id: openhands }
-          - { id: mem0 }
-          - { id: langfuse }
-          - { id: agent-framework }
-          - { id: crewai }
-          - { id: openai-agents }
+      matrix: ${{ fromJSON(needs.dependency-inventory.outputs.matrix) }}
     env:
       OPENAI_API_KEY: ""
       ANTHROPIC_API_KEY: ""
@@ -39,7 +52,6 @@ jobs:
       LANGFUSE_SECRET_KEY: ""
       MEM0_API_KEY: ""
       OTEL_SDK_DISABLED: "true"
-      LITELLM_LOCAL_MODEL_COST_MAP: "true"
       PIP_NO_INPUT: "1"
       PIP_CONFIG_FILE: /dev/null
     steps:
@@ -59,7 +71,7 @@ jobs:
           LOCK="experiments/oss-top10-safe-adoption/locks/${{ matrix.id }}-pip.txt"
           code=0
           python -m pip_audit --no-deps --disable-pip -r "$LOCK" --format json --progress-spinner off > "$RUNNER_TEMP/vuln.json" || code=$?
-          python .github/security/oss_top10_audit.py --kind python --lock "$LOCK" \
+          python .github/security/oss_top10_audit.py --lock "$LOCK" \
             --audit "$RUNNER_TEMP/vuln.json" --exit-code "$code" --advisory-only
       - name: Install immutable version set in disposable venv for package license metadata
         shell: bash
@@ -72,63 +84,5 @@ jobs:
         shell: bash
         run: |
           "$RUNNER_TEMP/license-env/bin/python" .github/security/oss_top10_audit.py \
-            --kind python --lock "experiments/oss-top10-safe-adoption/locks/${{ matrix.id }}-pip.txt" \
+            --lock "experiments/oss-top10-safe-adoption/locks/${{ matrix.id }}-pip.txt" \
             --audit "$RUNNER_TEMP/vuln.json" --exit-code 0
-
-  npm-security:
-    name: "npm advisory + dependency licenses ${{ matrix.id }}"
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix:
-        include:
-          - { id: activepieces, package: "@activepieces/pieces-framework", version: "0.32.0" }
-          - { id: letta, package: "@letta-ai/letta-agent-sdk", version: "0.8.86" }
-    env:
-      OPENAI_API_KEY: ""
-      ANTHROPIC_API_KEY: ""
-      LETTA_API_KEY: ""
-      NPM_CONFIG_USERCONFIG: /dev/null
-      NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
-      DO_NOT_TRACK: "1"
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
-        with:
-          node-version: "22"
-      - name: Restore exact npm integrity lock
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/npm-audit"
-          cd "$RUNNER_TEMP/npm-audit"
-          printf '{"name":"offline-sdk-smoke","private":true,"version":"1.0.0","dependencies":{"%s":"%s"}}\n' \
-            "${{ matrix.package }}" "${{ matrix.version }}" > package.json
-          base64 -d "$GITHUB_WORKSPACE/experiments/oss-top10-safe-adoption/locks/${{ matrix.id }}-package-lock.json.gz.b64" | gzip -dc > package-lock.json
-      - name: Verify npm public advisories before installing SDK dependencies
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd "$RUNNER_TEMP/npm-audit"
-          code=0
-          npm audit --json --package-lock-only > "$RUNNER_TEMP/npm-vuln.json" || code=$?
-          python3 "$GITHUB_WORKSPACE/.github/security/oss_top10_audit.py" \
-            --kind npm --lock package-lock.json --audit "$RUNNER_TEMP/npm-vuln.json" \
-            --exit-code "$code" --advisory-only
-      - name: Install audited lock to collect package license metadata
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd "$RUNNER_TEMP/npm-audit"
-          npm ci --ignore-scripts --no-audit --no-fund
-      - name: Independently verify npm advisory results and installed license metadata
-        shell: bash
-        run: |
-          python3 .github/security/oss_top10_audit.py \
-            --kind npm --root "$RUNNER_TEMP/npm-audit" \
-            --lock "$RUNNER_TEMP/npm-audit/package-lock.json" \
-            --audit "$RUNNER_TEMP/npm-vuln.json" --exit-code 0

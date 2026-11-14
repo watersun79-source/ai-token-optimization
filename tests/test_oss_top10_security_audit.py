@@ -20,14 +20,15 @@ class AuditTests(unittest.TestCase):
         cls.wf=WF.read_text(encoding="utf-8")
     def test_public_advisory_sources(self):
         self.assertIn("pip_audit --no-deps --disable-pip",self.wf)
-        self.assertIn("npm audit --json --package-lock-only",self.wf)
     def test_readonly_no_secrets_no_schedule(self):
         self.assertIn("contents: read",self.wf)
         self.assertIn("persist-credentials: false",self.wf)
         for x in ("pull_request_target:","workflow_dispatch:","schedule:","secrets."):
             self.assertNotIn(x,self.wf)
-    def test_nine_matrix_items(self):
-        self.assertEqual(self.wf.count("          - { id: "),9)
+    def test_matrix_only_uses_the_verified_lock_inventory(self):
+        self.assertIn("activation_guard.py --audit-matrix", self.wf)
+        self.assertIn("needs: dependency-inventory", self.wf)
+        self.assertIn("fromJSON(needs.dependency-inventory.outputs.matrix)", self.wf)
     def test_unverified_not_pass(self):
         src=SRC.read_text(encoding="utf-8")
         self.assertIn("if a.exit_code not in (0, 1):",src)
@@ -36,7 +37,6 @@ class AuditTests(unittest.TestCase):
     def test_no_lock_rewriting(self):
         self.assertNotIn("npm audit fix",self.wf)
         self.assertNotIn("pip-audit --fix",self.wf)
-        self.assertIn("npm ci --ignore-scripts",self.wf)
     def test_flowise_excluded(self):
         self.assertNotIn("- { id: flowise",self.wf)
     def test_license_classifier(self):
@@ -51,36 +51,24 @@ class AuditTests(unittest.TestCase):
                 audit.analyze_python(p,{"dependencies":[]})
 
     def test_verified_advisory_gate_precedes_each_install(self):
-        for job, install in (("python-security", 'pip install --index-url https://pypi.org/simple --only-binary=:all: --no-deps'),
-                             ("npm-security", "npm ci --ignore-scripts")):
-            with self.subTest(job=job):
-                section = self.wf.split(f"  {job}:", 1)[1].split("  npm-security:", 1)[0]
-                self.assertLess(section.index("--advisory-only"), section.index(install))
+        self.assertLess(self.wf.index("--advisory-only"), self.wf.index("--only-binary=:all: --no-deps"))
 
     def test_advisory_gate_exits_before_license_collection(self):
         cases = (
-            ("python", 0, {"dependencies": [{"name": "sample-sdk", "version": "1", "vulns": []}]}, 0),
-            ("python", 0, {"dependencies": []}, 2),
-            ("python", 0, {"dependencies": [{"name": "sample-sdk", "version": "1"}]}, 2),
-            ("python", 1, {"dependencies": [{"name": "sample-sdk", "version": "1", "vulns": [{"id": "PYSEC-TEST"}]}]}, 1),
-            ("npm", 0, {"vulnerabilities": {}}, 2),
-            ("npm", 0, {"vulnerabilities": {}, "metadata": {"vulnerabilities": {"total": 0},
-                                                          "dependencies": {"total": 0}}}, 2),
-            ("npm", 0, {"vulnerabilities": {}, "metadata": {"vulnerabilities": {"total": 0},
-                                                          "dependencies": {"total": 1}}}, 0),
-            ("npm", 1, {"vulnerabilities": {"sample-sdk": {"severity": "high", "nodes": ["node_modules/sample-sdk"]}},
-                        "metadata": {"vulnerabilities": {"total": 1}, "dependencies": {"total": 1}}}, 1),
+            (0, {"dependencies": [{"name": "sample-sdk", "version": "1", "vulns": []}]}, 0),
+            (0, {"dependencies": []}, 2),
+            (0, {"dependencies": [{"name": "sample-sdk", "version": "1"}]}, 2),
+            (1, {"dependencies": [{"name": "sample-sdk", "version": "1", "vulns": [{"id": "PYSEC-TEST"}]}]}, 1),
         )
         with TemporaryDirectory() as directory:
             root = Path(directory)
             lock = root / "lock"
+            lock.write_text("sample-sdk==1\n", encoding="utf-8")
             report = root / "report.json"
-            for kind, audit_code, payload, expected_code in cases:
-                with self.subTest(kind=kind, payload=payload):
-                    document = json.dumps({"packages": {"": {}, "node_modules/sample-sdk": {"version": "1"}}})
-                    lock.write_text("sample-sdk==1\n" if kind == "python" else document, encoding="utf-8")
+            for audit_code, payload, expected_code in cases:
+                with self.subTest(payload=payload):
                     report.write_text(json.dumps(payload), encoding="utf-8")
-                    run = subprocess.run([sys.executable, str(SRC), "--kind", kind, "--lock", str(lock),
+                    run = subprocess.run([sys.executable, str(SRC), "--lock", str(lock),
                                           "--audit", str(report), "--exit-code", str(audit_code),
                                           "--advisory-only"], cwd=root, capture_output=True, text=True, check=False)
                     self.assertEqual(run.returncode, expected_code, run.stderr or run.stdout)

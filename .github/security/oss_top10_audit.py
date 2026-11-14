@@ -1,4 +1,4 @@
-"""Audit pinned Python/npm locks against public advisories and installed license metadata."""
+"""Audit pinned Python locks against public advisories and installed license metadata."""
 import argparse
 import importlib.metadata as md
 import json
@@ -61,63 +61,21 @@ def analyze_python(lock, report, *, advisory_only=False):
         licenses.append((name, status))
     return len(packages), len(matched), findings, licenses
 
-def analyze_npm(lock, report, root, *, advisory_only=False):
-    document = json.loads(lock.read_text())
-    packages = document.get("packages")
-    if not isinstance(packages, dict) or "" not in packages or len(packages) < 2:
-        raise ValueError("npm lock missing packages")
-    if "error" in report or not isinstance(report.get("vulnerabilities"), dict):
-        raise ValueError("npm official advisories not available")
-    metadata = report.get("metadata") or {}
-    summary = metadata.get("vulnerabilities") or {}
-    total = summary.get("total")
-    if type(total) is not int or total != len(report["vulnerabilities"]):
-        raise ValueError("npm official advisory total missing or inconsistent")
-    size = len(packages) - 1
-    dependency_total = (metadata.get("dependencies") or {}).get("total")
-    if type(dependency_total) is not int or dependency_total != size:
-        raise ValueError("npm official advisory coverage incomplete")
-    findings = []
-    for name, v in report["vulnerabilities"].items():
-        nodes = v.get("nodes")
-        if not isinstance(nodes, list) or not nodes or any(not node or node not in packages for node in nodes):
-            raise ValueError("npm advisory package path missing from lock")
-        findings.append({"package": name, "severity": v.get("severity"),
-                         "advisories": [a.get("url") for a in v.get("via", []) if isinstance(a, dict)][:5],
-                         "fix_available": v.get("fixAvailable")})
-    licenses = []
-    for rel, spec in (() if advisory_only else packages.items()):
-        if not rel:
-            continue
-        name = spec.get("name") or rel.split("node_modules/")[-1]
-        try:
-            obj = json.loads((root / rel / "package.json").read_text())
-            status = classification([obj.get("license"), obj.get("licenses")])
-            if obj.get("version") != spec.get("version"):
-                status = "UNVERIFIED"
-        except (OSError, ValueError):
-            status = "UNVERIFIED"
-        licenses.append((name, status))
-    return size, dependency_total, findings, licenses
-
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--kind", choices=("python", "npm"), required=True)
     p.add_argument("--lock", type=Path, required=True)
     p.add_argument("--audit", type=Path, required=True)
     p.add_argument("--exit-code", type=int, required=True)
-    p.add_argument("--root", type=Path, default=Path("."))
     p.add_argument("--advisory-only", action="store_true")
     a = p.parse_args()
     try:
         if a.exit_code not in (0, 1):
             raise ValueError("audit service did not complete successfully")
         report = json.loads(a.audit.read_text())
-        size, covered, findings, licenses = (analyze_python(a.lock, report, advisory_only=a.advisory_only)
-            if a.kind == "python" else analyze_npm(a.lock, report, a.root, advisory_only=a.advisory_only))
+        size, covered, findings, licenses = analyze_python(a.lock, report, advisory_only=a.advisory_only)
         if (a.exit_code == 0) != (len(findings) == 0):
             raise ValueError("official audit exit contradicts findings")
-        receipt = {"kind": a.kind, "lock": a.lock.name,
+        receipt = {"kind": "python", "lock": a.lock.name,
                    "dependencies": size, "audited": covered,
                    "known_advisories": len(findings), "findings": findings[:20],
                    "findings_truncated": len(findings) > 20,

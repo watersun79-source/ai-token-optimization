@@ -1,7 +1,7 @@
 """Fail-closed gate for PR #30 isolated OSS adapters.
 
-Reads only verified lock blobs and an advisory snapshot. No network, SDK import,
-model/API calls, writes, or actual vendor activation. Local mock dry-runs remain legal.
+Verifies current lock blobs and retains historical evidence for removed locks.
+No network, SDK import, model/API calls, writes, or actual vendor activation.
 """
 from __future__ import annotations
 
@@ -17,10 +17,10 @@ SOURCE_RUN = 43299315660
 BLOCKED = frozenset({"activepieces", "openhands", "crewai", "letta"})
 CLEAN = frozenset({"langgraph", "mem0", "langfuse", "agent-framework", "openai-agents"})
 EXPECTED_BLOCKED = {
-    "activepieces": (9, "UNVERIFIED"),
-    "openhands": (13, "REVIEW"),
-    "crewai": (5, "UNVERIFIED"),
-    "letta": (4, "REVIEW"),
+    "activepieces": (9, "UNVERIFIED", "87349e98abe1390dcdd9dd3df1d04b211629ae12"),
+    "openhands": (13, "REVIEW", "cdfe11e6d879b60470535b193a3ea09a2c0a7303"),
+    "crewai": (5, "UNVERIFIED", "ab95572ef7a898a7177245889e74d6588713698f"),
+    "letta": (4, "REVIEW", "df29d0c5cc702d673891ab1656e3e6ca0c1bd6f3"),
 }
 ALL = BLOCKED | CLEAN | {"flowise"}
 NPM_PROJECTS = frozenset({"activepieces", "letta"})
@@ -52,6 +52,13 @@ def verify_evidence(evidence: dict, *, locks_dir: Path = LOCKS) -> dict:
     records = evidence.get("projects")
     if not isinstance(records, dict) or set(records) != ALL:
         raise SecurityBlock("INCOMPLETE_SECURITY_COVERAGE")
+    try:
+        entries = list(locks_dir.iterdir())
+    except OSError as error:
+        raise SecurityBlock("LOCK_INVENTORY_UNAVAILABLE") from error
+    if (locks_dir.is_symlink() or {path.name for path in entries} != {name + "-pip.txt" for name in CLEAN}
+            or any(path.is_symlink() or not path.is_file() for path in entries)):
+        raise SecurityBlock("UNAPPROVED_LOCK_INVENTORY")
 
     decisions = {}
     for name in sorted(ALL):
@@ -71,19 +78,13 @@ def verify_evidence(evidence: dict, *, locks_dir: Path = LOCKS) -> dict:
         if (not isinstance(sha, str) or len(sha) != 40
                 or any(c not in "0123456789abcdef" for c in sha)):
             raise SecurityBlock("EXPECTED_SHA_INVALID:" + name)
-        try:
-            actual = git_blob_sha((locks_dir / lock_name).read_bytes())
-        except OSError as error:
-            raise SecurityBlock("LOCK_UNAVAILABLE:" + name) from error
-        if actual != sha:
-            raise SecurityBlock("LOCK_CHANGED_REAUDIT_REQUIRED:" + name)
         count, license_state = row.get("known_advisories"), row.get("license_state")
         if type(count) is not int or count < 0:
             raise SecurityBlock("ADVISORY_COUNT_UNKNOWN:" + name)
         if license_state not in ("DECLARED_METADATA_ONLY", "REVIEW", "UNVERIFIED"):
             raise SecurityBlock("LICENSE_STATUS_UNKNOWN:" + name)
         if name in BLOCKED:
-            if (count, license_state) != EXPECTED_BLOCKED[name]:
+            if (count, license_state, sha) != EXPECTED_BLOCKED[name]:
                 raise SecurityBlock("IMMUTABLE_AUDIT_RESULT_CHANGED:" + name)
             if not row.get("license_unverified_examples"):
                 raise SecurityBlock("LICENSE_UNKNOWN_EVIDENCE_MISSING:" + name)
@@ -94,15 +95,23 @@ def verify_evidence(evidence: dict, *, locks_dir: Path = LOCKS) -> dict:
                     or not row["advisory_ids"]):
                 raise SecurityBlock("KNOWN_VULNERABILITY_UNBLOCK_ATTEMPT:" + name)
             status = "BLOCKED_VULNERABILITY"
+            lock_evidence = {"archived_lock_git_blob_sha": sha}
         else:
+            try:
+                actual = git_blob_sha((locks_dir / lock_name).read_bytes())
+            except OSError as error:
+                raise SecurityBlock("LOCK_UNAVAILABLE:" + name) from error
+            if actual != sha:
+                raise SecurityBlock("LOCK_CHANGED_REAUDIT_REQUIRED:" + name)
             if (count != 0 or row.get("status") != "OFFLINE_ONLY"
                     or license_state != "DECLARED_METADATA_ONLY"):
                 raise SecurityBlock("CLEAN_SDK_EVIDENCE_DRIFT:" + name)
             status = "OFFLINE_ONLY_NOT_APPROVED"
+            lock_evidence = {"lock_git_blob_sha": actual}
         decisions[name] = {
             "status": status, "activation_allowed": False,
             "license": license_state, "known_advisories": count,
-            "lock_git_blob_sha": actual,
+            **lock_evidence,
         }
     return {
         "schema": SCHEMA, "source_head": SOURCE_HEAD, "source_security_run": SOURCE_RUN,
@@ -122,6 +131,11 @@ def offline_ci_install_allowed(project: str) -> bool:
     return snapshot["projects"][project]["status"] == "OFFLINE_ONLY_NOT_APPROVED"
 
 
+def current_audit_matrix() -> dict:
+    projects = status_snapshot()["projects"]
+    return {"id": [name for name, row in projects.items() if "lock_git_blob_sha" in row]}
+
+
 def require_activation_allowed(project: str, *, action: str = "enable") -> None:
     """Explicit deny for ALL live SDK actions, even for advisory-clean candidates."""
     snapshot = status_snapshot()  # Fail closed if the evidence or lock drifts.
@@ -134,6 +148,11 @@ def require_activation_allowed(project: str, *, action: str = "enable") -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Report eligibility for an isolated SDK smoke test.")
-    parser.add_argument("--offline-ci", required=True, metavar="PROJECT")
+    command = parser.add_mutually_exclusive_group(required=True)
+    command.add_argument("--offline-ci", metavar="PROJECT")
+    command.add_argument("--audit-matrix", action="store_true")
     options = parser.parse_args()
-    print("true" if offline_ci_install_allowed(options.offline_ci) else "false")
+    if options.audit_matrix:
+        print(json.dumps(current_audit_matrix(), separators=(",", ":")))
+    else:
+        print("true" if offline_ci_install_allowed(options.offline_ci) else "false")

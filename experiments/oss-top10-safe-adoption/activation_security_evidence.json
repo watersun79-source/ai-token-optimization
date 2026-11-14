@@ -5,7 +5,7 @@
   "audit_run_id": 43299315660,
   "security_scan_date_kst": "2026-11-13",
   "scope": "READ_ONLY_OFFICIAL_CI_AND_NINE_PINNED_LOCKS_NO_HOSTED_DEPLOYMENT",
-  "note": "Metadata-only license verification is not legal license approval. All vendor SDK activation remains blocked; local deterministic mock dry-runs continue.",
+  "note": "Historical nine-lock audit. The four BLOCKED_VULNERABILITY lock blobs are retained in Git history; five current locks are verified separately. All live SDK activation is blocked. License metadata is not legal approval.",
   "projects": {
     "activepieces": {
       "status": "BLOCKED_VULNERABILITY",

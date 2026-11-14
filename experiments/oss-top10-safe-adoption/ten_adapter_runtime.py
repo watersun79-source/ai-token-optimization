@@ -97,7 +97,7 @@ def simulate_all(catalog: dict, goal: str, *, mode: str = "dry_run") -> dict:
         raise SafetyBlock("Live integrations, installation, deploy or writes are not authorized")
     goal = _safe_goal(goal)
     records = validate(catalog)
-    security = status_snapshot()  # Verify all nine Git blobs before any adapter contract is exercised.
+    security = status_snapshot()  # Verify the current locks and historical quarantine evidence.
     indexed = {r["id"]: r for r in records}
     if set(indexed) != set(_ADAPTERS) or set(_ADAPTERS) != set(ALL_IDS):
         raise SafetyBlock("Ten-project adapter registry drift")
