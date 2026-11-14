@@ -5,6 +5,7 @@ model/API calls, writes, or actual vendor activation. Local mock dry-runs remain
 """
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -22,6 +23,7 @@ EXPECTED_BLOCKED = {
     "letta": (4, "REVIEW"),
 }
 ALL = BLOCKED | CLEAN | {"flowise"}
+NPM_PROJECTS = frozenset({"activepieces", "letta"})
 LOCKS = ROOT / "locks"
 EVIDENCE = ROOT / "activation_security_evidence.json"
 
@@ -63,8 +65,8 @@ def verify_evidence(evidence: dict, *, locks_dir: Path = LOCKS) -> dict:
                                "license": "UNVERIFIED", "known_advisories": None}
             continue
         lock_name, sha = row.get("lock_file"), row.get("git_blob_sha")
-        if (not isinstance(lock_name, str) or not lock_name.startswith(name + "-")
-                or "/" in lock_name or "\\" in lock_name or ".." in lock_name):
+        suffix = "-package-lock.json.gz.b64" if name in NPM_PROJECTS else "-pip.txt"
+        if lock_name != name + suffix:
             raise SecurityBlock("LOCK_IDENTITY_INVALID:" + name)
         if (not isinstance(sha, str) or len(sha) != 40
                 or any(c not in "0123456789abcdef" for c in sha)):
@@ -113,6 +115,13 @@ def status_snapshot() -> dict:
     return verify_evidence(load_evidence())
 
 
+def offline_ci_install_allowed(project: str) -> bool:
+    snapshot = status_snapshot()
+    if project not in snapshot["projects"]:
+        raise SecurityBlock("UNKNOWN_SDK_BLOCKED")
+    return snapshot["projects"][project]["status"] == "OFFLINE_ONLY_NOT_APPROVED"
+
+
 def require_activation_allowed(project: str, *, action: str = "enable") -> None:
     """Explicit deny for ALL live SDK actions, even for advisory-clean candidates."""
     snapshot = status_snapshot()  # Fail closed if the evidence or lock drifts.
@@ -121,3 +130,10 @@ def require_activation_allowed(project: str, *, action: str = "enable") -> None:
     if action not in ("enable", "install", "start", "invoke", "deploy", "connect", "publish"):
         raise SecurityBlock("UNKNOWN_ACTION_BLOCKED")
     raise SecurityBlock("ACTIVATION_DENIED:" + project + ":" + snapshot["projects"][project]["status"])
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Report eligibility for an isolated SDK smoke test.")
+    parser.add_argument("--offline-ci", required=True, metavar="PROJECT")
+    options = parser.parse_args()
+    print("true" if offline_ci_install_allowed(options.offline_ci) else "false")

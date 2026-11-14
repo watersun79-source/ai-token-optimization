@@ -39,6 +39,13 @@ class TestOssFunctionalGuards(unittest.TestCase):
  def test_freeze_receipts(self):
   self.assertIn("SDK_DEPENDENCY_LOCK_BEGIN:",self.wf)
   self.assertIn("NODE_LOCK_GZIP_B64_BEGIN:",self.wf)
+ def test_install_and_sdk_execution_require_the_quarantine_check(self):
+  gated = "if: steps.quarantine.outputs.allowed == 'true'"
+  sdk_jobs = self.wf.split("  flowise-eol:", 1)[0]
+  self.assertEqual(sdk_jobs.count("id: quarantine"), 2)
+  for step in re.split(r"\n      - ", sdk_jobs):
+   if any(command in step for command in ("-r \"$SDK_LOCK\"", "npm ci", "sdk_functional_", "importlib.import_module")):
+    self.assertIn(gated, step)
  def test_all_nine_sdk_dependency_locks_exist(self):
   pins={"langgraph":"1.2.20","openhands-sdk":"1.62.0","mem0ai":"2.2.1",
    "langfuse":"5.2.0","agent-framework-core":"1.25.0","crewai":"1.15.40",

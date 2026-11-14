@@ -46,6 +46,13 @@ class TestSecurityActivationGate(unittest.TestCase):
             with self.subTest(project=project, action=action), self.assertRaises(guard.SecurityBlock):
                 guard.require_activation_allowed(project, action=action)
 
+    def test_ci_install_is_permitted_only_for_the_five_offline_candidates(self):
+        for project in guard.ALL:
+            with self.subTest(project=project):
+                self.assertEqual(guard.offline_ci_install_allowed(project), project in guard.CLEAN)
+        with self.assertRaises(guard.SecurityBlock):
+            guard.offline_ci_install_allowed("unknown-sdk")
+
     def test_source_run_or_sha_mismatch_fails_closed(self):
         for k, v in (("audit_run_id", 0), ("audit_head", "0" * 40), ("source", "trust_me")):
             with self.subTest(key=k):
