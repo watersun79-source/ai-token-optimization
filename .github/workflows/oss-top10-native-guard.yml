@@ -1,0 +1,31 @@
+name: OSS TOP10 native evidence isolated regression
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oss-top10-native-guard-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  native-run-cooldown-isolated:
+    name: Native KST and cooldown fail-closed (offline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      PYTHONNOUSERSITE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: '3.12'
+      - name: Run native integrity and cooldown isolated tests
+        run: python -B -m unittest discover -s tests -p 'test_native_run_cooldown_guard.py' -v

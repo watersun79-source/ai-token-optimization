@@ -1,0 +1,24 @@
+{
+  "last_run": {
+    "id": "9e405510-6c40-8323-9903-87b0469a415c",
+    "recorded_status": "completed",
+    "scheduled_for": "2026-11-15T02:00:00Z",
+    "started_at": "2026-11-15T01:59:48.889995Z",
+    "completed_at": "2026-11-15T02:00:13.169617Z"
+  },
+  "latest_result": {
+    "run_id": "9e405510-6c40-8323-9903-87b0469a415c",
+    "scheduled_for": "2026-11-15T02:00:00Z",
+    "created_at": "2026-11-15T02:00:12.395365Z",
+    "content_text": "진화하는 AI · 2026년 11월 15일 오전 11시 KST 예정 회차"
+  },
+  "evolution_cycle": {
+    "status": "BLOCKED",
+    "debug": {"status":"BLOCKED", "reason":"COOLDOWN"},
+    "fix": {"status":"SKIP"},
+    "update": {"status":"SKIP"},
+    "mcp_receipt": {"status":"PASS", "id":"mcp.86fe431d-9f98-4598-88c8-c9ffee1058bd"}
+  },
+  "d1_before": {"revision":14, "content_sha":"cb54f66d2fcdd6f0703312b7b1a086c1467622fde8938d8013a8df7aff9f3a51"},
+  "d1_after": {"revision":14, "content_sha":"cb54f66d2fcdd6f0703312b7b1a086c1467622fde8938d8013a8df7aff9f3a51"}
+}
