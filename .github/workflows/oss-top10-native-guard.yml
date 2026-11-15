@@ -28,4 +28,16 @@ jobs:
         with:
           python-version: '3.12'
       - name: Run native integrity and cooldown isolated tests
-        run: python -B -m unittest discover -s tests -p 'test_native_run_cooldown_guard.py' -v
+        run: |
+          python -B - <<'PYTEST'
+          import unittest
+          from pathlib import Path
+          test_file = Path("tests/test_native_run_cooldown_guard.py")
+          if not test_file.is_file() or test_file.is_symlink():
+              raise SystemExit("NATIVE_GUARD_TEST_FILE_MISSING_OR_SYMLINK")
+          suite = unittest.defaultTestLoader.discover("tests", pattern=test_file.name)
+          if suite.countTestCases() < 27:
+              raise SystemExit("NATIVE_GUARD_TESTS_MISSING_OR_TRUNCATED")
+          if not unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful():
+              raise SystemExit(1)
+          PYTEST

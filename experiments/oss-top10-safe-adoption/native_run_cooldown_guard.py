@@ -32,7 +32,10 @@ def _title_matches(title: object, when: datetime) -> bool | None:
         return None
     # First line only; text mentioning the scheduled date later is not proof of a matching heading.
     first_line = title.splitlines()[0][:200] if title else ""
-    match = HEADING.search(first_line)
+    # Do not treat a date mentioned in a warning/status sentence as the report heading.
+    heading = first_line.strip()
+    heading = re.sub(r"^진화하는 AI\s*[·:]\s*", "", heading)
+    match = HEADING.match(heading)
     if match is None:
         return None
     year, month, day, ampm, hour, minute = match.groups()

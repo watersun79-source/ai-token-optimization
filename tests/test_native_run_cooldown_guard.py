@@ -71,6 +71,12 @@ class NativeIntegrityTests(unittest.TestCase):
         out=self.check(lambda d:d['latest_result'].update(content_text='NO_UPDATE\n2026년 11월 15일 오전 11시'))
         self.assertEqual(out['native']['status'], 'UNVERIFIED')
 
+    def test_title_mentioned_inline_is_not_heading(self):
+        out = self.check(lambda d: d['latest_result'].update(
+            content_text='NO_UPDATE. Not a verified heading: 2026년 11월 15일 오전 11시'))
+        self.assertEqual(out['native']['status'], 'UNVERIFIED')
+        self.assertIsNone(out['native']['title_equal'])
+
     def test_in_progress_not_completed(self):
         out=self.check(lambda d:d['last_run'].update(recorded_status='in_progress'))
         self.assertEqual(out['native']['status'], 'UNVERIFIED')
