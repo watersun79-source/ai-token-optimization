@@ -108,6 +108,9 @@ def check_cycle(cycle: object) -> dict:
     stage_statuses = [part["status"] for part in (debug, fix, update) if "status" in part]
     stage_unverified = (any(name in cycle and not isinstance(cycle[name], dict)
                             for name in ("debug", "fix", "update")) or
+                        any(name in cycle and isinstance(cycle[name], dict) and
+                            "status" not in cycle[name]
+                            for name in ("debug", "fix", "update")) or
                         any(status not in ("PASS", "SKIP", "NO_UPDATE")
                             for status in stage_statuses))
     denied = (op_status in ("BLOCKED", "FAIL") or reason_code in DENIALS or
