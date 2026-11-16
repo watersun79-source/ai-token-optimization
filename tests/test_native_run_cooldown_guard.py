@@ -217,7 +217,7 @@ class SiteGithub403AdditionalRegressions(unittest.TestCase):
     """Only new PR #31 Site 403 fail-closed cases; no external calls."""
 
     def check(self, status='PASS', reason='GITHUB_HTTP_403'):
-        cycle = {'status': status, 'debug': {'reason': reason},
+        cycle = {'status': status, 'debug': {'status': 'PASS', 'reason': reason},
                  'mcp_receipt': {'status': 'PASS'}}
         before = copy.deepcopy(cycle)
         verdict = guard.check_cycle(cycle)
