@@ -15,7 +15,7 @@ HEADING = re.compile(
     r"(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일\s*(오전|오후)\s*"
     r"(\d{1,2})시(?:\s*(\d{1,2})분)?"
 )
-DENIALS = frozenset({"COOLDOWN", "UPSTREAM_BACKOFF", "HTTP_401", "HTTP_403", "HTTP_404", "HTTP_429", "PERMISSION_DENIED"})
+DENIALS = frozenset({"COOLDOWN", "UPSTREAM_BACKOFF", "HTTP_401", "HTTP_403", "GITHUB_HTTP_403", "HTTP_404", "HTTP_429", "PERMISSION_DENIED"})
 
 
 def _instant(value: object) -> datetime:
