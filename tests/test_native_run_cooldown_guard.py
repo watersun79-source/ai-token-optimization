@@ -363,5 +363,74 @@ class SiteGithub403StrictNoUpdateRegressions(unittest.TestCase):
         self.assertEqual(out['overall'], 'UNVERIFIED')
 
 
+
+def input_cycle():
+    return {'status': 'NO_UPDATE', 'debug': {'status': 'PASS', 'reason': 'SAME_HEAD'},
+            'fix': {'status': 'SKIP'}, 'update': {'status': 'SKIP'},
+            'mcp_receipt': {'status': 'PASS'}}
+
+
+def native_payload(cycle):
+    return {'last_run': {'id': 'run-1', 'recorded_status': 'completed',
+                         'scheduled_for': '2026-11-17T00:00:00Z',
+                         'started_at': '2026-11-17T00:00:01Z',
+                         'completed_at': '2026-11-17T00:00:05Z'},
+            'latest_result': {'run_id':'run-1','scheduled_for':'2026-11-17T00:00:00Z',
+                              'created_at':'2026-11-17T00:00:04Z',
+                              'content_text':'진화하는 AI · 2026년 11월 17일 오전 9시'},
+            'evolution_cycle':cycle}
+
+
+class StageStatusV4(unittest.TestCase):
+    """Fail-closed stage-status regressions; isolated, zero external calls."""
+
+    def check(self, status, stage=None, value=None):
+        c=input_cycle()
+        if stage is not None: c[stage]={'status': value}
+        if stage=='debug': c['debug']['reason']='SAME_HEAD'
+        previous=copy.deepcopy(c)
+        out=guard.check_cycle(c)
+        self.assertEqual(previous,c)
+        self.assertFalse(out['allow_retry']); self.assertFalse(out['allow_write'])
+        self.assertEqual(out['status'],status)
+        return out
+
+    def test_debug_fail_blocks(self): self.check('BLOCKED','debug','FAIL')
+    def test_fix_fail_blocks(self): self.check('BLOCKED','fix','FAIL')
+    def test_update_fail_blocks(self): self.check('BLOCKED','update','FAIL')
+    def test_debug_blocked_blocks(self): self.check('BLOCKED','debug','BLOCKED')
+    def test_fix_blocked_blocks(self): self.check('BLOCKED','fix','BLOCKED')
+    def test_update_blocked_blocks(self): self.check('BLOCKED','update','BLOCKED')
+    def test_debug_unverified_blocks_no_update(self): self.check('UNVERIFIED','debug','UNVERIFIED')
+    def test_fix_unverified_blocks_no_update(self): self.check('UNVERIFIED','fix','UNVERIFIED')
+    def test_update_unverified_blocks_no_update(self): self.check('UNVERIFIED','update','UNVERIFIED')
+    def test_failure_takes_precedence_over_unverified(self):
+        c=input_cycle();c['debug']['status']='UNVERIFIED';c['update']['status']='FAIL'
+        self.assertEqual(guard.check_cycle(c)['status'],'BLOCKED')
+    def test_inprogress_is_not_no_update(self): self.check('UNVERIFIED','fix','IN_PROGRESS')
+    def test_none_status_is_not_no_update(self): self.check('UNVERIFIED','fix',None)
+    def test_invalid_stage_is_unverified(self):
+        c=input_cycle();c['fix']='FAIL'
+        self.assertEqual(guard.check_cycle(c)['status'],'UNVERIFIED')
+    def test_same_head_pass_and_skip_preserved(self): self.check('NO_UPDATE')
+    def test_same_head_all_pass_preserved(self):
+        c=input_cycle();c['fix']['status']='PASS';c['update']['status']='PASS'
+        self.assertEqual(guard.check_cycle(c)['status'],'NO_UPDATE')
+    def test_same_head_optional_stages_absent_preserved(self):
+        c={'status':'NO_UPDATE','debug': {'reason':'SAME_HEAD'}}
+        self.assertEqual(guard.check_cycle(c)['status'],'NO_UPDATE')
+    def test_same_head_explicit_no_update_stage_preserved(self): self.check('NO_UPDATE','fix','NO_UPDATE')
+    def test_audit_overall_fail_stage_blocked(self):
+        c=input_cycle();c['fix']['status']='FAIL';v=guard.audit(native_payload(c))
+        self.assertEqual(v['native']['status'],'PASS')
+        self.assertEqual(v['cycle']['status'],'BLOCKED')
+        self.assertEqual(v['overall'],'BLOCKED');self.assertEqual(v['external_mutations'],0)
+    def test_audit_overall_unverified_stage(self):
+        c=input_cycle();c['update']['status']='UNVERIFIED';v=guard.audit(native_payload(c))
+        self.assertEqual(v['native']['status'],'PASS')
+        self.assertEqual(v['cycle']['status'],'UNVERIFIED')
+        self.assertEqual(v['overall'],'UNVERIFIED');self.assertEqual(v['external_mutations'],0)
+
+
 if __name__ == '__main__':
     unittest.main()
