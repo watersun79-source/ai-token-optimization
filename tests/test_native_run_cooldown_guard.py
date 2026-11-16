@@ -417,7 +417,7 @@ class StageStatusV4(unittest.TestCase):
         c=input_cycle();c['fix']['status']='PASS';c['update']['status']='PASS'
         self.assertEqual(guard.check_cycle(c)['status'],'NO_UPDATE')
     def test_same_head_optional_stages_absent_preserved(self):
-        c={'status':'NO_UPDATE','debug': {'reason':'SAME_HEAD'}}
+        c={'status':'NO_UPDATE','debug': {'status':'PASS', 'reason':'SAME_HEAD'}}
         self.assertEqual(guard.check_cycle(c)['status'],'NO_UPDATE')
     def test_same_head_explicit_no_update_stage_preserved(self): self.check('NO_UPDATE','fix','NO_UPDATE')
     def test_audit_overall_fail_stage_blocked(self):
@@ -430,6 +430,89 @@ class StageStatusV4(unittest.TestCase):
         self.assertEqual(v['native']['status'],'PASS')
         self.assertEqual(v['cycle']['status'],'UNVERIFIED')
         self.assertEqual(v['overall'],'UNVERIFIED');self.assertEqual(v['external_mutations'],0)
+
+
+
+def safe_cycle():
+    return {'status':'NO_UPDATE',
+            'debug':{'status':'PASS','reason':'SAME_HEAD'},
+            'fix':{'status':'SKIP'},
+            'update':{'status':'SKIP'},
+            'mcp_receipt':{'status':'PASS'}}
+
+
+class MissingStageStatusV5(unittest.TestCase):
+    """New standalone status-field omission regressions."""
+
+    def expect(self, expected, transform):
+        cycle=safe_cycle()
+        transform(cycle)
+        unchanged=copy.deepcopy(cycle)
+        result=guard.check_cycle(cycle)
+        self.assertEqual(expected,result['status'])
+        self.assertEqual(unchanged,cycle)
+        self.assertFalse(result['allow_retry'])
+        self.assertFalse(result['allow_write'])
+        return result
+
+    def test_missing_debug_status(self):
+        self.expect('UNVERIFIED',lambda c:c['debug'].pop('status'))
+
+    def test_missing_fix_status(self):
+        self.expect('UNVERIFIED',lambda c:c['fix'].pop('status'))
+
+    def test_missing_update_status(self):
+        self.expect('UNVERIFIED',lambda c:c['update'].pop('status'))
+
+    def test_all_present_but_empty_status(self):
+        self.expect('UNVERIFIED',lambda c:(c['debug'].pop('status'), c['fix'].pop('status'), c['update'].pop('status')))
+
+    def test_empty_fix_object_is_not_absence(self):
+        self.expect('UNVERIFIED',lambda c:c.update(fix={}))
+
+    def test_empty_update_object_is_not_absence(self):
+        self.expect('UNVERIFIED',lambda c:c.update(update={}))
+
+    def test_debug_reason_only_not_enough(self):
+        self.expect('UNVERIFIED',lambda c:c.update(debug={'reason':'SAME_HEAD'}))
+
+    def test_failure_overrides_missing_stage(self):
+        self.expect('BLOCKED',lambda c:(c.update(fix={}), c['update'].update(status='FAIL')))
+
+    def test_blocked_overrides_missing_stage(self):
+        self.expect('BLOCKED',lambda c:(c.update(update={}), c['fix'].update(status='BLOCKED')))
+
+    def test_valid_optional_stages_absent(self):
+        self.expect('NO_UPDATE',lambda c:(c.pop('fix'),c.pop('update')))
+
+    def test_all_valid_stages_still_no_update(self):
+        self.expect('NO_UPDATE',lambda c:None)
+
+    def test_explicit_nonvalidated_status_stays_unverified(self):
+        self.expect('UNVERIFIED',lambda c:c['fix'].update(status='IN_PROGRESS'))
+
+    def test_audit_overall_missing_fix_unverified(self):
+        c=safe_cycle(); c.update(fix={})
+        out=guard.audit(native_payload(c))
+        self.assertEqual(out['native']['status'],'PASS')
+        self.assertEqual(out['cycle']['status'],'UNVERIFIED')
+        self.assertEqual(out['overall'],'UNVERIFIED')
+        self.assertEqual(out['external_mutations'],0)
+
+    def test_audit_overall_missing_debug_unverified(self):
+        c=safe_cycle(); c['debug'].pop('status')
+        out=guard.audit(native_payload(c))
+        self.assertEqual(out['native']['status'],'PASS')
+        self.assertEqual(out['overall'],'UNVERIFIED')
+
+    def test_audit_failure_priority_for_native_mismatch(self):
+        c=safe_cycle(); c.update(fix={})
+        data=native_payload(c);data['latest_result']['run_id']='wrong'
+        self.assertEqual(guard.audit(data)['overall'],'FAIL')
+
+    def test_existing_403_still_blocked_even_when_stage_missing(self):
+        c=safe_cycle(); c.update(fix={}); c['debug']['reason']='GITHUB_HTTP_403'
+        self.assertEqual(guard.check_cycle(c)['status'],'BLOCKED')
 
 
 if __name__ == '__main__':
