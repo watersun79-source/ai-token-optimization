@@ -200,5 +200,86 @@ class SiteGithub403NewRegressionTests(unittest.TestCase):
         self.assertFalse(result['allow_write'])
 
 
+
+def _site403_native_v2():
+    return {
+        'last_run': {'id': 'run-a', 'recorded_status': 'completed',
+                     'scheduled_for': '2026-11-17T00:00:00Z',
+                     'started_at': '2026-11-17T00:00:01Z',
+                     'completed_at': '2026-11-17T00:00:04Z'},
+        'latest_result': {'run_id': 'run-a', 'scheduled_for': '2026-11-17T00:00:00Z',
+                          'created_at': '2026-11-17T00:00:03Z',
+                          'content_text': '진화하는 AI · 2026년 11월 17일 오전 9시'},
+    }
+
+
+class SiteGithub403AdditionalRegressions(unittest.TestCase):
+    """Only new PR #31 Site 403 fail-closed cases; no external calls."""
+
+    def check(self, status='PASS', reason='GITHUB_HTTP_403'):
+        cycle = {'status': status, 'debug': {'reason': reason},
+                 'mcp_receipt': {'status': 'PASS'}}
+        before = copy.deepcopy(cycle)
+        verdict = guard.check_cycle(cycle)
+        self.assertEqual(cycle, before)
+        self.assertFalse(verdict['allow_retry'])
+        self.assertFalse(verdict['allow_write'])
+        return verdict
+
+    def test_leading_trailing_whitespace_403(self):
+        self.assertEqual(self.check(reason='  GITHUB_HTTP_403  ')['status'], 'BLOCKED')
+
+    def test_colon_detail_403(self):
+        self.assertEqual(self.check(reason='GITHUB_HTTP_403: denied by upstream')['status'], 'BLOCKED')
+
+    def test_colon_detail_overrides_no_update(self):
+        self.assertEqual(self.check(status='NO_UPDATE', reason='GITHUB_HTTP_403: forbidden')['status'], 'BLOCKED')
+
+    def test_padded_colon_403(self):
+        self.assertEqual(self.check(reason=' GITHUB_HTTP_403 : denied ')['status'], 'BLOCKED')
+
+    def test_missing_reason_no_update_unverified(self):
+        out = guard.check_cycle({'status': 'NO_UPDATE', 'debug': {}, 'mcp_receipt': {'status': 'PASS'}})
+        self.assertEqual(out['status'], 'UNVERIFIED')
+        self.assertFalse(out['allow_write'])
+        self.assertFalse(out['allow_retry'])
+
+    def test_blank_reason_no_update_unverified(self):
+        self.assertEqual(self.check(status='NO_UPDATE', reason='  ')['status'], 'UNVERIFIED')
+
+    def test_none_reason_no_update_unverified(self):
+        self.assertEqual(self.check(status='NO_UPDATE', reason=None)['status'], 'UNVERIFIED')
+
+    def test_nonstring_reason_no_update_unverified(self):
+        self.assertEqual(self.check(status='NO_UPDATE', reason={'detail': 'GITHUB_HTTP_403'})['status'], 'UNVERIFIED')
+
+    def test_similar_prefix_not_false_positive(self):
+        self.assertEqual(self.check(reason='GITHUB_HTTP_403X: denied')['status'], 'UNVERIFIED')
+
+    def test_embedded_reason_not_false_positive(self):
+        self.assertEqual(self.check(reason='NOT_GITHUB_HTTP_403: denied')['status'], 'UNVERIFIED')
+
+    def test_verified_same_head_preserves_no_update(self):
+        self.assertEqual(self.check(status='NO_UPDATE', reason='SAME_HEAD')['status'], 'NO_UPDATE')
+
+    def test_audit_overall_blocked_for_detailed_403(self):
+        data = _site403_native_v2()
+        data['evolution_cycle'] = {'status': 'NO_UPDATE', 'debug': {'reason': ' GITHUB_HTTP_403: forbidden'}}
+        out = guard.audit(data)
+        self.assertEqual(out['native']['status'], 'PASS')
+        self.assertEqual(out['cycle']['status'], 'BLOCKED')
+        self.assertEqual(out['overall'], 'BLOCKED')
+        self.assertEqual(out['external_mutations'], 0)
+
+    def test_audit_overall_unverified_for_missing_reason(self):
+        data = _site403_native_v2()
+        data['evolution_cycle'] = {'status': 'NO_UPDATE', 'debug': {}}
+        out = guard.audit(data)
+        self.assertEqual(out['native']['status'], 'PASS')
+        self.assertEqual(out['cycle']['status'], 'UNVERIFIED')
+        self.assertEqual(out['overall'], 'UNVERIFIED')
+        self.assertEqual(out['external_mutations'], 0)
+
+
 if __name__ == '__main__':
     unittest.main()
