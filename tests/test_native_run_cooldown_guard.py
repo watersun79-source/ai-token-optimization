@@ -515,5 +515,89 @@ class MissingStageStatusV5(unittest.TestCase):
         self.assertEqual(guard.check_cycle(c)['status'],'BLOCKED')
 
 
+
+class SiteGithub403IntakeCLIRegressions(unittest.TestCase):
+    """Real executable stdin/stdout boundary, no external Site or GitHub operations."""
+
+    def _event(self, reason="GITHUB_HTTP_403", status="NO_UPDATE"):
+        cycle={"status":status,"debug":{"status":"PASS","reason":reason},
+               "fix":{"status":"SKIP"},"update":{"status":"SKIP"},
+               "mcp_receipt":{"status":"PASS"}}
+        return native_payload(cycle)
+
+    def _invoke(self, payload, expected_exit=2, *, raw=False):
+        import subprocess, sys
+        script=ROOT / "experiments" / "oss-top10-safe-adoption" / "site_github403_intake.py"
+        stdin=payload if raw else json.dumps(payload,ensure_ascii=False).encode("utf-8")
+        proc=subprocess.run([sys.executable,"-B",str(script)],input=stdin,
+                            stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=8)
+        self.assertEqual(proc.returncode,expected_exit,proc.stderr.decode("utf-8","replace"))
+        self.assertEqual(proc.stderr,b"")
+        result=json.loads(proc.stdout.decode("utf-8"))
+        self.assertFalse(result["allow_retry"])
+        self.assertFalse(result["allow_write"])
+        self.assertEqual(result["external_requests"],0)
+        self.assertEqual(result["external_mutations"],0)
+        self.assertEqual(result["site_source_authentication"],"UNVERIFIED")
+        self.assertEqual(result["site_runtime_integration"],"UNVERIFIED")
+        self.assertEqual(result["operational_clearance"],"BLOCKED")
+        return result,proc.stdout.decode("utf-8")
+
+    def test_exec_403_blocks_claimed_no_update(self):
+        result,_=self._invoke(self._event())
+        self.assertEqual(result["classification"],"BLOCKED")
+
+    def test_exec_403_blocks_claimed_pass(self):
+        result,_=self._invoke(self._event(status="PASS"))
+        self.assertEqual(result["classification"],"BLOCKED")
+
+    def test_exec_normal_no_update_is_noop(self):
+        result,_=self._invoke(self._event("SAME_HEAD"),0)
+        self.assertEqual(result["classification"],"NO_UPDATE")
+
+    def test_exec_missing_stage_status_unverified(self):
+        data=self._event("SAME_HEAD");data["evolution_cycle"]["fix"]={}
+        result,_=self._invoke(data)
+        self.assertEqual(result["classification"],"UNVERIFIED")
+
+    def test_exec_absent_optional_stage_preserved(self):
+        data=self._event("SAME_HEAD");data["evolution_cycle"].pop("fix")
+        data["evolution_cycle"].pop("update")
+        result,_=self._invoke(data,0)
+        self.assertEqual(result["classification"],"NO_UPDATE")
+
+    def test_exec_unverified_when_native_missing(self):
+        result,_=self._invoke({"evolution_cycle":self._event("SAME_HEAD")["evolution_cycle"]})
+        self.assertEqual(result["classification"],"UNVERIFIED")
+
+    def test_exec_native_mismatch_fails(self):
+        data=self._event("SAME_HEAD");data["latest_result"]["run_id"]="wrong"
+        result,_=self._invoke(data)
+        self.assertEqual(result["classification"],"FAIL")
+
+    def test_exec_bad_json_is_blocked_sanitized(self):
+        result,printed=self._invoke(b'{"bad":oops sk-proj-hiddentoken123}',raw=True)
+        self.assertEqual(result["reason_code"],"INPUT_INVALID")
+        self.assertNotIn("hiddentoken",printed)
+
+    def test_exec_duplicate_json_keys_denied(self):
+        result,_=self._invoke(b'{"x":1,"x":2}',raw=True)
+        self.assertEqual(result["reason_code"],"INPUT_INVALID")
+
+    def test_exec_oversized_json_denied(self):
+        result,_=self._invoke(b"x"*65537,raw=True)
+        self.assertEqual(result["reason_code"],"INPUT_INVALID")
+
+    def test_exec_secret_in_reason_not_echoed(self):
+        data=self._event("GITHUB_HTTP_403: sk-proj-ultrasecret987654321")
+        result,printed=self._invoke(data)
+        self.assertEqual(result["classification"],"BLOCKED")
+        self.assertNotIn("ultrasecret",printed)
+
+    def test_exec_invalid_utf8_denied(self):
+        result,_=self._invoke(b'\xff\xfe',raw=True)
+        self.assertEqual(result["reason_code"],"INPUT_INVALID")
+
+
 if __name__ == '__main__':
     unittest.main()
