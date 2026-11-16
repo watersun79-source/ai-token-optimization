@@ -162,5 +162,43 @@ class CooldownTests(unittest.TestCase):
         self.assertEqual(SAMPLE,before)
 
 
+
+class SiteGithub403NewRegressionTests(unittest.TestCase):
+    """Novel fail-closed Site 403 cases. No Site or GitHub calls."""
+
+    def case(self, status, reason):
+        result = guard.check_cycle({
+            'status': status,
+            'debug': {'status': 'PASS', 'reason': reason},
+            'mcp_receipt': {'status': 'PASS'},
+        })
+        self.assertFalse(result['allow_retry'])
+        self.assertFalse(result['allow_write'])
+        return result
+
+    def test_site_github_403_claimed_pass_is_blocked(self):
+        self.assertEqual(self.case('PASS', 'GITHUB_HTTP_403')['status'], 'BLOCKED')
+
+    def test_site_github_403_claimed_no_update_is_blocked(self):
+        self.assertEqual(self.case('NO_UPDATE', 'GITHUB_HTTP_403')['status'], 'BLOCKED')
+
+    def test_site_github_403_receipt_does_not_override_block(self):
+        outcome = self.case('PASS', 'GITHUB_HTTP_403')
+        self.assertTrue(outcome['receipt_pass'])
+        self.assertEqual(outcome['status'], 'BLOCKED')
+
+    def test_legacy_http_403_still_blocked(self):
+        self.assertEqual(self.case('PASS', 'HTTP_403')['status'], 'BLOCKED')
+
+    def test_same_head_no_update_stays_no_update(self):
+        self.assertEqual(self.case('NO_UPDATE', 'SAME_HEAD')['status'], 'NO_UPDATE')
+
+    def test_missing_cycle_never_permits_writes_or_retry(self):
+        result = guard.check_cycle(None)
+        self.assertEqual(result['status'], 'UNVERIFIED')
+        self.assertFalse(result['allow_retry'])
+        self.assertFalse(result['allow_write'])
+
+
 if __name__ == '__main__':
     unittest.main()
