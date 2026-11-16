@@ -281,5 +281,87 @@ class SiteGithub403AdditionalRegressions(unittest.TestCase):
         self.assertEqual(out['external_mutations'], 0)
 
 
+
+class SiteGithub403StrictNoUpdateRegressions(unittest.TestCase):
+    """New standalone fail-closed cases; no network, SDK or privileged operation."""
+
+    def check(self, reason, expected, status='NO_UPDATE'):
+        cycle = {'status': status, 'debug': {'status': 'PASS', 'reason': reason},
+                 'mcp_receipt': {'status': 'PASS'}}
+        before = copy.deepcopy(cycle)
+        result = guard.check_cycle(cycle)
+        self.assertEqual(result['status'], expected)
+        self.assertFalse(result['allow_retry'])
+        self.assertFalse(result['allow_write'])
+        self.assertEqual(cycle, before)
+
+    def test_space_separated_github_403(self):
+        self.check('GITHUB_HTTP_403 denied', 'BLOCKED')
+
+    def test_padded_space_separated_github_403(self):
+        self.check(' GITHUB_HTTP_403   denied upstream', 'BLOCKED', 'PASS')
+
+    def test_space_separated_legacy_403(self):
+        self.check('HTTP_403 forbidden', 'BLOCKED')
+
+    def test_space_separated_429(self):
+        self.check('HTTP_429 wait', 'BLOCKED')
+
+    def test_unrecognized_github_http_503(self):
+        self.check('GITHUB_HTTP_503: upstream failure', 'BLOCKED')
+
+    def test_unrecognized_http_502(self):
+        self.check('HTTP_502 bad gateway', 'BLOCKED')
+
+    def test_unrecognized_http_500(self):
+        self.check('HTTP_500', 'BLOCKED', 'PASS')
+
+    def test_unknown_error_is_not_no_update(self):
+        self.check('NEW_UPSTREAM_ERROR', 'UNVERIFIED')
+
+    def test_unknown_nonerror_is_not_no_update(self):
+        self.check('RETRY_LATER', 'UNVERIFIED')
+
+    def test_same_head_with_details_not_whitelisted(self):
+        self.check('SAME_HEAD: not independently verified', 'UNVERIFIED')
+
+    def test_exact_same_head_preserves_no_update(self):
+        self.check('SAME_HEAD', 'NO_UPDATE')
+
+    def test_whitespace_trimmed_same_head_preserves_no_update(self):
+        self.check('  SAME_HEAD  ', 'NO_UPDATE')
+
+    def test_spoofed_error_code_suffix_not_blocked_as_exact(self):
+        self.check('GITHUB_HTTP_403X denied', 'UNVERIFIED')
+
+    def test_embedded_error_code_not_blocked_as_exact(self):
+        self.check('NOT_GITHUB_HTTP_403 denied', 'UNVERIFIED')
+
+    def test_overall_propagates_space_403(self):
+        payload = _site403_native_v2()
+        payload['evolution_cycle'] = {'status':'NO_UPDATE','debug':{'reason':'GITHUB_HTTP_403 denied'}}
+        out = guard.audit(payload)
+        self.assertEqual(out['native']['status'], 'PASS')
+        self.assertEqual(out['cycle']['status'], 'BLOCKED')
+        self.assertEqual(out['overall'], 'BLOCKED')
+        self.assertEqual(out['external_mutations'], 0)
+
+    def test_overall_propagates_new_http_error(self):
+        payload = _site403_native_v2()
+        payload['evolution_cycle'] = {'status':'NO_UPDATE','debug':{'reason':'GITHUB_HTTP_503: fail'}}
+        out = guard.audit(payload)
+        self.assertEqual(out['native']['status'], 'PASS')
+        self.assertEqual(out['cycle']['status'], 'BLOCKED')
+        self.assertEqual(out['overall'], 'BLOCKED')
+
+    def test_overall_unknown_reason_unverified(self):
+        payload = _site403_native_v2()
+        payload['evolution_cycle'] = {'status':'NO_UPDATE','debug':{'reason':'NEW_UPSTREAM_ERROR'}}
+        out = guard.audit(payload)
+        self.assertEqual(out['native']['status'], 'PASS')
+        self.assertEqual(out['cycle']['status'], 'UNVERIFIED')
+        self.assertEqual(out['overall'], 'UNVERIFIED')
+
+
 if __name__ == '__main__':
     unittest.main()
