@@ -101,13 +101,15 @@ def check_cycle(cycle: object) -> dict:
     fix = cycle.get("fix") if isinstance(cycle.get("fix"), dict) else {}
     update = cycle.get("update") if isinstance(cycle.get("update"), dict) else {}
     receipt = cycle.get("mcp_receipt") if isinstance(cycle.get("mcp_receipt"), dict) else {}
-    reason = str(debug.get("reason") or "UNKNOWN")
+    raw_reason = debug.get("reason")
+    reason = raw_reason.strip() if isinstance(raw_reason, str) and raw_reason.strip() else "UNKNOWN"
+    reason_code = reason.partition(":")[0].strip()
     op_status = cycle.get("status")
-    denied = op_status in ("BLOCKED", "FAIL") or reason in DENIALS
+    denied = op_status in ("BLOCKED", "FAIL") or reason_code in DENIALS
     # An outcome of NO_UPDATE is not evidence of a successful repair.
     if denied:
         verdict = "BLOCKED"
-    elif op_status == "NO_UPDATE":
+    elif op_status == "NO_UPDATE" and reason_code != "UNKNOWN":
         verdict = "NO_UPDATE"
     else:
         verdict = "UNVERIFIED"  # PASS requires separate source/write/readback evidence.
