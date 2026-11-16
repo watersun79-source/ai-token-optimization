@@ -105,12 +105,18 @@ def check_cycle(cycle: object) -> dict:
     reason = raw_reason.strip() if isinstance(raw_reason, str) and raw_reason.strip() else "UNKNOWN"
     reason_code = re.split(r"[\s:]", reason, maxsplit=1)[0]
     op_status = cycle.get("status")
+    stage_statuses = [part["status"] for part in (debug, fix, update) if "status" in part]
+    stage_unverified = (any(name in cycle and not isinstance(cycle[name], dict)
+                            for name in ("debug", "fix", "update")) or
+                        any(status not in ("PASS", "SKIP", "NO_UPDATE")
+                            for status in stage_statuses))
     denied = (op_status in ("BLOCKED", "FAIL") or reason_code in DENIALS or
-              re.fullmatch(r"(?:GITHUB_)?HTTP_[45]\d{2}", reason_code) is not None)
+              re.fullmatch(r"(?:GITHUB_)?HTTP_[45]\d{2}", reason_code) is not None or
+              any(status in ("BLOCKED", "FAIL") for status in stage_statuses))
     # An outcome of NO_UPDATE is not evidence of a successful repair.
     if denied:
         verdict = "BLOCKED"
-    elif op_status == "NO_UPDATE" and reason == "SAME_HEAD":
+    elif op_status == "NO_UPDATE" and reason == "SAME_HEAD" and not stage_unverified:
         verdict = "NO_UPDATE"
     else:
         verdict = "UNVERIFIED"  # PASS requires separate source/write/readback evidence.
