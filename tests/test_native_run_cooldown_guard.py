@@ -801,5 +801,50 @@ class SiteReadOneShotExportRegressions(unittest.TestCase):
         self.invoke(x, "SOURCE_INCOMPLETE")
 
 
+
+# PR #31: novel five-stage fail-closed cases; isolated verdict only.
+def _pr31_stage_case():
+    return {
+        "status": "NO_UPDATE",
+        "debug": {"status": "PASS", "reason": "SAME_HEAD"},
+        "analysis": {"status": "PASS"},
+        "fix": {"status": "NO_UPDATE"},
+        "update": {"status": "NO_UPDATE"},
+        "verify": {"status": "PASS"},
+        "mcp_receipt": {"status": "PASS"},
+    }
+
+
+class PR31AnalysisVerifyStatusRegressions(unittest.TestCase):
+    def expect(self, stage, value, status):
+        payload = _pr31_stage_case()
+        if stage is not None:
+            payload[stage] = value
+        original = copy.deepcopy(payload)
+        result = guard.check_cycle(payload)
+        self.assertEqual(payload, original)
+        self.assertFalse(result["allow_retry"])
+        self.assertFalse(result["allow_write"])
+        self.assertEqual(result["status"], status)
+
+    def test_analysis_blocked_cannot_be_no_update(self):
+        self.expect("analysis", {"status": "BLOCKED"}, "BLOCKED")
+
+    def test_verify_failed_cannot_be_no_update(self):
+        self.expect("verify", {"status": "FAIL"}, "BLOCKED")
+
+    def test_analysis_missing_status_unverified(self):
+        self.expect("analysis", {}, "UNVERIFIED")
+
+    def test_verify_wrong_type_unverified(self):
+        self.expect("verify", "PASS", "UNVERIFIED")
+
+    def test_analysis_unknown_status_unverified(self):
+        self.expect("analysis", {"status": "UNKNOWN"}, "UNVERIFIED")
+
+    def test_valid_five_stage_no_update_preserved(self):
+        self.expect(None, None, "NO_UPDATE")
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -105,12 +105,14 @@ def check_cycle(cycle: object) -> dict:
     reason = raw_reason.strip() if isinstance(raw_reason, str) and raw_reason.strip() else "UNKNOWN"
     reason_code = re.split(r"[\s:]", reason, maxsplit=1)[0]
     op_status = cycle.get("status")
-    stage_statuses = [part["status"] for part in (debug, fix, update) if "status" in part]
+    stage_names = ("debug", "analysis", "fix", "update", "verify")
+    stage_statuses = [cycle[name]["status"] for name in stage_names
+                      if isinstance(cycle.get(name), dict) and "status" in cycle[name]]
     stage_unverified = (any(name in cycle and not isinstance(cycle[name], dict)
-                            for name in ("debug", "fix", "update")) or
+                            for name in stage_names) or
                         any(name in cycle and isinstance(cycle[name], dict) and
                             "status" not in cycle[name]
-                            for name in ("debug", "fix", "update")) or
+                            for name in stage_names) or
                         any(status not in ("PASS", "SKIP", "NO_UPDATE")
                             for status in stage_statuses))
     denied = (op_status in ("BLOCKED", "FAIL") or reason_code in DENIALS or
