@@ -1,0 +1,39 @@
+name: PR31 GitHub provider read-only preflight
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - "experiments/oss-top10-safe-adoption/github_provider_preflight.py"
+      - ".github/workflows/oss-top10-github-provider-preflight.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr31-provider-readonly-${ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  github-provider-one-get:
+    if: >-
+      github.event.pull_request.number == 31 &&
+      github.event.pull_request.head.ref == 'ai/site-github403-failclosed-20261116' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONNOUSERSITE: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Test negative cases offline
+        run: python3 -B experiments/oss-top10-safe-adoption/github_provider_preflight.py --self-test
+      - name: Single official GitHub API GET with read-only Actions token (not Site)
+        env:
+          GH_PREFLIGHT_TOKEN: ${ github.token }}
+          EXPECTED_HEAD: ${ github.event.pull_request.head.sha }}
+        run: python3 -B experiments/oss-top10-safe-adoption/github_provider_preflight.py --sha "$EXPECTED_HEAD"
