@@ -1,0 +1,25 @@
+# Evolving AI v1.0.4: intentionally non-runnable security CI definition.
+# Only a new, separate approval may remove the unconditional false gate.
+# No event other than workflow_dispatch; this file is NOT on the default branch.
+# No access to repository or environment secrets, no deployment, no API writes.
+name: Evolving AI v1.0.4 security (MANUAL / DISABLED)
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  offline-security-new12:
+    if: ${{ false }} # fail closed: even an explicit dispatch must SKIP this job
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions: {}
+    steps:
+      - name: Checkout exact requested branch (credentials not persisted)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7; repository's existing pinned checkout
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Run ONLY twelve new offline security cases
+        run: node --test experiments/evolving-ai/v1_0_4/test_security_new_only.mjs
