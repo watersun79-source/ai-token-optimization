@@ -692,5 +692,114 @@ class SiteOfficialBridgeRegressions(unittest.TestCase):
         self.invoke(b"\xff\xfe", "INPUT_INVALID", raw=True)
 
 
+
+class SiteReadOneShotExportRegressions(unittest.TestCase):
+    """Standalone one-shot local connection path; never invokes an actual Site reader."""
+
+    def source(self):
+        return {
+            "schema": "SITE_READ_RESULT_EXPORT_V1",
+            "project_id": "appgprj_6ae20fb4b2b08191b0f4b44438fc0237",
+            "source": {"reader": "site_readonly_export",
+                       "reference": "site.source.run-0001",
+                       "observed_at_utc": "2026-11-17T01:00:00Z"},
+            "github_request": {"execution_id": "run-0001", "http_status": 403,
+                               "error_code": "GITHUB_HTTP_403"},
+        }
+
+    def invoke(self, data, reason, cycle="UNVERIFIED", *, raw=False):
+        import subprocess, sys
+        script = ROOT / "experiments" / "oss-top10-safe-adoption" / "site_github403_once.py"
+        supplied = data if raw else json.dumps(data, ensure_ascii=False).encode("utf-8")
+        p = subprocess.run([sys.executable, "-B", str(script)], input=supplied,
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=8)
+        self.assertEqual(p.returncode, 2)
+        self.assertFalse(p.stderr, p.stderr.decode("utf-8", "replace"))
+        self.assertEqual(p.stdout.count(b"\n"), 1)
+        out = json.loads(p.stdout)
+        self.assertEqual(out["reason_code"], reason)
+        self.assertEqual(out["observed_cycle_status"], cycle)
+        self.assertEqual(out["classification"], "UNVERIFIED")
+        self.assertEqual(out["operational_clearance"], "BLOCKED")
+        self.assertEqual(out["source_authentication"], "UNVERIFIED")
+        self.assertEqual(out["site_runtime_integration"], "UNVERIFIED")
+        self.assertFalse(out["allow_retry"]); self.assertFalse(out["allow_write"])
+        self.assertEqual(out["external_requests"], 0)
+        self.assertEqual(out["external_mutations"], 0)
+        return p.stdout.decode("utf-8")
+
+    def test_missing_official_export(self):
+        self.invoke(None, "MISSING_OFFICIAL_SOURCE")
+
+    def test_claimed_403_flows_into_existing_bridge(self):
+        self.invoke(self.source(), "UNAUTHENTICATED_SITE_OBSERVATION", "BLOCKED")
+
+    def test_legacy_http403_flows(self):
+        x = self.source(); x["github_request"]["error_code"] = "HTTP_403"
+        self.invoke(x, "UNAUTHENTICATED_SITE_OBSERVATION", "BLOCKED")
+
+    def test_spoofed_pass_not_authenticated(self):
+        x = self.source(); x["source"]["auth_status"] = "PASS"
+        x["github_request"]["verified"] = True
+        self.invoke(x, "UNAUTHENTICATED_SITE_OBSERVATION", "BLOCKED")
+
+    def test_wrong_project(self):
+        x = self.source(); x["project_id"] = "wrong"
+        self.invoke(x, "PROJECT_ID_MISMATCH")
+
+    def test_missing_source(self):
+        x = self.source(); x.pop("source")
+        self.invoke(x, "SOURCE_INCOMPLETE")
+
+    def test_missing_source_reference(self):
+        x = self.source(); x["source"].pop("reference")
+        self.invoke(x, "SOURCE_INCOMPLETE")
+
+    def test_bad_source_timestamp(self):
+        x = self.source(); x["source"]["observed_at_utc"] = "2026-11-17T01:00:00"
+        self.invoke(x, "SOURCE_INCOMPLETE")
+
+    def test_missing_execution_id(self):
+        x = self.source(); x["github_request"].pop("execution_id")
+        self.invoke(x, "SOURCE_INCOMPLETE")
+
+    def test_non403_http_is_not_forged_into_denial(self):
+        x = self.source(); x["github_request"]["http_status"] = 200
+        self.invoke(x, "HTTP_EVIDENCE_MISMATCH")
+
+    def test_boolean_http_is_not_integer_status(self):
+        x = self.source(); x["github_request"]["http_status"] = True
+        self.invoke(x, "HTTP_EVIDENCE_MISMATCH")
+
+    def test_inconsistent_http_error_code(self):
+        x = self.source(); x["github_request"]["error_code"] = "SAME_HEAD"
+        self.invoke(x, "HTTP_EVIDENCE_MISMATCH")
+
+    def test_invalid_schema(self):
+        x = self.source(); x["schema"] = "unknown"
+        self.invoke(x, "INPUT_INVALID")
+
+    def test_duplicate_json_keys(self):
+        self.invoke(b'{"schema":"A","schema":"B"}', "INPUT_INVALID", raw=True)
+
+    def test_invalid_utf8(self):
+        self.invoke(b"\xff\xfe", "INPUT_INVALID", raw=True)
+
+    def test_oversize_rejected(self):
+        self.invoke(b"X" * 65537, "INPUT_INVALID", raw=True)
+
+    def test_sensitive_source_metadata_never_printed(self):
+        x = self.source()
+        x["source"]["raw_log"] = "sk-proj-supersecret987654"
+        x["github_request"]["authorization"] = "Bearer supersecret"
+        out = self.invoke(x, "UNAUTHENTICATED_SITE_OBSERVATION", "BLOCKED")
+        self.assertNotIn("supersecret", out)
+
+    def test_input_url_is_never_fetched(self):
+        x = self.source()
+        x["source"]["reference"] = "https://example.com/secret"
+        self.invoke(x, "SOURCE_INCOMPLETE")
+
+
 if __name__ == '__main__':
     unittest.main()
