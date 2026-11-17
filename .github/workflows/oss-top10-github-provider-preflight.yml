@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: pr31-provider-readonly-${ github.event.pull_request.number }}
+  group: pr31-provider-readonly-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
@@ -34,6 +34,6 @@ jobs:
         run: python3 -B experiments/oss-top10-safe-adoption/github_provider_preflight.py --self-test
       - name: Single official GitHub API GET with read-only Actions token (not Site)
         env:
-          GH_PREFLIGHT_TOKEN: ${ github.token }}
-          EXPECTED_HEAD: ${ github.event.pull_request.head.sha }}
+          GH_PREFLIGHT_TOKEN: ${{ github.token }}
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
         run: python3 -B experiments/oss-top10-safe-adoption/github_provider_preflight.py --sha "$EXPECTED_HEAD"
