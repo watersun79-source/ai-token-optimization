@@ -599,5 +599,98 @@ class SiteGithub403IntakeCLIRegressions(unittest.TestCase):
         self.assertEqual(result["reason_code"],"INPUT_INVALID")
 
 
+
+class SiteOfficialBridgeRegressions(unittest.TestCase):
+    """New bridge CLI only; no official Site reader or remote operations."""
+
+    def event(self):
+        return {"schema": "SITE_GITHUB403_OBSERVATION_INPUT_V1",
+                "project_id": "appgprj_6ae20fb4b2b08191b0f4b44438fc0237",
+                "collector": {"http_status": 403, "error_code": "GITHUB_HTTP_403",
+                              "execution_id": "run-20261117-A", "observed_at_utc": "2026-11-17T00:00:00Z"}}
+
+    def invoke(self, event, reason, cycle="UNVERIFIED", raw=False):
+        import subprocess, sys
+        script = ROOT / "experiments" / "oss-top10-safe-adoption" / "site_github403_evidence_bridge.py"
+        value = event if raw else json.dumps(event).encode("utf-8")
+        proc = subprocess.run([sys.executable, "-B", str(script)], input=value,
+                              capture_output=True, timeout=8)
+        self.assertEqual(proc.returncode, 2)
+        self.assertFalse(proc.stderr)
+        out = json.loads(proc.stdout.decode("utf-8"))
+        self.assertEqual(out["reason_code"], reason)
+        self.assertEqual(out["observed_cycle_status"], cycle)
+        self.assertEqual(out["classification"], "UNVERIFIED")
+        self.assertEqual(out["source_authentication"], "UNVERIFIED")
+        self.assertEqual(out["github_authentication"], "UNVERIFIED")
+        self.assertEqual(out["site_runtime_integration"], "UNVERIFIED")
+        self.assertEqual(out["operational_clearance"], "BLOCKED")
+        self.assertFalse(out["allow_retry"])
+        self.assertFalse(out["allow_write"])
+        self.assertEqual(out["external_requests"], 0)
+        self.assertEqual(out["external_mutations"], 0)
+        return proc.stdout.decode("utf-8")
+
+    def test_no_official_source(self):
+        self.invoke(None, "MISSING_OFFICIAL_SOURCE")
+
+    def test_403_claim_diagnostic_block_no_auth(self):
+        self.invoke(self.event(), "UNAUTHENTICATED_SITE_OBSERVATION", "BLOCKED")
+
+    def test_spoofed_pass_cannot_authenticate(self):
+        x = self.event(); x["collector"]["auth_status"] = "PASS"; x["signature"] = "FAKE"
+        self.invoke(x, "UNAUTHENTICATED_SITE_OBSERVATION", "BLOCKED")
+
+    def test_wrong_project(self):
+        x = self.event(); x["project_id"] = "other"
+        self.invoke(x, "PROJECT_ID_MISMATCH")
+
+    def test_non403_report_is_not_claimed_as_403(self):
+        x = self.event(); x["collector"]["http_status"] = 200
+        self.invoke(x, "HTTP_EVIDENCE_MISMATCH")
+
+    def test_403_reason_code_mismatch(self):
+        x = self.event(); x["collector"]["error_code"] = "SAME_HEAD"
+        self.invoke(x, "HTTP_EVIDENCE_MISMATCH")
+
+    def test_missing_execution_id(self):
+        x = self.event(); x["collector"].pop("execution_id")
+        self.invoke(x, "SOURCE_INCOMPLETE")
+
+    def test_timestamp_without_timezone(self):
+        x = self.event(); x["collector"]["observed_at_utc"] = "2026-11-17T00:00:00"
+        self.invoke(x, "SOURCE_INCOMPLETE")
+
+    def test_collector_missing(self):
+        x = self.event(); x.pop("collector")
+        self.invoke(x, "SOURCE_INCOMPLETE")
+
+    def test_native_part_missing(self):
+        x = self.event(); x["native"] = {"last_run": {"id": "a"}}
+        self.invoke(x, "NATIVE_EVIDENCE_PARTIAL")
+
+    def test_claimed_native_result_never_promotes(self):
+        x = self.event(); x["native"] = {"last_run": {}, "latest_result": {}}
+        self.invoke(x, "UNAUTHENTICATED_SITE_OBSERVATION", "BLOCKED")
+
+    def test_wrong_local_schema(self):
+        x = self.event(); x["schema"] = "UNKNOWN"
+        self.invoke(x, "INPUT_INVALID")
+
+    def test_duplicate_keys(self):
+        self.invoke(b'{"schema":"A","schema":"B"}', "INPUT_INVALID", raw=True)
+
+    def test_oversized_input(self):
+        self.invoke(b"x" * 65537, "INPUT_INVALID", raw=True)
+
+    def test_secret_never_echoed(self):
+        x = self.event(); x["collector"]["error_detail"] = "sk-proj-supersecret987654321"
+        text = self.invoke(x, "UNAUTHENTICATED_SITE_OBSERVATION", "BLOCKED")
+        self.assertNotIn("supersecret", text)
+
+    def test_invalid_utf8(self):
+        self.invoke(b"\xff\xfe", "INPUT_INVALID", raw=True)
+
+
 if __name__ == '__main__':
     unittest.main()
