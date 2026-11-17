@@ -5,7 +5,7 @@
  * Cryptographic hash is for normalized output BYTES only, NOT MCP origin authentication.
  */
 const TASK_ID='6ae8db67fef081919af59fecbf162552';
-const BASELINE={run_id:'7ca1c18d-e45c-8322-b4c9-e56d87d15c3f',scheduled_for:'2026-11-16T05:00:00Z',record_version:17,event_key:'github.pr30.1605ec459634f37cf5c30d7c3eba8b0ff5e8757de609e90326481e652e58fa33'};
+const BASELINE={run_id:'7ca1c18d-e45c-8322-b4c9-e56d87d15c3f',scheduled_for:'2026-11-16T05:00:00Z',record_version:17,content_sha:'d573de1ee07d1fa68924728e6c549d4ade44d1e8a995c3a6b09d4d75b82c6dd5',event_key:'github.pr30.1605ec459634f37cf5c30d7c3eba8b0ff5e8757de609e90326481e652e58fa33'};
 const UUID=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/;
 const HASH40=/^[0-9a-f]{40}$/,HASH64=/^[0-9a-f]{64}$/,EVENT=/^github\.pr30\.[0-9a-f]{64}$/;
 const ISOTIME=/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,9})?(?:Z|[+-]\d\d:\d\d)$/;
@@ -135,6 +135,9 @@ function sanitizeConnected(peekData,d1Data,baseline=BASELINE){
   const newRun=runId!==baseline.run_id;
   const newEvent=event.event_key!==baseline.event_key;
   const recordRevisionChanged=d.record_version!==baseline.record_version;
+  requireMatch(baseline.content_sha,HASH64,'BASELINE_CONTENT_SHA_INVALID');
+  if(d.record_version===baseline.record_version&&rec.content_sha!==baseline.content_sha)
+    fail('D1_CONTENT_SHA_CHANGED_SAME_REVISION');
   if(d.record_version<baseline.record_version)fail('D1_REVISION_ROLLBACK');
   if(newEvent&&!recordRevisionChanged)fail('EVENT_CHANGED_WITHOUT_RECORD_REVISION');
   let status='NO_UPDATE',reason='SAME_OFFICIAL_RUN_AND_EVENT';
@@ -224,6 +227,7 @@ const HOST_READONLY_GUARD = Object.freeze({
     run_id: '0476e7b0-cf9c-8322-8233-fdc0409c8d7e',
     scheduled_for: '2026-11-16T21:00:00Z',
     record_version: 17,
+    content_sha: 'd573de1ee07d1fa68924728e6c549d4ade44d1e8a995c3a6b09d4d75b82c6dd5',
     event_key: 'github.pr30.1605ec459634f37cf5c30d7c3eba8b0ff5e8757de609e90326481e652e58fa33'
   })
 });
@@ -245,6 +249,7 @@ async function guardedInHostReadOnly() {
       !validTime(HOST_READONLY_GUARD.baseline.scheduled_for) ||
       !UUID.test(HOST_READONLY_GUARD.baseline.run_id) ||
       !EVENT.test(HOST_READONLY_GUARD.baseline.event_key) ||
+      !HASH64.test(HOST_READONLY_GUARD.baseline.content_sha) ||
       !Number.isSafeInteger(HOST_READONLY_GUARD.baseline.record_version) ||
       HOST_READONLY_GUARD.baseline.record_version < 1)
     return block('HOST_PREFLIGHT_POLICY_INVALID');

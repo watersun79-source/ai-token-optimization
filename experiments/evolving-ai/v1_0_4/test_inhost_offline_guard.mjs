@@ -12,7 +12,7 @@ import test from 'node:test';
 
 const source = readFileSync(new URL('./inhost_readonly_bundle_DISABLED.mjs', import.meta.url), 'utf8');
 const digest = (s) => createHash('sha256').update(s).digest('hex');
-const EXPECTED_SOURCE_SHA = '763f0dc372ba5d1b7656c2accb597793eadafe386f948f67b2e3905b3e895338';
+const EXPECTED_SOURCE_SHA = '3bd27cd054745c802d85cf38f6f3e0b199d621199f54b56de4dde09ac57d715b';
 assert.equal(digest(source), EXPECTED_SOURCE_SHA, 'refuse unreviewed module bytes');
 assert.equal(source.split('enabled: false').length, 2, 'one disabled gate required');
 const TASK = '6ae8db67fef081919af59fecbf162552';
