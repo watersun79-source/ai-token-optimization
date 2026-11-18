@@ -61,5 +61,19 @@ export function fromSanitizedSnapshot(snapshot, {clock = Date.now} = {}) {
       state: snapshot.state, merged: snapshot.merged,
     }}};
   } : undefined;
-  return createChatGithubAdapter({fetchPr, clock});
+  // A replay invokes an in-process fixture, never the connected GitHub tool.
+  // Do not report that fixture invocation as a live connector call.
+  const localAdapter = createChatGithubAdapter({fetchPr, clock});
+  return Object.freeze({
+    async observe() {
+      const result = await localAdapter.observe();
+      return Object.freeze({
+        ...result,
+        connectedReaderInvocations: 0,
+        simulatedReaderInvocations: result.connectedReaderInvocations,
+        liveConnectorCallsByReplay: 0,
+        replayOnly: true,
+      });
+    },
+  });
 }
