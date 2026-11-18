@@ -20,7 +20,7 @@ MAX_BYTES = 65536
 
 
 def result(sha, verdict, status=None, hdr=None, matched=False):
-    headers = hdr or {}
+    headers = hdr if callable(getattr(hdr, "get", None)) else {}
     def get(name):
         val = headers.get(name, "")
         return val if isinstance(val, str) else ""
@@ -73,6 +73,7 @@ def probe(sha, token, opener=request.urlopen):
             return result(sha, "PASS_ACTIONS_ONLY" if match else "BLOCKED_SHA_MISMATCH", status, headers, match)
     except error.HTTPError as exc:
         status, h = exc.code, exc.headers
+        h = h if callable(getattr(h, "get", None)) else {}
         if status in (403, 429):
             if h.get("x-github-sso"):
                 reason = "BLOCKED_SSO_INDICATOR"
@@ -81,7 +82,8 @@ def probe(sha, token, opener=request.urlopen):
             elif h.get("retry-after"):
                 reason = "BLOCKED_RETRY_AFTER_INDICATOR"
             else:
-                reason = "BLOCKED_403_UNDETERMINED"
+                reason = ("BLOCKED_429_UNDETERMINED" if status == 429
+                          else "BLOCKED_403_UNDETERMINED")
         elif status == 401:
             reason = "BLOCKED_AUTH"
         elif status == 404:
@@ -144,6 +146,36 @@ class ContractTests(unittest.TestCase):
         def reject(*_a, **_k):
             raise error.HTTPError(API, 429, "no", {"retry-after": "60"}, None)
         self.assertEqual(probe(self.sha, self.token, reject)["status"], "BLOCKED_RETRY_AFTER_INDICATOR")
+
+    def test_403_missing_headers_fails_closed(self):
+        def reject(*_a, **_k):
+            raise error.HTTPError(API, 403, "blocked", None, None)
+        x = probe(self.sha, self.token, reject)
+        self.assertEqual(x["status"], "BLOCKED_403_UNDETERMINED")
+        self.assertFalse(x["allow_retry"])
+        self.assertFalse(x["allow_write"])
+
+    def test_429_missing_headers_reports_correct_status(self):
+        def reject(*_a, **_k):
+            raise error.HTTPError(API, 429, "rate-limited", None, None)
+        x = probe(self.sha, self.token, reject)
+        self.assertEqual(x["status"], "BLOCKED_429_UNDETERMINED")
+        self.assertEqual(x["http_status"], 429)
+        self.assertFalse(x["allow_retry"])
+
+    def test_403_invalid_headers_fails_closed(self):
+        def reject(*_a, **_k):
+            raise error.HTTPError(API, 403, "blocked", "malformed-headers", None)
+        x = probe(self.sha, self.token, reject)
+        self.assertEqual(x["status"], "BLOCKED_403_UNDETERMINED")
+
+    def test_429_zero_remaining_keeps_rate_limit_classification(self):
+        def reject(*_a, **_k):
+            raise error.HTTPError(API, 429, "blocked", {"x-ratelimit-remaining": "0"}, None)
+        x = probe(self.sha, self.token, reject)
+        self.assertEqual(x["status"], "BLOCKED_RATE_LIMIT_INDICATOR")
+        self.assertFalse(x["allow_retry"])
+
 
     def test_bad_token_never_calls(self):
         called = []
