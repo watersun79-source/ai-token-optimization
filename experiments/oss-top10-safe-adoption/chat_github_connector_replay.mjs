@@ -18,9 +18,10 @@ if (process.argv.length !== 3) {
       ...outcome,
       replayOnly: true,
       liveConnectorCallsByReplay: 0,
-      connectedSourceOriginalCallExternallyObserved: 'SEPARATE_CHAT_TOOL_CALL',
+      connectedSourceOriginalCallExternallyObserved: 'UNVERIFIED_BY_REPLAY',
     }));
-    process.exitCode = outcome.status === 'OBSERVED_UNVERIFIED' ? 0 : 2;
+    // Local snapshots cannot authenticate a Site or prove a live GitHub call.
+    process.exitCode = 2;  // Fail-closed even for a well-formed replay.
   } catch {
     console.log(JSON.stringify({status:'BLOCKED',reason:'SNAPSHOT_INVALID',allowWrite:false,
       replayOnly:true,liveConnectorCallsByReplay:0}));
