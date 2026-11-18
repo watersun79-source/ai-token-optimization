@@ -16,7 +16,6 @@ const FIXED_REQUEST = Object.freeze({
 });
 const MIN_REFRESH_MS = 180_000;
 const DEFAULT_DENIAL_MS = 300_000;
-const MAX_BACKOFF_MS = 3_600_000;
 const SHA = /^[a-f0-9]{40}$/;
 
 function finiteInt(value) {
@@ -40,12 +39,18 @@ function getHeader(headers, name) {
 }
 
 function cooldownFor(response, now) {
-  const seconds = finiteInt(getHeader(response.headers, 'retry-after'));
+  const retryAfter = getHeader(response.headers, 'retry-after');
+  const seconds = finiteInt(retryAfter);
+  const retryDate = typeof retryAfter === 'string' &&
+    /^[A-Za-z]{3}, \d{2} [A-Za-z]{3} \d{4} \d{2}:\d{2}:\d{2} GMT$/.test(retryAfter)
+    ? Date.parse(retryAfter) : NaN;
   const reset = finiteInt(getHeader(response.headers, 'x-ratelimit-reset'));
   let delay = DEFAULT_DENIAL_MS;
   if (seconds !== null) delay = Math.max(delay, seconds * 1000);
+  if (Number.isFinite(retryDate) && retryDate > now) delay = Math.max(delay, retryDate - now);
   if (reset !== null && reset * 1000 > now) delay = Math.max(delay, reset * 1000 - now);
-  return Math.min(MAX_BACKOFF_MS, delay);
+  // Never shorten a provider cooldown. Clamp only to keep safe integer timestamps.
+  return Math.min(Number.MAX_SAFE_INTEGER - now, delay);
 }
 
 function verdict(status, reason, {nextAllowedAt = null, sha = null, attempts = 0} = {}) {
