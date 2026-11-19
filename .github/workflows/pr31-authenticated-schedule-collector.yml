@@ -65,6 +65,24 @@ jobs:
           Path('pr31_schedule_dashboard.html').write_text(page,encoding='utf-8')
           assert page.count('class="entry" data-key=')==len(records)
           print(f'PR31_OFFLINE_DASHBOARD PASS records={len(records)} bytes={len(page.encode())} site_deployed=false')
+          # The Actions run page now shows current schedule evidence directly.
+          # Every row was already validated against the authenticated JSON digest.
+          import os
+          target=os.environ.get('GITHUB_STEP_SUMMARY')
+          if not target:raise SystemExit('BLOCKED_ACTIONS_SUMMARY_MISSING')
+          report=['# 진화하는 AI · 인증 일정 관제','',
+                  f'**GitHub 일정 수집 {len(records)}건 · SUCCESS {count}건**','',
+                  '> GitHub Actions 결과만 표시해. 기존 Site·ChatGPT 예약 성공 근거가 아니야. 운영 Site BLOCKED / NO_WRITE.','',
+                  '| 실행 ID | 생성(KST) | 상태 | 커밋 |','|---|---|---|---|']
+          for r in records:
+              kst=datetime.fromisoformat(r['created_at'].replace('Z','+00:00')).astimezone(timezone(timedelta(hours=9))).strftime('%m.%d %H:%M') if r['created_at'] else '미확인'
+              label='SUCCESS' if r['status']=='completed' and r['conclusion']=='success' else 'UNVERIFIED'
+              number=r['id']
+              report.append(f"| [#{number}](https://github.com/watersun79-source/ai-token-optimization/actions/runs/{number}) | {kst} | {label} | `{r['sha'][:12]}` |")
+          report += ['',f'검증된 원본 SHA-256: `{digest}`','',
+                     '운영 Site 미배포 · 공식 예약 실행 검증 별개 · GitHub 코드/운영 쓰기 없음']
+          Path(target).write_text('\n'.join(report)+'\n',encoding='utf-8')
+          print(f'PR31_ACTIONS_SUMMARY PASS rows={len(records)} success={count} site_deployed=false')
           PY
       - name: Store sanitized schedule-runs and offline dashboard
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
