@@ -30,6 +30,7 @@ jobs:
         run: python3 experiments/oss-top10-safe-adoption/pr31_authenticated_schedule_snapshot.py
       - name: Render offline iPhone dashboard from authenticated snapshot
         run: |
+          python3 - <<'PY'
           import hashlib,html,json,re
           from datetime import datetime,timezone,timedelta
           from pathlib import Path
@@ -64,6 +65,7 @@ jobs:
           Path('pr31_schedule_dashboard.html').write_text(page,encoding='utf-8')
           assert page.count('class="entry" data-key=')==len(records)
           print(f'PR31_OFFLINE_DASHBOARD PASS records={len(records)} bytes={len(page.encode())} site_deployed=false')
+          PY
       - name: Store sanitized schedule-runs and offline dashboard
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
