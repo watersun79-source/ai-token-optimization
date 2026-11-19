@@ -69,9 +69,12 @@ export async function guardedSiteRead({snapshot, hostCollector, clock = Date.now
     const result = await hostCollector.readOnce();
     // A host-supplied result cannot promote Site/operational permissions.
     if (!result || typeof result !== 'object') return refusal('BLOCKED', 'COLLECTOR_RESULT_INVALID');
-    return Object.freeze({ ...refusal('UNVERIFIED', 'HOST_COLLECTOR_RESULT_NOT_OPERATING_PROOF'),
-      sourceStatus: ['BLOCKED', 'DEFERRED', 'UNVERIFIED'].includes(result.status) ? result.status : 'UNVERIFIED',
-    });
+    const sourceStatus = ['BLOCKED', 'DEFERRED', 'UNVERIFIED'].includes(result.status)
+      ? result.status : 'UNVERIFIED';
+    const reason = sourceStatus === 'BLOCKED' ? 'HOST_COLLECTOR_BLOCKED'
+      : sourceStatus === 'DEFERRED' ? 'HOST_COLLECTOR_DEFERRED'
+      : 'HOST_COLLECTOR_RESULT_NOT_OPERATING_PROOF';
+    return Object.freeze({ ...refusal(sourceStatus, reason), sourceStatus });
   } catch {
     return refusal('BLOCKED', 'HOST_COLLECTOR_FAILED');
   }
