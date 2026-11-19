@@ -1,0 +1,37 @@
+name: PR31 authenticated schedule run collection (read only)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - '.github/workflows/pr31-authenticated-schedule-collector.yml'
+      - 'experiments/oss-top10-safe-adoption/pr31_authenticated_schedule_snapshot.py'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  authenticated-schedule-read:
+    if: >-
+      github.event.pull_request.number == 31 &&
+      github.event.pull_request.head.ref == 'ai/site-github403-failclosed-20261116' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Collect current schedule runs via authenticated GitHub API once
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 experiments/oss-top10-safe-adoption/pr31_authenticated_schedule_snapshot.py
+      - name: Store sanitized schedule-runs evidence only
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pr31-schedule-runs-${{ github.run_id }}
+          path: pr31_schedule_runs.json
+          if-no-files-found: error
+          retention-days: 7
