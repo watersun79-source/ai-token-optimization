@@ -26,7 +26,7 @@ function checkedReset(reset) {
 }
 
 /** Consume the sync_status github_source_states as UNTRUSTED deny-only input. */
-export function checkUpstreamSourceState(snapshot, now) {
+function inspectUpstreamSourceState(snapshot, now) {
   if (!Number.isSafeInteger(now) || now < 0) return refusal('BLOCKED', 'CLOCK_INVALID');
   const sources = snapshot?.github_source_states;
   const schedule = sources?.schedule;
@@ -56,17 +56,26 @@ export function checkUpstreamSourceState(snapshot, now) {
   return refusal('UNVERIFIED', 'READ_PERMITTED_ONLY_IN_AUTHORIZED_ISOLATED_HOST');
 }
 
+/** Fail closed on accessor/proxy errors from untrusted source-state objects. */
+export function checkUpstreamSourceState(snapshot, now) {
+  try { return inspectUpstreamSourceState(snapshot, now); }
+  catch { return refusal('BLOCKED', 'SOURCE_STATE_ACCESS_FAILED'); }
+}
+
 /** Attach before an existing PR31 site_host_collector_bridge readOnce(). */
 export async function guardedSiteRead({snapshot, hostCollector, clock = Date.now} = {}) {
   let now;
   try { now = clock(); } catch { return refusal('BLOCKED', 'CLOCK_INVALID'); }
   const preflight = checkUpstreamSourceState(snapshot, now);
   if (preflight.status !== 'UNVERIFIED') return preflight;
-  if (typeof hostCollector?.readOnce !== 'function') {
+  let readOnce;
+  try { readOnce = hostCollector?.readOnce; }
+  catch { return refusal('BLOCKED', 'SITE_HOST_COLLECTOR_ACCESS_FAILED'); }
+  if (typeof readOnce !== 'function') {
     return refusal('BLOCKED', 'SITE_HOST_COLLECTOR_MISSING');
   }
   try {
-    const result = await hostCollector.readOnce();
+    const result = await readOnce.call(hostCollector);
     // A host-supplied result cannot promote Site/operational permissions.
     if (!result || typeof result !== 'object') return refusal('BLOCKED', 'COLLECTOR_RESULT_INVALID');
     const sourceStatus = ['BLOCKED', 'DEFERRED', 'UNVERIFIED'].includes(result.status)

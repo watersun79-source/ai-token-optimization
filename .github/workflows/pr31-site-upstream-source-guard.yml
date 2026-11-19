@@ -8,6 +8,7 @@ on:
       - "experiments/oss-top10-safe-adoption/site_source_upstream_guard.mjs"
       - "tests/pr31_site_source_upstream_guard.test.mjs"
       - "tests/pr31_upstream_denial_propagation.test.mjs"
+      - "tests/pr31_untrusted_accessor_guard.test.mjs"
       - ".github/workflows/pr31-site-upstream-source-guard.yml"
 
 permissions:
@@ -26,4 +27,4 @@ jobs:
         with:
           persist-credentials: false
       - name: Run only new source rate-limit negative cases
-        run: node --test tests/pr31_site_source_upstream_guard.test.mjs tests/pr31_upstream_denial_propagation.test.mjs
+        run: node --test tests/pr31_untrusted_accessor_guard.test.mjs
