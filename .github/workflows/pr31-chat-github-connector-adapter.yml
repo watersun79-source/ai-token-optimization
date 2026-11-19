@@ -1,0 +1,31 @@
+name: PR31 Chat GitHub connector adapter (offline)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - "experiments/oss-top10-safe-adoption/chat_github_connector_adapter.mjs"
+      - "experiments/oss-top10-safe-adoption/chat_github_connector_replay.mjs"
+      - "tests/chat_github_connector_adapter.test.mjs"
+      - ".github/workflows/pr31-chat-github-connector-adapter.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  offline-chat-connector-adapter:
+    if: >-
+      github.event.pull_request.number == 31 &&
+      github.event.pull_request.head.ref == 'ai/site-github403-failclosed-20261116' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Offline bridge tests only; do not call GitHub
+        run: node --test tests/chat_github_connector_adapter.test.mjs

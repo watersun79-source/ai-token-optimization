@@ -1,0 +1,108 @@
+{
+  "schema": "OSS_TOP10_SAFE_ADOPTION_V1",
+  "checked_date_kst": "2026-11-12",
+  "target_repository": "watersun79-source/ai-token-optimization",
+  "source_main_sha": "923c281f82023cc6b49f3844bad17f508f1ab203",
+  "guard_policy": {
+    "allow_install": false,
+    "allow_external_api": false,
+    "allow_paid_api": false,
+    "allow_production_write": false,
+    "allow_scheduled_task_change": false,
+    "allow_flow_change": false,
+    "allow_d1_write": false,
+    "allow_main_change": false
+  },
+  "projects": [
+    {
+      "id": "langgraph",
+      "repo": "langchain-ai/langgraph",
+      "license": "MIT",
+      "capability": "orchestration",
+      "mode": "primary_candidate",
+      "archived": false,
+      "rationale": "Stateful workflow candidate; live API/runtime not provisioned"
+    },
+    {
+      "id": "activepieces",
+      "repo": "activepieces/activepieces",
+      "license": "MIT core; commercial EE",
+      "capability": "automation",
+      "mode": "existing_reference",
+      "archived": false,
+      "rationale": "Existing project references; connection/live flow not proven by this audit"
+    },
+    {
+      "id": "openhands",
+      "repo": "OpenHands/OpenHands",
+      "license": "MIT community",
+      "capability": "coding",
+      "mode": "sandbox_candidate",
+      "archived": false,
+      "rationale": "Requires isolated shell/container and model quota approval"
+    },
+    {
+      "id": "mem0",
+      "repo": "mem0ai/mem0",
+      "license": "Apache-2.0",
+      "capability": "memory",
+      "mode": "primary_candidate",
+      "archived": false,
+      "rationale": "Candidate only; must not bypass D1 NO_WRITE or duplicate memory"
+    },
+    {
+      "id": "langfuse",
+      "repo": "langfuse/langfuse",
+      "license": "MIT core; separate EE",
+      "capability": "observability",
+      "mode": "primary_candidate",
+      "archived": false,
+      "rationale": "Candidate for trace schema, no new telemetry service or secrets"
+    },
+    {
+      "id": "agent-framework",
+      "repo": "microsoft/agent-framework",
+      "license": "MIT",
+      "capability": "orchestration",
+      "mode": "alternative",
+      "archived": false,
+      "rationale": "Alternative to LangGraph, not simultaneously enabled"
+    },
+    {
+      "id": "crewai",
+      "repo": "crewAIInc/crewAI",
+      "license": "MIT",
+      "capability": "orchestration",
+      "mode": "alternative",
+      "archived": false,
+      "rationale": "Alternative multi-agent execution engine"
+    },
+    {
+      "id": "letta",
+      "repo": "letta-ai/letta",
+      "license": "Apache-2.0",
+      "capability": "memory",
+      "mode": "alternative",
+      "archived": false,
+      "rationale": "Alternative memory service; avoid duplicate memory writers"
+    },
+    {
+      "id": "openai-agents",
+      "repo": "openai/openai-agents-python",
+      "license": "MIT",
+      "capability": "orchestration",
+      "mode": "alternative",
+      "archived": false,
+      "rationale": "Alternative harness; model API billing not approved"
+    },
+    {
+      "id": "flowise",
+      "repo": "FlowiseAI/Flowise",
+      "license": "Apache-2.0 core; separate commercial",
+      "capability": "visualization",
+      "mode": "excluded",
+      "archived": true,
+      "rationale": "Upstream archived 2026-08-13; EOL 2026-08-31; no new deployment"
+    }
+  ]
+}

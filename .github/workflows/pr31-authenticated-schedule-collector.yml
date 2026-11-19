@@ -1,0 +1,95 @@
+name: PR31 authenticated schedule run collection (read only)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - '.github/workflows/pr31-authenticated-schedule-collector.yml'
+      - 'experiments/oss-top10-safe-adoption/pr31_authenticated_schedule_snapshot.py'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  authenticated-schedule-read:
+    if: >-
+      github.event.pull_request.number == 31 &&
+      github.event.pull_request.head.ref == 'ai/site-github403-failclosed-20261116' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Collect current schedule runs via authenticated GitHub API once
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 experiments/oss-top10-safe-adoption/pr31_authenticated_schedule_snapshot.py
+      - name: Render offline iPhone dashboard from authenticated snapshot
+        run: |
+          python3 - <<'PY'
+          import hashlib,html,json,re
+          from datetime import datetime,timezone,timedelta
+          from pathlib import Path
+          data=json.loads(Path('pr31_schedule_runs.json').read_text(encoding='utf-8'))
+          records=data.get('runs')
+          if (data.get('schema')!='PR31_AUTHENTICATED_GITHUB_SCHEDULE_SNAPSHOT_V1' or
+              data.get('repository')!='watersun79-source/ai-token-optimization' or
+              data.get('site_source_deployed') is not False or data.get('operational_write_allowed') is not False or
+              not isinstance(records,list) or len(records)>10 or data.get('observed_count')!=len(records)):
+              raise SystemExit('BLOCKED_INVALID_SNAPSHOT')
+          digest=hashlib.sha256(json.dumps(records,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+          if digest!=data.get('runs_sha256'):raise SystemExit('BLOCKED_DIGEST')
+          cards=[];count=0;seen=set()
+          for r in records:
+              num=r.get('id');sha=r.get('sha');status=r.get('status');result=r.get('conclusion')
+              if (type(num) is not int or num<=0 or num in seen or
+                  not isinstance(sha,str) or not re.fullmatch('[0-9a-f]{40}',sha) or
+                  status not in ('queued','in_progress','completed','waiting','pending','requested','unverified') or
+                  result not in ('success','failure','cancelled','skipped','timed_out','neutral','action_required','stale',None)):
+                  raise SystemExit('BLOCKED_RUN_IDENTITY')
+              seen.add(num);passed=status=='completed' and result=='success';count+=passed
+              value=r.get('created_at')
+              try:when=datetime.fromisoformat(value.replace('Z','+00:00')).astimezone(timezone(timedelta(hours=9))).strftime('%m.%d %H:%M') if value else '시각 미확인'
+              except (ValueError,AttributeError,TypeError):raise SystemExit('BLOCKED_RUN_TIME')
+              searchable=html.escape(f'{num} {sha} {status} {result}',quote=True)
+              cards.append(f'<article class="entry" data-key="{searchable}"><div><b>#{num}</b><span class="ok">{"PASS" if passed else "UNVERIFIED"}</span><small>{html.escape(when)} KST · {html.escape(status)}</small><code>{sha[:12]}…</code></div><a href="https://github.com/watersun79-source/ai-token-optimization/actions/runs/{num}" target="_blank" rel="noopener noreferrer">열기 ↗</a></article>')
+          page='''<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>진화하는 AI · 일정 관제</title><style>
+          body{margin:0;background:#e7edf3;color:#193449;font-family:-apple-system,system-ui,sans-serif}main{max-width:760px;margin:auto;padding:18px}.hero{background:#c9d9e7;padding:26px;border-radius:24px}h1{font-size:30px;margin:5px 0}.muted{color:#587284;font-size:13px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:17px 0}.stat,.box{background:white;border-radius:20px;padding:17px}.n{font-size:27px;color:#128257;font-weight:800}.box{margin:14px 0}h2{font-size:19px;margin-top:0}.entry{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 0;border-bottom:1px solid #e1e9ef}.entry small,.entry code{display:block;color:#597587;margin-top:5px;font-size:12px}.entry a{white-space:nowrap;color:#28688c;font-size:12px;text-decoration:none;background:#edf4f8;padding:9px;border-radius:12px}.ok{border-radius:8px;background:#e5f3eb;color:#177a59;padding:4px 8px;font-size:11px;margin-left:8px}.warning{background:#f9f3e7;border-left:4px solid #b89e6d;padding:14px;border-radius:11px;font-size:13px}input{width:100%;box-sizing:border-box;border:1px solid #dae5ee;border-radius:12px;font-size:16px;padding:12px}.sha{overflow-wrap:anywhere;font:11px monospace;color:#597587}</style></head><body><main><header class="hero"><div class="muted">AI BOT v8.1 · GITHUB ACTIONS</div><h1>진화하는 AI</h1><div class="muted">인증 수집 · 오프라인 일정 관제</div></header><div class="stats"><div class="stat"><div class="muted">수집</div><div class="n">@@TOTAL@@</div></div><div class="stat"><div class="muted">SUCCESS</div><div class="n">@@PASS@@</div></div><div class="stat"><div class="muted">운영 Site</div><div class="n" style="color:#9a7644;font-size:15px">BLOCKED</div></div></div><section class="box"><h2>실행 기록 · 최신순</h2><input type="search" id="filter" placeholder="실행 ID · SHA 검색" aria-label="실행 ID 또는 SHA 검색"><div>@@ROWS@@</div><p id="empty" class="muted" hidden>검색 결과 없음</p></section><section class="box"><h2>원본과 보호 상태</h2><p class="warning">GitHub Actions SUCCESS가 Site 운영 또는 ChatGPT 예약 성공을 의미하지 않아. Site 배포 미실행 · NO_WRITE.</p><p class="sha">데이터 SHA-256: @@SHA@@</p><p class="muted">인증된 GitHub Actions 읽기 1회 · 비밀키 없음 · 외부 JS 없음</p></section></main><script>
+          const el=document.querySelector('#filter'),rows=[...document.querySelectorAll('.entry')];el.addEventListener('input',()=>{let n=0;for(const r of rows){r.hidden=!r.dataset.key.toLowerCase().includes(el.value.trim().toLowerCase());n+=!r.hidden}document.querySelector('#empty').hidden=n!==0});
+          </script></body></html>'''
+          page=page.replace('@@TOTAL@@',str(len(records))).replace('@@PASS@@',str(count)).replace('@@ROWS@@',''.join(cards)).replace('@@SHA@@',digest)
+          Path('pr31_schedule_dashboard.html').write_text(page,encoding='utf-8')
+          assert page.count('class="entry" data-key=')==len(records)
+          print(f'PR31_OFFLINE_DASHBOARD PASS records={len(records)} bytes={len(page.encode())} site_deployed=false')
+          # The Actions run page now shows current schedule evidence directly.
+          # Every row was already validated against the authenticated JSON digest.
+          import os
+          target=os.environ.get('GITHUB_STEP_SUMMARY')
+          if not target:raise SystemExit('BLOCKED_ACTIONS_SUMMARY_MISSING')
+          report=['# 진화하는 AI · 인증 일정 관제','',
+                  f'**GitHub 일정 수집 {len(records)}건 · SUCCESS {count}건**','',
+                  '> GitHub Actions 결과만 표시해. 기존 Site·ChatGPT 예약 성공 근거가 아니야. 운영 Site BLOCKED / NO_WRITE.','',
+                  '| 실행 ID | 생성(KST) | 상태 | 커밋 |','|---|---|---|---|']
+          for r in records:
+              kst=datetime.fromisoformat(r['created_at'].replace('Z','+00:00')).astimezone(timezone(timedelta(hours=9))).strftime('%m.%d %H:%M') if r['created_at'] else '미확인'
+              label='SUCCESS' if r['status']=='completed' and r['conclusion']=='success' else 'UNVERIFIED'
+              number=r['id']
+              report.append(f"| [#{number}](https://github.com/watersun79-source/ai-token-optimization/actions/runs/{number}) | {kst} | {label} | `{r['sha'][:12]}` |")
+          report += ['',f'검증된 원본 SHA-256: `{digest}`','',
+                     '운영 Site 미배포 · 공식 예약 실행 검증 별개 · GitHub 코드/운영 쓰기 없음']
+          Path(target).write_text('\n'.join(report)+'\n',encoding='utf-8')
+          print(f'PR31_ACTIONS_SUMMARY PASS rows={len(records)} success={count} site_deployed=false')
+          PY
+      - name: Store sanitized schedule-runs and offline dashboard
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pr31-schedule-runs-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: |
+            pr31_schedule_runs.json
+            pr31_schedule_dashboard.html
+          if-no-files-found: error
+          retention-days: 7

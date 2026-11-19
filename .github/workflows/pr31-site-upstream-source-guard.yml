@@ -1,0 +1,30 @@
+name: PR31 Site upstream source gate (new tests only)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - "experiments/oss-top10-safe-adoption/site_source_upstream_guard.mjs"
+      - "tests/pr31_site_source_upstream_guard.test.mjs"
+      - "tests/pr31_upstream_denial_propagation.test.mjs"
+      - "tests/pr31_untrusted_accessor_guard.test.mjs"
+      - ".github/workflows/pr31-site-upstream-source-guard.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  new-upstream-403-guard-only:
+    if: >-
+      github.event.pull_request.number == 31 &&
+      github.event.pull_request.head.ref == 'ai/site-github403-failclosed-20261116' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Run only new source rate-limit negative cases
+        run: node --test tests/pr31_untrusted_accessor_guard.test.mjs
