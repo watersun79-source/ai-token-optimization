@@ -87,7 +87,7 @@ jobs:
       - name: Store sanitized schedule-runs and offline dashboard
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: pr31-schedule-runs-${{ github.run_id }}
+          name: pr31-schedule-runs-${{ github.run_id }}-attempt-${{ github.run_attempt }}
           path: |
             pr31_schedule_runs.json
             pr31_schedule_dashboard.html
